@@ -129,7 +129,7 @@ export default function EditEmployeeModal({
         </div>
       </div>
 
-      <div className="modal-backdrop fade show"></div>
+      {open && <div className="modal-backdrop fade show"></div>}
     </>
   );
 }

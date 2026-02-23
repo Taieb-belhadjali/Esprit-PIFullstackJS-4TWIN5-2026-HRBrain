@@ -121,7 +121,7 @@ export default function AddEmployeeModal({ open, onClose, onCreated }: Props) {
       </div>
 
       {/* Manual backdrop */}
-      <div className="modal-backdrop fade show"></div>
+      {open && <div className="modal-backdrop fade show"></div>}
     </>
   );
 }

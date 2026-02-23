@@ -82,7 +82,7 @@ export default function ViewEmployeeModal({ open, employee, onClose }: Props) {
         </div>
       </div>
 
-      <div className="modal-backdrop fade show"></div>
+      {open && <div className="modal-backdrop fade show"></div>}
     </>
   );
 }
