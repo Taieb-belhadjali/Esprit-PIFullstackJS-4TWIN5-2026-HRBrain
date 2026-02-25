@@ -10,6 +10,7 @@ import {
   Settings,
   ChevronLeft,
   ChevronRight,
+  Folder, // <-- icon for Departments
 } from 'lucide-react';
 import { ViewType } from './Dashboard';
 
@@ -81,6 +82,12 @@ export function Sidebar({
       label: 'Notifications',
       icon: <Bell className="w-5 h-5" />,
       roles: ['HR', 'Manager', 'Employee'],
+    },
+    {
+      id: 'departments', // <-- new Departments item
+      label: 'Departments',
+      icon: <Folder className="w-5 h-5" />,
+      roles: ['HR', 'Manager'], // only HR and Manager can see
     },
     {
       id: 'profile',
