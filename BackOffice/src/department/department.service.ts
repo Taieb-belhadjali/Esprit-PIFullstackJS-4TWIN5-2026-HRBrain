@@ -38,4 +38,5 @@ export class DepartmentService {
     }
     return { message: 'Department deleted successfully' };
   }
+
 }

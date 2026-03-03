@@ -1,3 +1,8 @@
 @import './fonts.css';
 @import './tailwind.css';
 @import './theme.css';
+
+
+/* إضافة لتحسين المظهر */
+.bg-gray-50 { background-color: #f9fafb; }
+.transition-shadow { transition: box-shadow 0.2s; }

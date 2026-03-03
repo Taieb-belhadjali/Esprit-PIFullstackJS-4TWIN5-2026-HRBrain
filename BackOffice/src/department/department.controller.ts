@@ -1,10 +1,15 @@
-import { Controller, Get, Post, Body, Param, Put, Delete } from '@nestjs/common';
+import { Controller, Get, Post, Body, Param, Put, Delete, Options } from '@nestjs/common';
 import { DepartmentService } from './department.service';
 import { Department } from './schemas/department.schema';
 
 @Controller('departments')
 export class DepartmentController {
   constructor(private readonly departmentService: DepartmentService) {}
+
+  @Options('*')
+  options() {
+    return { status: 'ok' };
+  }
 
   @Get()
   findAll() {

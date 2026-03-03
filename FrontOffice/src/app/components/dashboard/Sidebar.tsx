@@ -10,7 +10,7 @@ import {
   Settings,
   ChevronLeft,
   ChevronRight,
-  Folder, // <-- icon for Departments
+  Building2, // أيقونة أحسن للـ Departments
 } from 'lucide-react';
 import { ViewType } from './Dashboard';
 
@@ -84,12 +84,6 @@ export function Sidebar({
       roles: ['HR', 'Manager', 'Employee'],
     },
     {
-      id: 'departments', // <-- new Departments item
-      label: 'Departments',
-      icon: <Folder className="w-5 h-5" />,
-      roles: ['HR', 'Manager'], // only HR and Manager can see
-    },
-    {
       id: 'profile',
       label: 'Profile',
       icon: <User className="w-5 h-5" />,
@@ -101,8 +95,16 @@ export function Sidebar({
       icon: <Settings className="w-5 h-5" />,
       roles: ['HR', 'Manager', 'Employee'],
     },
+    // 👇 ضفنا Departments هنا في الـ menuItems (بدل ما نكتبه برا)
+    {
+      id: 'departments',
+      label: 'Departments',
+      icon: <Building2 className="w-5 h-5" />, // أو استعمل Brain
+      roles: ['HR'], // فقط HR يشوف Departments
+    },
   ];
 
+  // فلترة العناصر حسب دور المستخدم
   const filteredMenuItems = menuItems.filter((item) =>
     item.roles.includes(userRole)
   );
