@@ -37,6 +37,7 @@ export function Employees({ userRole }: EmployeesProps) {
   // ✅ PAGINATION STATE
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 5;
+  
 
   const departments = ['All', 'Engineering', 'Marketing', 'Sales', 'HR', 'Finance'];
 

@@ -4,15 +4,20 @@ import { Model } from 'mongoose';
 import { User } from './shemas/user.shema';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
-//import * as bcrypt from 'bcrypt';
 
 @Injectable()
 export class UsersService {
-  constructor(@InjectModel(User.name) private userModel: Model<User>) {}
+  constructor(
+    @InjectModel(User.name)
+    private userModel: Model<User>,
+  ) {}
 
-  async create(data: CreateUserDto) {
-    //const hashed = await bcrypt.hash(data.password, 10);
-    const user = new this.userModel({ ...data });
+  async create(data: CreateUserDto, file?: Express.Multer.File) {
+    const user = new this.userModel({
+      ...data,
+      cv: file ? `uploads/${file.filename}` : undefined,
+    });
+
     return user.save();
   }
 
@@ -23,11 +28,6 @@ export class UsersService {
   async findOne(id: string) {
     const user = await this.userModel.findById(id);
     if (!user) throw new NotFoundException('User not found');
-    return user;
-  }
-
-  async findByEmail(email: string) {
-    const user = await this.userModel.findOne({ email });
     return user;
   }
 
