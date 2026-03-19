@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { Navigate, Route, Routes } from 'react-router-dom';
 import { Login } from './components/auth/Login';
 import { Signup } from './components/auth/Signup';
 import { Dashboard } from './components/dashboard/Dashboard';
@@ -12,41 +13,56 @@ interface User {
 }
 
 export default function App() {
-  const [currentView, setCurrentView] = useState<'login' | 'signup' | 'dashboard'>('login');
   const [user, setUser] = useState<User | null>(null);
 
   const handleLogin = (email: string, role: UserRole) => {
     setUser({ email, role, name: email.split('@')[0] });
-    setCurrentView('dashboard');
   };
 
   const handleSignup = (email: string, role: UserRole) => {
     setUser({ email, role, name: email.split('@')[0] });
-    setCurrentView('dashboard');
   };
 
   const handleLogout = () => {
     setUser(null);
-    setCurrentView('login');
   };
 
-  if (currentView === 'login') {
-    return (
-      <Login 
-        onLogin={handleLogin}
-        onSwitchToSignup={() => setCurrentView('signup')}
+  return (
+    <Routes>
+      <Route
+        path="/login"
+        element={
+          user ? (
+            <Navigate to="/dashboard" replace />
+          ) : (
+            <Login onLogin={handleLogin} onSwitchToSignupPath="/signup" />
+          )
+        }
       />
-    );
-  }
-
-  if (currentView === 'signup') {
-    return (
-      <Signup 
-        onSignup={handleSignup}
-        onSwitchToLogin={() => setCurrentView('login')}
+      <Route
+        path="/signup"
+        element={
+          user ? (
+            <Navigate to="/dashboard" replace />
+          ) : (
+            <Signup onSignup={handleSignup} onSwitchToLoginPath="/login" />
+          )
+        }
       />
-    );
-  }
-
-  return user ? <Dashboard user={user} onLogout={handleLogout} /> : null;
+      <Route
+        path="/dashboard/*"
+        element={
+          user ? (
+            <Dashboard user={user} onLogout={handleLogout} />
+          ) : (
+            <Navigate to="/login" replace />
+          )
+        }
+      />
+      <Route
+        path="*"
+        element={<Navigate to={user ? '/dashboard' : '/login'} replace />}
+      />
+    </Routes>
+  );
 }
