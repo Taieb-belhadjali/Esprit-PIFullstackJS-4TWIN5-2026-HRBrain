@@ -1,4 +1,5 @@
-import { useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { Sidebar } from './Sidebar';
 import { Home } from '../views/Home';
 import { Employees } from '../views/Employees';
@@ -35,8 +36,40 @@ export type ViewType =
   | 'settings';
 
 export function Dashboard({ user, onLogout }: DashboardProps) {
-  const [currentView, setCurrentView] = useState<ViewType>('home');
+  const navigate = useNavigate();
+  const location = useLocation();
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
+
+  const viewRoles: Record<ViewType, UserRole[]> = {
+    home: ['HR', 'Manager', 'Employee'],
+    employees: ['HR', 'Manager'],
+    skills: ['HR', 'Manager', 'Employee'],
+    activities: ['HR', 'Manager', 'Employee'],
+    recommendations: ['HR', 'Manager'],
+    analytics: ['HR', 'Manager'],
+    notifications: ['HR', 'Manager', 'Employee'],
+    profile: ['HR', 'Manager', 'Employee'],
+    settings: ['HR', 'Manager', 'Employee'],
+  };
+
+  const currentView = useMemo<ViewType>(() => {
+    const segment = location.pathname.split('/')[2] as ViewType | undefined;
+    if (!segment || !(segment in viewRoles)) {
+      return 'home';
+    }
+    return segment;
+  }, [location.pathname]);
+
+  useEffect(() => {
+    if (!viewRoles[currentView].includes(user.role)) {
+      navigate('/dashboard/home', { replace: true });
+      return;
+    }
+
+    if (location.pathname === '/dashboard') {
+      navigate('/dashboard/home', { replace: true });
+    }
+  }, [currentView, location.pathname, navigate, user.role]);
 
   const renderView = () => {
     switch (currentView) {
@@ -67,7 +100,7 @@ export function Dashboard({ user, onLogout }: DashboardProps) {
     <div className="flex h-screen bg-secondary overflow-hidden">
       <Sidebar
         currentView={currentView}
-        onViewChange={setCurrentView}
+        onViewChange={(view) => navigate(`/dashboard/${view}`)}
         userRole={user.role}
         userName={user.name}
         isCollapsed={isSidebarCollapsed}
