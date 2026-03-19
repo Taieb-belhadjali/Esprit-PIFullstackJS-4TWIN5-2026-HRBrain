@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Routes, Route,Navigate } from 'react-router-dom';
+import { Navigate, Route, Routes } from 'react-router-dom';
 import { Login } from './components/auth/Login';
 import { Signup } from './components/auth/Signup';
 import { Dashboard } from './components/dashboard/Dashboard';
@@ -13,25 +13,19 @@ interface User {
 }
 
 export default function App() {
-  const [currentView, setCurrentView] = useState<'login' | 'signup' | 'dashboard'>('login');
   const [user, setUser] = useState<User | null>(null);
 
   const handleLogin = (email: string, role: UserRole) => {
     setUser({ email, role, name: email.split('@')[0] });
-    setCurrentView('dashboard');
   };
 
   const handleSignup = (email: string, role: UserRole) => {
     setUser({ email, role, name: email.split('@')[0] });
-    setCurrentView('dashboard');
   };
 
   const handleLogout = () => {
     setUser(null);
-    setCurrentView('login');
   };
-
-  
 
   return (
     <Routes>
