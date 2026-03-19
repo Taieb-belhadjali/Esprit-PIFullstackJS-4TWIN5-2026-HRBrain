@@ -8,7 +8,13 @@ import { SkillsHeader } from '../skills/SkillsHeader';
 import { SkillsStats } from '../skills/SkillsStats';
 import { Skill, SkillSortBy } from '../skills/types';
 
-export const Skills: React.FC = () => {
+type UserRole = 'HR' | 'Manager' | 'Employee';
+
+interface SkillsProps {
+  userRole: UserRole;
+}
+
+export const Skills: React.FC<SkillsProps> = ({ userRole }) => {
   const [skills, setSkills] = useState<Skill[]>([]);
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
@@ -25,8 +31,11 @@ export const Skills: React.FC = () => {
   const fetchSkills = async () => {
     setLoading(true);
     try {
-      const res = await axios.get('http://localhost:3000/skills');
-      setSkills(res.data);
+      const res = await axios.get('http://localhost:1000/skills');
+      // Filtrer les skills valides (avec name)
+      const validSkills = res.data.filter((skill: any) => skill.name);
+      console.log('Valid skills:', validSkills.length);
+      setSkills(validSkills);
     } catch (err) {
       console.error(err);
       alert('Erreur lors du chargement des skills');
@@ -43,7 +52,7 @@ export const Skills: React.FC = () => {
   const handleDelete = async (id: string) => {
     if (!window.confirm('Voulez-vous vraiment supprimer ce skill ?')) return;
     try {
-      await axios.delete(`http://localhost:3000/skills/${id}`);
+      await axios.delete(`http://localhost:1000/skills/${id}`);
       fetchSkills();
     } catch (err) {
       console.error(err);

@@ -7,10 +7,10 @@ export type SkillDocument = Skill & Document;
 
 @Schema({ timestamps: true })
 export class Skill {
-  @Prop({ required: true })
+  @Prop({ required: true, minlength: 1, trim: true })
   name: string;
 
-  @Prop()
+  @Prop({ trim: true })
   description?: string; // optionnel
 }
 

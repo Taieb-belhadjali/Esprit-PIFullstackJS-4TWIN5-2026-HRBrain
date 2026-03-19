@@ -12,6 +12,9 @@ export class SkillService {
   ) {}
 
   async create(createSkillDto: CreateSkillDto): Promise<SkillDocument> {
+    if (!createSkillDto.name || !createSkillDto.name.trim()) {
+      throw new Error('Le nom du skill ne peut pas être vide');
+    }
     const createdSkill = new this.skillModel(createSkillDto);
     return createdSkill.save();
   }

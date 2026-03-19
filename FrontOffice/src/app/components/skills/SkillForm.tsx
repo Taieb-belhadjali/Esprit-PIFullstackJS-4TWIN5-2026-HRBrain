@@ -33,7 +33,7 @@ export const SkillForm: React.FC<SkillFormProps> = ({
       if (skillToEdit) {
         // Update
         console.log(`Updating skill ${skillToEdit._id}...`);
-        const response = await axios.patch(`http://localhost:3000/skills/${skillToEdit._id}`, {
+        const response = await axios.patch(`http://localhost:1000/skills/${skillToEdit._id}`, {
           name,
           description,
         });
@@ -41,7 +41,7 @@ export const SkillForm: React.FC<SkillFormProps> = ({
       } else {
         // Create
         console.log('Creating new skill...');
-        const response = await axios.post('http://localhost:3000/skills', { name, description });
+        const response = await axios.post('http://localhost:1000/skills', { name, description });
         console.log('Create success:', response.data);
       }
       onCreatedOrUpdated();
@@ -56,7 +56,7 @@ export const SkillForm: React.FC<SkillFormProps> = ({
         alert(`Erreur: ${err.response.data?.message || err.response.statusText}`);
       } else if (err.request) {
         console.error('No response received:', err.request);
-        alert('Erreur: Pas de réponse du serveur. Vérifiez que le serveur est lancé sur http://localhost:3000');
+        alert('Erreur: Pas de réponse du serveur. Vérifiez que le serveur est lancé sur http://localhost:1000');
       } else {
         console.error('Error message:', err.message);
         alert(`Erreur: ${err.message}`);
