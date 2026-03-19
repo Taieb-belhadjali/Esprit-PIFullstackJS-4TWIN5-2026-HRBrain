@@ -1,14 +1,16 @@
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Mail, Lock, AlertCircle, Brain, User } from 'lucide-react';
 
 type UserRole = 'HR' | 'Manager' | 'Employee';
 
 interface SignupProps {
   onSignup: (email: string, role: UserRole) => void;
-  onSwitchToLogin: () => void;
+  onSwitchToLoginPath: string;
 }
 
-export function Signup({ onSignup, onSwitchToLogin }: SignupProps) {
+export function Signup({ onSignup, onSwitchToLoginPath }: SignupProps) {
+  const navigate = useNavigate();
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -59,6 +61,7 @@ export function Signup({ onSignup, onSwitchToLogin }: SignupProps) {
     e.preventDefault();
     if (validateForm()) {
       onSignup(email, role);
+      navigate('/dashboard');
     }
   };
 
@@ -220,7 +223,7 @@ export function Signup({ onSignup, onSwitchToLogin }: SignupProps) {
               Already have an account?{' '}
               <button
                 type="button"
-                onClick={onSwitchToLogin}
+                onClick={() => navigate(onSwitchToLoginPath)}
                 className="text-primary hover:underline"
               >
                 Sign in
