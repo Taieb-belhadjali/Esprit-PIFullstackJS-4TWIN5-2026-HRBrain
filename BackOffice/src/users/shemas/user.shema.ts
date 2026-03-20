@@ -19,6 +19,9 @@ export class User {
 
   @Prop()
   cv?: string;
+
+  @Prop({ default: true })
+  mustChangePassword: boolean;
 }
 
 export const UserSchema = SchemaFactory.createForClass(User);
