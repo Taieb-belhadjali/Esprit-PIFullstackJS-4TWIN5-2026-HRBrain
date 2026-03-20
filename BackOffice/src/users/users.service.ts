@@ -1,6 +1,7 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
+import * as bcrypt from 'bcrypt';
 import { User } from './shemas/user.shema';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
@@ -13,8 +14,11 @@ export class UsersService {
   ) {}
 
   async create(data: CreateUserDto, file?: Express.Multer.File) {
+    const hashedPassword = await bcrypt.hash(data.password, 10);
     const user = new this.userModel({
       ...data,
+      password: hashedPassword,
+      mustChangePassword: true,
       cv: file ? `uploads/${file.filename}` : undefined,
     });
 
