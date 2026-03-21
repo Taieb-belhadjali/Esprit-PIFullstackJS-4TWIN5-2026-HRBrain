@@ -31,7 +31,7 @@ export const Skills: React.FC<SkillsProps> = ({ userRole }) => {
   const fetchSkills = async () => {
     setLoading(true);
     try {
-      const res = await axios.get('http://localhost:1000/skills');
+      const res = await axios.get('http://localhost:3000/skills');
       // Filtrer les skills valides (avec name)
       const validSkills = res.data.filter((skill: any) => skill.name);
       console.log('Valid skills:', validSkills.length);
@@ -52,7 +52,7 @@ export const Skills: React.FC<SkillsProps> = ({ userRole }) => {
   const handleDelete = async (id: string) => {
     if (!window.confirm('Voulez-vous vraiment supprimer ce skill ?')) return;
     try {
-      await axios.delete(`http://localhost:1000/skills/${id}`);
+      await axios.delete(`http://localhost:3000/skills/${id}`);
       fetchSkills();
     } catch (err) {
       console.error(err);
