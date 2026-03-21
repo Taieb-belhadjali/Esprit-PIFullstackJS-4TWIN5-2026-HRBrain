@@ -1,67 +1,108 @@
 import { useState } from 'react';
 import { Navigate, Route, Routes } from 'react-router-dom';
 import { Login } from './components/auth/Login';
-import { Signup } from './components/auth/Signup';
+import { ChangePassword } from './components/auth/ChangePassword';
+import { OAuthCallback } from './components/auth/OAuthCallback';
 import { Dashboard } from './components/dashboard/Dashboard';
 
-type UserRole = 'HR' | 'Manager' | 'Employee';
+type UserRole = 'HR' | 'MANAGER' | 'EMPLOYEE';
 
 interface User {
+  id: string;
   email: string;
   role: UserRole;
   name: string;
 }
 
-export default function App() {
-  const [user, setUser] = useState<User | null>(null);
+interface AuthState {
+  token: string;
+  user: User;
+  mustChangePassword: boolean;
+}
 
-  const handleLogin = (email: string, role: UserRole) => {
-    setUser({ email, role, name: email.split('@')[0] });
+export default function App() {
+  const [auth, setAuth] = useState<AuthState | null>(null);
+
+  const handleLogin = (result: { token: string; mustChangePassword: boolean; user: User }) => {
+    setAuth(result);
   };
 
-  const handleSignup = (email: string, role: UserRole) => {
-    setUser({ email, role, name: email.split('@')[0] });
+  const handlePasswordChanged = () => {
+    if (auth) {
+      setAuth({ ...auth, mustChangePassword: false });
+    }
   };
 
   const handleLogout = () => {
-    setUser(null);
+    setAuth(null);
+  };
+
+  // Map backend roles to frontend roles
+  const mapRole = (role: string): 'HR' | 'Manager' | 'Employee' => {
+    if (role === 'HR') return 'HR';
+    if (role === 'MANAGER') return 'Manager';
+    return 'Employee';
   };
 
   return (
     <Routes>
       <Route
+        path="/oauth/callback"
+        element={<OAuthCallback onLogin={handleLogin} />}
+      />
+      <Route
         path="/login"
         element={
-          user ? (
-            <Navigate to="/dashboard" replace />
+          !auth ? (
+            <Login onLogin={handleLogin} />
+          ) : auth.mustChangePassword ? (
+            <Navigate to="/change-password" replace />
           ) : (
-            <Login onLogin={handleLogin} onSwitchToSignupPath="/signup" />
+            <Navigate to="/dashboard" replace />
           )
         }
       />
+
       <Route
-        path="/signup"
+        path="/change-password"
         element={
-          user ? (
+          auth && auth.mustChangePassword ? (
+            <ChangePassword
+              token={auth.token}
+              onPasswordChanged={handlePasswordChanged}
+            />
+          ) : auth && !auth.mustChangePassword ? (
             <Navigate to="/dashboard" replace />
-          ) : (
-            <Signup onSignup={handleSignup} onSwitchToLoginPath="/login" />
-          )
-        }
-      />
-      <Route
-        path="/dashboard/*"
-        element={
-          user ? (
-            <Dashboard user={user} onLogout={handleLogout} />
           ) : (
             <Navigate to="/login" replace />
           )
         }
       />
+
+      <Route
+        path="/dashboard/*"
+        element={
+          auth && !auth.mustChangePassword ? (
+            <Dashboard
+              user={{ email: auth.user.email, role: mapRole(auth.user.role), name: auth.user.name }}
+              onLogout={handleLogout}
+            />
+          ) : auth && auth.mustChangePassword ? (
+            <Navigate to="/change-password" replace />
+          ) : (
+            <Navigate to="/login" replace />
+          )
+        }
+      />
+
       <Route
         path="*"
-        element={<Navigate to={user ? '/dashboard' : '/login'} replace />}
+        element={
+          <Navigate
+            to={!auth ? '/login' : auth.mustChangePassword ? '/change-password' : '/dashboard'}
+            replace
+          />
+        }
       />
     </Routes>
   );

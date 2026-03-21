@@ -1,30 +1,16 @@
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 import { ValidationPipe } from '@nestjs/common';
+import { NestExpressApplication } from '@nestjs/platform-express';
+import { join } from 'path';
 
 async function bootstrap() {
-  const app = await NestFactory.create(AppModule);
-  app.enableCors({
-    origin: (origin, callback) => {
-      if (!origin) {
-        return callback(null, true);
-      }
-
-      const allowed = /^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/i.test(origin);
-      if (allowed) {
-        return callback(null, true);
-      }
-
-      callback(new Error(`Origin not allowed by CORS: ${origin}`), false);
-    },
-    credentials: true,
+  const app = await NestFactory.create<NestExpressApplication>(AppModule);
+  app.enableCors({ origin: 'http://localhost:5173', credentials: true });
+  app.useGlobalPipes(new ValidationPipe());
+  app.useStaticAssets(join(__dirname, '..', 'uploads'), {
+    prefix: '/uploads',
   });
-  app.useGlobalPipes(
-    new ValidationPipe({
-      whitelist: false,
-      forbidNonWhitelisted: false,
-    }),
-  );
-  await app.listen(process.env.PORT ?? 1000);
+  await app.listen(process.env.PORT ?? 3000);
 }
 bootstrap();
