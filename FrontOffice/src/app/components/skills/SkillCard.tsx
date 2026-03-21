@@ -45,8 +45,8 @@ export const SkillCard: React.FC<SkillCardProps> = ({
           )}
         </div>
 
-        {/* Modern icon buttons */}
-        <div className="flex gap-2 ml-4 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+        {/* Action buttons: Edit and Delete - Always visible for better UX */}
+        <div className="flex gap-2 ml-4 transition-opacity duration-300">
           <button
             onClick={(event) => {
               event.stopPropagation();
