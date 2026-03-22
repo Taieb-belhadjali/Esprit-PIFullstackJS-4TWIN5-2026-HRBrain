@@ -8,15 +8,71 @@ import {
   Put,
   UseInterceptors,
   UploadedFile,
+  NotFoundException,
+  Res,
+  BadRequestException,
 } from '@nestjs/common';
+import type { Response } from 'express';
 import { UsersService } from './users.service';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { diskStorage } from 'multer';
-import { extname } from 'path';
+import { extname, resolve } from 'path';
+import { createReadStream, existsSync } from 'fs';
 
 @Controller('users')
 export class UsersController {
   constructor(private readonly usersService: UsersService) {}
+
+  @Get(':id/cv')
+  async getCvFile(@Param('id') id: string) {
+    const user = await this.usersService.findOne(id);
+    if (!user) {
+      throw new NotFoundException('Utilisateur non trouvé');
+    }
+    if (!user.cv) {
+      throw new BadRequestException(`Aucun fichier CV pour cet utilisateur. CV actuel: ${user.cv}`);
+    }
+    return { cvPath: user.cv };
+  }
+
+  @Get(':id/cv/download')
+  async downloadCv(@Param('id') id: string, @Res() res: Response) {
+    try {
+      const user = await this.usersService.findOne(id);
+      if (!user?.cv) {
+        throw new NotFoundException('Fichier CV non trouvé');
+      }
+      
+      // Construire le chemin absolu du fichier
+      let filePath = user.cv;
+      if (!filePath.startsWith('/')) {
+        filePath = resolve(process.cwd(), filePath);
+      }
+      
+      // Vérifier que le fichier existe
+      if (!existsSync(filePath)) {
+        console.error(`Fichier non trouvé: ${filePath}`);
+        throw new BadRequestException(`Fichier CV n'existe pas: ${filePath}`);
+      }
+      
+      const file = createReadStream(filePath);
+      
+      res.setHeader('Content-Type', 'text/plain; charset=utf-8');
+      res.setHeader('Content-Disposition', `attachment; filename="cv_${id}.txt"`);
+      
+      file.pipe(res);
+      
+      file.on('error', (err) => {
+        console.error('Stream error:', err);
+        if (!res.headersSent) {
+          res.status(500).send('Erreur lors du téléchargement du fichier');
+        }
+      });
+    } catch (error) {
+      console.error('Download CV error:', error);
+      throw error;
+    }
+  }
 
   @Post()
   @UseInterceptors(
@@ -29,8 +85,9 @@ export class UsersController {
         },
       }),
       fileFilter: (req, file, callback) => {
-        if (file.mimetype !== 'application/pdf') {
-          return callback(new Error('Only PDF files are allowed'), false);
+        const allowedMimes = ['application/pdf', 'text/plain'];
+        if (!allowedMimes.includes(file.mimetype)) {
+          return callback(new Error('Only PDF or TXT files are allowed'), false);
         }
         callback(null, true);
       },

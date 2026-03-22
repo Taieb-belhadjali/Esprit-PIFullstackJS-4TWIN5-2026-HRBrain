@@ -74,12 +74,13 @@ export default function AddEmployeeModal({
 
     if (form.role === "EMPLOYEE") {
       if (!file) {
-        alert("PDF file is required for employees");
+        alert("CV file (PDF or TXT) is required for employees");
         return;
       }
 
-      if (file.type !== "application/pdf") {
-        alert("Only PDF files are allowed");
+      const allowedTypes = ["application/pdf", "text/plain"];
+      if (!allowedTypes.includes(file.type)) {
+        alert("Only PDF or TXT files are allowed");
         return;
       }
     }
@@ -163,47 +164,35 @@ export default function AddEmployeeModal({
                   />
                 </div>
 
-                <div className="mb-3">
-                  <label className="form-label">Role</label>
-                  <select
-                    className="form-select"
-                    name="role"
-                    value={form.role}
-                    onChange={handleChange}
-                  >
-                    <option value="HR">HR</option>
-                    <option value="MANAGER">MANAGER</option>
-                    <option value="EMPLOYEE">EMPLOYEE</option>
-                  </select>
-                </div>
-
-                <div className="mb-3">
-                  <label className="form-label">Skills</label>
-                  <div className="border rounded p-2" style={{ maxHeight: 180, overflowY: "auto" }}>
-                    {skills.length === 0 ? (
-                      <small className="text-muted">No skills found</small>
-                    ) : (
-                      skills.map((skill) => (
-                        <div key={skill._id} className="form-check">
-                          <input
-                            className="form-check-input"
-                            type="checkbox"
-                            id={`skill-${skill._id}`}
-                            checked={form.skills.includes(skill._id)}
-                            onChange={() => toggleSkill(skill._id)}
-                          />
-                          <label className="form-check-label" htmlFor={`skill-${skill._id}`}>
-                            {skill.name}
-                          </label>
-                        </div>
-                      ))
-                    )}
+                {form.role === "EMPLOYEE" && (
+                  <div className="mb-3">
+                    <label className="form-label">Skills</label>
+                    <div className="border rounded p-2" style={{ maxHeight: 180, overflowY: "auto" }}>
+                      {skills.length === 0 ? (
+                        <small className="text-muted">No skills found</small>
+                      ) : (
+                        skills.map((skill) => (
+                          <div key={skill._id} className="form-check">
+                            <input
+                              className="form-check-input"
+                              type="checkbox"
+                              id={`skill-${skill._id}`}
+                              checked={form.skills.includes(skill._id)}
+                              onChange={() => toggleSkill(skill._id)}
+                            />
+                            <label className="form-check-label" htmlFor={`skill-${skill._id}`}>
+                              {skill.name}
+                            </label>
+                          </div>
+                        ))
+                      )}
+                    </div>
                   </div>
-                </div>
+                )}
 
                 {form.role === "EMPLOYEE" && (
                   <div className="mb-3">
-                    <label className="form-label">Upload CV (PDF only)</label>
+                    <label className="form-label">Upload CV (PDF or TXT)</label>
                     <input
                       type="file"
                       accept="application/pdf"
