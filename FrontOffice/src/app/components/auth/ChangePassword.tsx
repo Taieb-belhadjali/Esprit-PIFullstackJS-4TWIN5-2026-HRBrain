@@ -1,4 +1,3 @@
-import { useState } from 'react';
 import { Lock, AlertCircle, Brain } from 'lucide-react';
 import { changePassword } from '../../../api/authApi';
 

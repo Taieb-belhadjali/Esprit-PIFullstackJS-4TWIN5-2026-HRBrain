@@ -1,5 +1,5 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
-import { Document } from 'mongoose';
+import { Document, Types } from 'mongoose';
 
 export type UserDocument = User & Document;
 
@@ -19,6 +19,12 @@ export class User {
 
   @Prop()
   cv?: string;
+
+  @Prop({ type: [{ type: Types.ObjectId, ref: 'Skill' }], default: [] })
+  skills: Types.ObjectId[];
+
+  @Prop({ type: [{ type: Types.ObjectId, ref: 'Skill' }], default: [] })
+  cvDetectedSkills: Types.ObjectId[];
 
   @Prop({ default: true })
   mustChangePassword: boolean;

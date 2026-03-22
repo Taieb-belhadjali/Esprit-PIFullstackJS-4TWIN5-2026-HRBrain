@@ -1,5 +1,11 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { createEmployee } from "../../../api/employeeApi";
+import axios from "axios";
+
+interface Skill {
+  _id: string;
+  name: string;
+}
 
 interface Props {
   open: boolean;
@@ -17,9 +23,26 @@ export default function AddEmployeeModal({
     email: "",
     password: "",
     role: "EMPLOYEE",
+    skills: [] as string[],
   });
 
   const [file, setFile] = useState<File | null>(null);
+  const [skills, setSkills] = useState<Skill[]>([]);
+
+  useEffect(() => {
+    const fetchSkills = async () => {
+      try {
+        const response = await axios.get("http://localhost:3000/skills");
+        setSkills(response.data || []);
+      } catch (error) {
+        console.error("Failed to fetch skills:", error);
+      }
+    };
+
+    if (open) {
+      fetchSkills();
+    }
+  }, [open]);
 
   if (!open) return null;
 
@@ -29,16 +52,26 @@ export default function AddEmployeeModal({
     setForm({ ...form, [e.target.name]: e.target.value });
   };
 
+  const toggleSkill = (skillId: string) => {
+    setForm((prev) => {
+      const exists = prev.skills.includes(skillId);
+      return {
+        ...prev,
+        skills: exists
+          ? prev.skills.filter((id) => id !== skillId)
+          : [...prev.skills, skillId],
+      };
+    });
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    // Validation champs obligatoires
     if (!form.name || !form.email || !form.password) {
       alert("Name, Email and Password are required");
       return;
     }
 
-    // Si EMPLOYEE → fichier obligatoire + PDF uniquement
     if (form.role === "EMPLOYEE") {
       if (!file) {
         alert("PDF file is required for employees");
@@ -58,9 +91,10 @@ export default function AddEmployeeModal({
       formData.append("email", form.email);
       formData.append("password", form.password);
       formData.append("role", form.role);
+      form.skills.forEach((skillId) => formData.append("skills", skillId));
 
       if (file) {
-        formData.append("cv", file); // ⚠️ Doit correspondre au backend
+        formData.append("cv", file);
       }
 
       await createEmployee(formData);
@@ -68,12 +102,12 @@ export default function AddEmployeeModal({
       onCreated();
       onClose();
 
-      // Reset form
       setForm({
         name: "",
         email: "",
         password: "",
         role: "EMPLOYEE",
+        skills: [],
       });
       setFile(null);
     } catch (err: any) {
@@ -84,17 +118,14 @@ export default function AddEmployeeModal({
 
   return (
     <>
-      {/* Modal */}
       <div className="modal fade show d-block" tabIndex={-1}>
         <div className="modal-dialog modal-dialog-centered">
           <div className="modal-content shadow">
-            {/* HEADER */}
             <div className="modal-header">
               <h5 className="modal-title">Add Employee</h5>
               <button className="btn-close" onClick={onClose}></button>
             </div>
 
-            {/* BODY */}
             <form onSubmit={handleSubmit}>
               <div className="modal-body">
                 <div className="mb-3">
@@ -146,7 +177,30 @@ export default function AddEmployeeModal({
                   </select>
                 </div>
 
-                {/* Upload CV uniquement si EMPLOYEE */}
+                <div className="mb-3">
+                  <label className="form-label">Skills</label>
+                  <div className="border rounded p-2" style={{ maxHeight: 180, overflowY: "auto" }}>
+                    {skills.length === 0 ? (
+                      <small className="text-muted">No skills found</small>
+                    ) : (
+                      skills.map((skill) => (
+                        <div key={skill._id} className="form-check">
+                          <input
+                            className="form-check-input"
+                            type="checkbox"
+                            id={`skill-${skill._id}`}
+                            checked={form.skills.includes(skill._id)}
+                            onChange={() => toggleSkill(skill._id)}
+                          />
+                          <label className="form-check-label" htmlFor={`skill-${skill._id}`}>
+                            {skill.name}
+                          </label>
+                        </div>
+                      ))
+                    )}
+                  </div>
+                </div>
+
                 {form.role === "EMPLOYEE" && (
                   <div className="mb-3">
                     <label className="form-label">Upload CV (PDF only)</label>
@@ -165,7 +219,6 @@ export default function AddEmployeeModal({
                 )}
               </div>
 
-              {/* FOOTER */}
               <div className="modal-footer">
                 <button
                   type="button"
@@ -183,7 +236,6 @@ export default function AddEmployeeModal({
         </div>
       </div>
 
-      {/* Backdrop */}
       {open && <div className="modal-backdrop fade show"></div>}
     </>
   );

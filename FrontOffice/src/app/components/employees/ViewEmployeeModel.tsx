@@ -5,6 +5,7 @@ interface Employee {
   name: string;
   email: string;
   role: string;
+  skills?: Array<{ _id: string; name: string } | string>;
 }
 
 interface Props {
@@ -15,6 +16,10 @@ interface Props {
 
 export default function ViewEmployeeModal({ open, employee, onClose }: Props) {
   if (!open || !employee) return null;
+
+  const skillNames = (employee.skills || []).map((skill) =>
+    typeof skill === 'string' ? skill : skill.name,
+  );
 
   // 🔹 ROLE COLOR HELPER
   const getRoleBadge = (role: string) => {
@@ -67,6 +72,13 @@ export default function ViewEmployeeModal({ open, employee, onClose }: Props) {
               <div className="mb-3">
                 <label className="form-label fw-bold">Employee ID</label>
                 <div className="form-control bg-light">{employee.id}</div>
+              </div>
+
+              <div className="mb-3">
+                <label className="form-label fw-bold">Skills</label>
+                <div className="form-control bg-light">
+                  {skillNames.length > 0 ? skillNames.join(', ') : 'No skills assigned'}
+                </div>
               </div>
 
             </div>

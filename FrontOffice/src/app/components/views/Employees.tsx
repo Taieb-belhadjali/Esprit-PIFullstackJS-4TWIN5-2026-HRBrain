@@ -16,6 +16,7 @@ interface Employee {
   id: string;
   name: string;
   email: string;
+  skills?: Array<{ _id: string; name: string } | string>;
   department: string;
   position: string;
   skillsCount: number;
@@ -46,7 +47,9 @@ export function Employees({ userRole }: EmployeesProps) {
       const res = await getEmployees();
       const mappedEmployees = res.data.map((emp: any) => ({
         ...emp,
-        id: emp._id
+        id: emp._id,
+        skills: Array.isArray(emp.skills) ? emp.skills : [],
+        skillsCount: Array.isArray(emp.skills) ? emp.skills.length : 0,
       }));
       setEmployees(mappedEmployees);
     } catch (error) {
