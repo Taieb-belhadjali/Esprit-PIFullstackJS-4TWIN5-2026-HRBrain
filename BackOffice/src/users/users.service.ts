@@ -24,7 +24,7 @@ export class UsersService {
 
   private async detectSkillIdsFromText(text: string) {
     // Récupérer tous les skills de la base
-    const validLevels = ['LOW', 'MEDIUM', 'HIGH'];
+    const validLevels = ['LOW', 'MEDIUM', 'HIGH', 'EXPERT'];
     const allSkills = await this.skillModel.find({}, { _id: 1, name: 1 }).lean();
     
     // Créer un map pour recherche rapide par nom
@@ -55,7 +55,7 @@ export class UsersService {
       const match = line.match(/^([A-Za-z0-9\s+#\-_.]+):([A-Z]+)$/);
       
       if (!match) {
-        errors.push(`Ligne ${lineNumber}: Format invalide "${line}". Requis: SKILL:HIGH|MEDIUM|LOW`);
+        errors.push(`Ligne ${lineNumber}: Format invalide "${line}". Requis: SKILL:HIGH|MEDIUM|LOW|EXPERT`);
         continue;
       }
       
@@ -64,7 +64,7 @@ export class UsersService {
       
       // Vérifier que le niveau est valide (HIGH, MEDIUM ou LOW seulement)
       if (!validLevels.includes(level)) {
-        errors.push(`Ligne ${lineNumber}: Niveau invalide "${level}". Accepté: HIGH, MEDIUM, LOW`);
+        errors.push(`Ligne ${lineNumber}: Niveau invalide "${level}". Accepté: HIGH, MEDIUM, LOW, EXPERT`);
         continue;
       }
       
@@ -91,7 +91,7 @@ export class UsersService {
     
     // Aucun skill valide
     if (foundSkillIds.size === 0) {
-      throw new BadRequestException('Aucun skill valide. Format: SKILL:HIGH|MEDIUM|LOW');
+      throw new BadRequestException('Aucun skill valide. Format: SKILL:HIGH|MEDIUM|LOW|EXPERT');
     }
     
     return Array.from(foundSkillIds);

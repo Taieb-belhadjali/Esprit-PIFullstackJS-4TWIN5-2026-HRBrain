@@ -129,6 +129,9 @@ export default function AddEmployeeModal({
 
             <form onSubmit={handleSubmit}>
               <div className="modal-body">
+
+
+
                 <div className="mb-3">
                   <label className="form-label">Name</label>
                   <input
@@ -163,6 +166,25 @@ export default function AddEmployeeModal({
                     required
                   />
                 </div>
+
+
+
+                <div className="mb-3">
+                  <label className="form-label">Role</label>
+                  <select
+                    className="form-select"
+                    name="role"
+                    value={form.role}
+                    onChange={handleChange}
+                    required
+                  >
+                    <option value="EMPLOYEE">Employee</option>
+                    <option value="MANAGER">Manager</option>
+                    <option value="HR">HR</option>
+                  </select>
+                </div>
+
+                {/* Champs Email et Password après le champ Role supprimés ici (plus de duplication) */}
 
                 {form.role === "EMPLOYEE" && (
                   <div className="mb-3">
