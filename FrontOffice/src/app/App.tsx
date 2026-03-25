@@ -1,7 +1,6 @@
 import { useState } from 'react';
 import { Navigate, Route, Routes } from 'react-router-dom';
 import { Login } from './components/auth/Login';
-import { login as loginApi } from '../api/authApi';
 import { ChangePassword } from './components/auth/ChangePassword';
 import { OAuthCallback } from './components/auth/OAuthCallback';
 import { Dashboard } from './components/dashboard/Dashboard';
@@ -24,13 +23,9 @@ interface AuthState {
 export default function App() {
   const [auth, setAuth] = useState<AuthState | null>(null);
 
-  const handleLogin = async (email: string, password: string) => {
-    try {
-      const res = await loginApi(email, password);
-      setAuth(res.data);
-    } catch (err) {
-    }
-  };
+    const handleLogin = (result: { token: string; mustChangePassword: boolean; user: User }) => {
+        setAuth(result);
+    };
 
   const handlePasswordChanged = () => {
     if (auth) {
@@ -53,13 +48,13 @@ export default function App() {
     <Routes>
       <Route
         path="/oauth/callback"
-        element={<OAuthCallback onLogin={(result) => setAuth(result)} />}
+        element={<OAuthCallback onLogin={handleLogin} />}
       />
       <Route
         path="/login"
         element={
           !auth ? (
-            <Login onLogin={handleLogin} onSwitchToSignup={() => {}} />
+            <Login onLogin={handleLogin} />
           ) : auth.mustChangePassword ? (
             <Navigate to="/change-password" replace />
           ) : (
