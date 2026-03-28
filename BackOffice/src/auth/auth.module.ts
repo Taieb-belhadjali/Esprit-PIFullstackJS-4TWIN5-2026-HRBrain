@@ -8,6 +8,10 @@ import { JwtStrategy } from './jwt.strategy';
 import { GoogleStrategy } from './google.strategy';
 import { User, UserSchema } from '../users/shemas/user.shema';
 
+const googleOAuthConfigured =
+  Boolean(process.env.GOOGLE_CLIENT_ID?.trim()) &&
+  Boolean(process.env.GOOGLE_CLIENT_SECRET?.trim());
+
 @Module({
   imports: [
     PassportModule,
@@ -17,7 +21,11 @@ import { User, UserSchema } from '../users/shemas/user.shema';
     }),
     MongooseModule.forFeature([{ name: User.name, schema: UserSchema }]),
   ],
-  providers: [AuthService, JwtStrategy, GoogleStrategy],
+  providers: [
+    AuthService,
+    JwtStrategy,
+    ...(googleOAuthConfigured ? [GoogleStrategy] : []),
+  ],
   controllers: [AuthController],
 })
 export class AuthModule {}

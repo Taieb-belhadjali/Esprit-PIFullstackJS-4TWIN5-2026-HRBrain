@@ -10,6 +10,7 @@ import { Analytics } from '../views/Analytics';
 import { Notifications } from '../views/Notifications';
 import { Profile } from '../views/Profile';
 import { Settings } from '../views/Settings';
+import { Departments } from '../views/Departments';
 
 type UserRole = 'HR' | 'Manager' | 'Employee';
 
@@ -27,6 +28,7 @@ interface DashboardProps {
 export type ViewType =
   | 'home'
   | 'employees'
+  | 'departments'
   | 'skills'
   | 'activities'
   | 'recommendations'
@@ -43,6 +45,7 @@ export function Dashboard({ user, onLogout }: DashboardProps) {
   const viewRoles: Record<ViewType, UserRole[]> = {
     home: ['HR', 'Manager', 'Employee'],
     employees: ['HR', 'Manager'],
+    departments: ['HR'],
     skills: ['HR', 'Manager', 'Employee'],
     activities: ['HR', 'Manager', 'Employee'],
     recommendations: ['HR', 'Manager'],
@@ -77,6 +80,8 @@ export function Dashboard({ user, onLogout }: DashboardProps) {
         return <Home userRole={user.role} />;
       case 'employees':
         return <Employees userRole={user.role} />;
+      case 'departments':
+        return <Departments userRole={user.role} />;
       case 'skills':
         return <Skills userRole={user.role} />;
       case 'activities':
