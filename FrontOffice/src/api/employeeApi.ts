@@ -2,7 +2,7 @@ import axios from "axios";
 import API from "./api.ts";
 
 // GET all employees
-export const getEmployees = () => axios.get("http://localhost:3000/users");
+export const getEmployees = () => axios.get("http://localhost:3001/users");
 
 // CREATE employee
 export const createEmployee = (data:any) =>
