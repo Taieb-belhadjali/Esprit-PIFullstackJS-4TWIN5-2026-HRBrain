@@ -1,6 +1,7 @@
 import {
   Home,
   Users,
+  Building2,
   Brain,
   Activity,
   Target,
@@ -51,6 +52,12 @@ export function Sidebar({
       label: 'Employees',
       icon: <Users className="w-5 h-5" />,
       roles: ['HR', 'Manager'],
+    },
+    {
+      id: 'departments',
+      label: 'Departments',
+      icon: <Building2 className="w-5 h-5" />,
+      roles: ['HR'],
     },
     {
       id: 'skills',
