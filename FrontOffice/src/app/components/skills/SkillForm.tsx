@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
+import { Department, getDepartments } from '../departments/departmentService';
 
 interface SkillFormProps {
   onCreatedOrUpdated: () => void; // callback pour recharger la liste
@@ -8,6 +9,7 @@ interface SkillFormProps {
     _id: string;
     name: string;
     description?: string;
+    departmentId: string;
   };
 }
 
@@ -18,35 +20,55 @@ export const SkillForm: React.FC<SkillFormProps> = ({
 }) => {
   const [name, setName] = useState(skillToEdit?.name || '');
   const [description, setDescription] = useState(skillToEdit?.description || '');
+  const [departmentId, setDepartmentId] = useState(skillToEdit?.departmentId || '');
+  const [departments, setDepartments] = useState<Department[]>([]);
 
   useEffect(() => {
     if (skillToEdit) {
       setName(skillToEdit.name);
       setDescription(skillToEdit.description || '');
+      setDepartmentId(skillToEdit.departmentId || '');
     }
   }, [skillToEdit]);
+
+  useEffect(() => {
+    const fetchDepartments = async () => {
+      try {
+        const data = await getDepartments();
+        setDepartments(data);
+      } catch (err) {
+        console.error(err);
+        alert('Erreur lors du chargement des départements');
+      }
+    };
+    fetchDepartments();
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      console.log('Submitting skill...', { name, description });
+      if (!departmentId) {
+        alert('Veuillez sélectionner un département');
+        return;
+      }
+      console.log('Submitting skill...', { name, description, departmentId });
       if (skillToEdit) {
         // Update
-        console.log(`Updating skill ${skillToEdit._id}...`);
         const response = await axios.patch(`http://localhost:3000/skills/${skillToEdit._id}`, {
           name,
           description,
+          departmentId,
         });
         console.log('Update success:', response.data);
       } else {
         // Create
-        console.log('Creating new skill...');
-        const response = await axios.post('http://localhost:3000/skills', { name, description });
+        const response = await axios.post('http://localhost:3000/skills', { name, description, departmentId });
         console.log('Create success:', response.data);
       }
       onCreatedOrUpdated();
       setName('');
       setDescription('');
+      setDepartmentId('');
       alert('Skill sauvegardé avec succès !');
     } catch (err: any) {
       console.error('Error details:', err);
@@ -88,6 +110,20 @@ export const SkillForm: React.FC<SkillFormProps> = ({
             onChange={(e) => setDescription(e.target.value)}
             className="w-full px-3 py-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
           />
+        </div>
+        <div>
+          <label className="block mb-1 font-medium">Département</label>
+          <select
+            value={departmentId}
+            onChange={e => setDepartmentId(e.target.value)}
+            className="w-full px-3 py-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+            required
+          >
+            <option value="">Sélectionner un département</option>
+            {departments.map(dep => (
+              <option key={dep._id} value={dep._id}>{dep.name}</option>
+            ))}
+          </select>
         </div>
         <div className="flex gap-2 justify-end mt-4">
           <button

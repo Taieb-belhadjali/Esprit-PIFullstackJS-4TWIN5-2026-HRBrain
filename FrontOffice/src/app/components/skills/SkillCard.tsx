@@ -1,45 +1,32 @@
+
 import React from 'react';
 import { Edit2, Trash2 } from 'lucide-react';
 
-interface SkillCardProps {
-  id: string;
-  name: string;
-  description?: string;
-  onEdit: (id: string) => void;
-  onDelete: (id: string) => void;
-  onPreview?: (id: string) => void;
-}
 
-export const SkillCard: React.FC<SkillCardProps> = ({
+const SkillCard: React.FC<SkillCardProps> = ({
   id,
   name,
   description,
+  departmentName,
+  skillObj,
   onEdit,
   onDelete,
-  onPreview,
 }) => {
   return (
     <div
       className="group cursor-pointer bg-white rounded-xl shadow-md hover:shadow-xl transition-all duration-300 border border-gray-100 overflow-hidden hover:border-blue-200"
-      onClick={() => onPreview?.(id)}
-      onKeyDown={(event) => {
-        if (event.key === 'Enter' || event.key === ' ') {
-          event.preventDefault();
-          onPreview?.(id);
-        }
-      }}
-      role="button"
-      tabIndex={0}
-      aria-label={`Ouvrir le détail du skill ${name}`}
     >
       {/* Header with gradient accent */}
       <div className="h-1 bg-gradient-to-r from-blue-500 to-indigo-600"></div>
-      
+
       <div className="p-5 flex justify-between items-start">
         <div className="flex-1">
           <h3 className="text-lg font-bold text-gray-900 group-hover:text-blue-600 transition-colors">
             {name}
           </h3>
+          {departmentName && (
+            <p className="text-xs text-blue-700 font-semibold mt-1">Département : {departmentName}</p>
+          )}
           {description && (
             <p className="text-gray-600 text-sm mt-2 leading-relaxed">{description}</p>
           )}
@@ -74,3 +61,5 @@ export const SkillCard: React.FC<SkillCardProps> = ({
     </div>
   );
 };
+
+export { SkillCard };
