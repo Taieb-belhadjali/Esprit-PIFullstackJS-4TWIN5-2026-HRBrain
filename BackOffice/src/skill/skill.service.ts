@@ -19,8 +19,12 @@ export class SkillService {
     return createdSkill.save();
   }
 
-  async findAll(): Promise<SkillDocument[]> {
-    return this.skillModel.find().exec();
+  async findAll(departmentId?: string): Promise<SkillDocument[]> {
+    const filter: any = {};
+    if (departmentId) {
+      filter.departmentId = departmentId;
+    }
+    return this.skillModel.find(filter).exec();
   }
 
   async findOne(id: string): Promise<SkillDocument> {

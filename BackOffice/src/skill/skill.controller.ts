@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Patch, Delete, Param, Body, Logger } from '@nestjs/common';
+import { Controller, Get, Post, Patch, Delete, Param, Body, Logger, Query } from '@nestjs/common';
 import { SkillService } from './skill.service';
 import { CreateSkillDto } from './dto-skill/create-skill.dto';
 import { UpdateSkillDto } from './dto-skill/update-skill.dto';
@@ -21,8 +21,8 @@ export class SkillController {
   }
 
   @Get()
-  findAll() {
-    return this.skillService.findAll();
+  findAll(@Query('departmentId') departmentId?: string) {
+    return this.skillService.findAll(departmentId);
   }
 
   @Get(':id')

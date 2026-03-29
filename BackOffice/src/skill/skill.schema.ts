@@ -1,6 +1,7 @@
 // src/skill/schemas/skill.schema.ts
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import { Document } from 'mongoose';
+import { Types } from 'mongoose';
 
 // Type pour Mongoose + NestJS
 export type SkillDocument = Skill & Document;
@@ -12,6 +13,9 @@ export class Skill {
 
   @Prop({ trim: true })
   description?: string; // optionnel
+
+  @Prop({ type: Types.ObjectId, ref: 'Department', required: true })
+  departmentId: Types.ObjectId;
 }
 
 // Schema Mongoose pour la collection "skills"
