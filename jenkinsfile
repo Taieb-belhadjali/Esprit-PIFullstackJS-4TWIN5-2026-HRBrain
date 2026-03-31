@@ -4,18 +4,36 @@ pipeline {
     timestamps()
     ansiColor('xterm')
     disableConcurrentBuilds()
+    timeout(time: 30, unit: 'MINUTES')
   }
   tools {
     nodejs "node20"
   }
   environment {
     SONARQUBE_SERVER = 'SonarQube'
+    GIT_TIMEOUT = '3600'
   }
   stages {
     stage('Checkout') {
       steps {
         retry(3) {
-          checkout scm
+          checkout(
+            [$class: 'GitSCM',
+              branches: [[name: '*/hiba']],
+              userRemoteConfigs: [[
+                url: 'https://git:${GIT_TOKEN}@github.com/Taieb-belhadjali/ZeroOne-Studio.git'
+              ]],
+              extensions: [
+                [$class: 'CloneOption', 
+                  depth: 10,
+                  noTags: true,
+                  reference: '',
+                  shallow: true,
+                  timeout: 120
+                ]
+              ]
+            ]
+          )
         }
       }
     }
