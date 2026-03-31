@@ -11,7 +11,6 @@ pipeline {
   }
   environment {
     SONARQUBE_SERVER = 'SonarQube'
-    GIT_TIMEOUT = '3600'
   }
   stages {
     stage('Checkout') {
@@ -22,7 +21,6 @@ pipeline {
       }
     }
     stage('Install BackOffice') {
-      when { branch 'hiba' }
       steps {
         dir('BackOffice') {
           bat 'npm ci'
@@ -30,7 +28,6 @@ pipeline {
       }
     }
     stage('Test & Coverage BackOffice') {
-      when { branch 'hiba' }
       steps {
         dir('BackOffice') {
           bat 'npm run test:cov -- src/skill src/users --testPathPattern="(skill|users)"'
@@ -38,23 +35,19 @@ pipeline {
       }
     }
     stage('SonarQube Scan BackOffice') {
-      when { branch 'hiba' }
       steps {
         dir('BackOffice') {
           withSonarQubeEnv("${SONARQUBE_SERVER}") {
             bat """
               sonar-scanner ^
                 -Dsonar.projectKey=BackOffice ^
-                -Dsonar.projectBaseDir=%WORKSPACE%\\BackOffice ^
-                -Dsonar.branch.name=%BRANCH_NAME% ^
-                -Dsonar.branch.target=main
+                -Dsonar.projectBaseDir=%WORKSPACE%\\BackOffice
             """
           }
         }
       }
     }
     stage('Install FrontOffice') {
-      when { branch 'hiba' }
       steps {
         dir('FrontOffice') {
           bat 'npm ci'
@@ -62,7 +55,6 @@ pipeline {
       }
     }
     stage('Test & Coverage FrontOffice') {
-      when { branch 'hiba' }
       steps {
         dir('FrontOffice') {
           bat 'npm run test -- src/app/components/skills src/app/components/employees --coverage --passWithNoTests'
@@ -70,23 +62,19 @@ pipeline {
       }
     }
     stage('SonarQube Scan FrontOffice') {
-      when { branch 'hiba' }
       steps {
         dir('FrontOffice') {
           withSonarQubeEnv("${SONARQUBE_SERVER}") {
             bat """
               sonar-scanner ^
                 -Dsonar.projectKey=FrontOffice ^
-                -Dsonar.projectBaseDir=%WORKSPACE%\\FrontOffice ^
-                -Dsonar.branch.name=%BRANCH_NAME% ^
-                -Dsonar.branch.target=main
+                -Dsonar.projectBaseDir=%WORKSPACE%\\FrontOffice
             """
           }
         }
       }
     }
     stage('Quality Gate') {
-      when { branch 'hiba' }
       steps {
         timeout(time: 15, unit: 'MINUTES') {
           waitForQualityGate abortPipeline: false
