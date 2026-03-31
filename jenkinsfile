@@ -17,23 +17,7 @@ pipeline {
     stage('Checkout') {
       steps {
         retry(3) {
-          checkout(
-            [$class: 'GitSCM',
-              branches: [[name: '*/hiba']],
-              userRemoteConfigs: [[
-                url: 'https://git:${GIT_TOKEN}@github.com/Taieb-belhadjali/ZeroOne-Studio.git'
-              ]],
-              extensions: [
-                [$class: 'CloneOption', 
-                  depth: 10,
-                  noTags: true,
-                  reference: '',
-                  shallow: true,
-                  timeout: 120
-                ]
-              ]
-            ]
-          )
+          checkout scm
         }
       }
     }
