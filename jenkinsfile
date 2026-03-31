@@ -1,0 +1,98 @@
+pipeline {
+  agent any
+  options {
+    timestamps()
+    ansiColor('xterm')
+    disableConcurrentBuilds()
+  }
+  tools {
+    nodejs "node20"
+  }
+  environment {
+    SONARQUBE_SERVER = 'SonarQube'
+  }
+  stages {
+    stage('Checkout') {
+      steps {
+        checkout scm
+      }
+    }
+    stage('Install BackOffice') {
+      when { branch 'hiba' }
+      steps {
+        dir('BackOffice') {
+          bat 'npm ci'
+        }
+      }
+    }
+    stage('Test & Coverage BackOffice') {
+      when { branch 'hiba' }
+      steps {
+        dir('BackOffice') {
+          bat 'npm run test:cov -- src/skill src/users --testPathPattern="(skill|users)"'
+        }
+      }
+    }
+    stage('SonarQube Scan BackOffice') {
+      when { branch 'hiba' }
+      steps {
+        dir('BackOffice') {
+          withSonarQubeEnv("${SONARQUBE_SERVER}") {
+            bat """
+              sonar-scanner ^
+                -Dsonar.projectKey=BackOffice ^
+                -Dsonar.projectBaseDir=%WORKSPACE%\\BackOffice ^
+                -Dsonar.branch.name=%BRANCH_NAME% ^
+                -Dsonar.branch.target=main
+            """
+          }
+        }
+      }
+    }
+    stage('Install FrontOffice') {
+      when { branch 'hiba' }
+      steps {
+        dir('FrontOffice') {
+          bat 'npm ci'
+        }
+      }
+    }
+    stage('Test & Coverage FrontOffice') {
+      when { branch 'hiba' }
+      steps {
+        dir('FrontOffice') {
+          bat 'npm run test -- src/app/components/skills src/app/components/employees --coverage --passWithNoTests'
+        }
+      }
+    }
+    stage('SonarQube Scan FrontOffice') {
+      when { branch 'hiba' }
+      steps {
+        dir('FrontOffice') {
+          withSonarQubeEnv("${SONARQUBE_SERVER}") {
+            bat """
+              sonar-scanner ^
+                -Dsonar.projectKey=FrontOffice ^
+                -Dsonar.projectBaseDir=%WORKSPACE%\\FrontOffice ^
+                -Dsonar.branch.name=%BRANCH_NAME% ^
+                -Dsonar.branch.target=main
+            """
+          }
+        }
+      }
+    }
+    stage('Quality Gate') {
+      when { branch 'hiba' }
+      steps {
+        timeout(time: 15, unit: 'MINUTES') {
+          waitForQualityGate abortPipeline: false
+        }
+      }
+    }
+  }
+  post {
+    always {
+      archiveArtifacts artifacts: 'BackOffice/coverage/**,FrontOffice/coverage/**', onlyIfSuccessful: false
+    }
+  }
+}
