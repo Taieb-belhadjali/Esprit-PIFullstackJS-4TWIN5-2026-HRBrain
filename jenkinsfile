@@ -16,6 +16,18 @@ pipeline {
     stage('Checkout') {
       steps {
         retry(3) {
+          script {
+            bat 'git config --global http.version HTTP/1.1'
+            bat 'git config --global http.postBuffer 1048576000'
+            bat 'git config --global http.lowSpeedLimit 0'
+            bat 'git config --global http.lowSpeedTime 999999'
+            bat 'git config --global core.compression 0'
+            bat 'git config --global pack.windowMemory 100m'
+            bat 'git config --global pack.deltaCacheSize 2047m'
+            bat 'git config --global pack.packSizeLimit 2047m'
+            bat 'git config --global pack.threads 1'
+            bat 'git config --global pack.window 0'
+          }
           checkout scm
         }
       }
