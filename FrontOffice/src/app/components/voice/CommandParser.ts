@@ -12,6 +12,10 @@ export type Intent =
   | 'filter'
   | 'sort'
   | 'view'
+  | 'stats'
+  | 'list'
+  | 'confirm'
+  | 'cancel'
   | 'help'
   | 'greeting'
   | 'thanks'
@@ -35,39 +39,44 @@ export interface ParsedCommand {
   intent: Intent;
   entity: EntityType;
   name: string | null;
+  newName: string | null;  // extrait de "par Y" dans les commandes de modification
   confidence: number;
   originalText: string;
 }
 
 // Mots-clés pour détecter l'intention
 const INTENT_KEYWORDS: Record<Intent, string[]> = {
-  create: ['créer', 'crée', 'ajouter', 'ajouté', 'nouveau', 'nouvelle', 'ajoute', 'ajoutée', 'faire', 'faite'],
-  modify: ['modifier', 'modifié', 'éditer', 'édité', 'changer', 'changé', 'mettre', 'mise', 'mettre à jour', 'mise à jour', 'update', 'change'],
-  delete: ['supprimer', 'supprimé', 'effacer', 'effacé', 'retirer', 'retiré', 'enlever', 'enlevé', 'delete', 'remove'],
-  open: ['ouvrir', 'ouvert', 'montrer', 'montré', 'afficher', 'affiché', 'voir', 'vu', 'visualiser', 'visualisé', 'open', 'show', 'display'],
+  create: ['créer', 'crée', 'ajouter', 'ajouté', 'nouveau', 'nouvelle', 'ajoute', 'ajoutée', 'créez', 'ajoutez', 'insérer', 'enregistrer', 'enregistrez', 'faire', 'faite'],
+  modify: ['modifier', 'modifié', 'éditer', 'édité', 'changer', 'changé', 'mettre à jour', 'mise à jour', 'update', 'change', 'renommer', 'renommé', 'corriger', 'corrigé', 'modifiez'],
+  delete: ['supprimer', 'supprimé', 'supprime', 'effacer', 'effacé', 'retirer', 'retiré', 'enlever', 'enlevé', 'delete', 'remove', 'supprimez', 'effacez'],
+  open: ['ouvrir', 'ouvert', 'montrer', 'montré', 'afficher', 'affiché', 'open', 'show', 'display', 'accéder', 'accédez'],
   close: ['fermer', 'fermé', 'cacher', 'caché', 'masquer', 'masqué', 'close', 'hide'],
-  navigate: ['aller', 'allé', 'naviguer', 'navigué', 'va', 'vas', 'go', 'navigate'],
-  search: ['chercher', 'cherché', 'rechercher', 'recherché', 'trouver', 'trouvé', 'où', 'qui', 'search', 'find'],
-  filter: ['filtrer', 'filtré', 'filter', 'filtre'],
-  sort: ['trier', 'trié', 'sort', 'sortir'],
-  view: ['voir', 'vu', 'visualiser', 'visualisé', 'afficher', 'affiché', 'view', 'show'],
-  help: ['aide', 'help', 'assistance', 'commandes', 'que puis-je faire', 'what can I do'],
-  greeting: ['bonjour', 'salut', 'hello', 'hi', 'hey', 'coucou'],
-  thanks: ['merci', 'thanks', 'thank you', 'merci beaucoup'],
-  logout: ['déconnexion', 'déconnecter', 'logout', 'log out', 'se déconnecter'],
+  navigate: ['aller', 'allé', 'naviguer', 'navigué', 'va', 'vas', 'go', 'navigate', 'emmène', 'amène', 'direction'],
+  search: ['chercher', 'cherché', 'rechercher', 'recherché', 'trouver', 'trouvé', 'search', 'find', 'cherche', 'trouve', 'recherche'],
+  filter: ['filtrer', 'filtré', 'filter', 'filtre', 'filtrez'],
+  sort: ['trier', 'trié', 'sort', 'classer', 'classé', 'ordonner', 'ordonné'],
+  stats: ['combien', 'nombre', 'count', 'total', 'compter', 'compte', 'statistiques', 'chiffres', 'résumé'],
+  list: ['liste', 'lister', 'énumérer', 'tous les', 'toutes les', 'quels sont', 'quelles sont'],
+  confirm: ['oui', 'confirmer', 'confirme', 'confirmes', 'valider', 'valide', "d'accord", 'ok', 'yes', 'ouais', 'absolument'],
+  cancel: ['non', 'annuler', 'annule', 'abandonner', 'abandonne', 'stop', 'arrêter', 'arrête', 'cancel', 'no', 'pas question'],
+  view: ['voir', 'vu', 'visualiser', 'visualisé', 'view', 'aperçu'],
+  help: ['aide', 'help', 'assistance', 'commandes', 'que puis-je faire', 'instructions'],
+  greeting: ['bonjour', 'salut', 'hello', 'hi', 'hey', 'coucou', 'bonsoir'],
+  thanks: ['merci', 'thanks', 'thank you', 'merci beaucoup', 'super', 'bravo', 'parfait'],
+  logout: ['déconnexion', 'déconnecter', 'logout', 'log out', 'se déconnecter', 'quitter'],
   unknown: [],
 };
 
 // Mots-clés pour détecter l'entité
 const ENTITY_KEYWORDS: Record<EntityType, string[]> = {
-  skill: ['skill', 'compétence', 'compétences', 'savoir-faire', 'expertise'],
-  employee: ['employé', 'employés', 'employee', 'employees', 'personnel', 'collaborateur', 'collaborateurs'],
-  department: ['département', 'départements', 'department', 'departments', 'service', 'services'],
-  activity: ['activité', 'activités', 'activity', 'activities', 'formation', 'formations', 'training'],
-  profile: ['profil', 'profile', 'compte', 'account'],
-  settings: ['paramètres', 'settings', 'configuration', 'config'],
-  notifications: ['notification', 'notifications', 'alerte', 'alertes', 'message', 'messages'],
-  analytics: ['analytique', 'analytics', 'statistiques', 'stats', 'rapport', 'rapports'],
+  skill: ['skill', 'skills', 'compétence', 'compétences', 'savoir-faire', 'expertise', 'technologie', 'technologies'],
+  employee: ['employé', 'employés', 'employee', 'employees', 'personnel', 'collaborateur', 'collaborateurs', 'utilisateur', 'utilisateurs', 'membre', 'membres', 'personne', 'personnes'],
+  department: ['département', 'départements', 'department', 'departments', 'service', 'services', 'équipe', 'équipes', 'division', 'divisions'],
+  activity: ['activité', 'activités', 'activity', 'activities', 'formation', 'formations', 'training', 'session', 'sessions', 'cours'],
+  profile: ['profil', 'profile', 'compte', 'account', 'mon compte'],
+  settings: ['paramètres', 'settings', 'configuration', 'config', 'préférences'],
+  notifications: ['notification', 'notifications', 'alerte', 'alertes'],
+  analytics: ['analytique', 'analytics', 'rapport', 'rapports', 'données'],
   recommendations: ['recommandation', 'recommandations', 'recommendation', 'recommendations', 'suggestion', 'suggestions'],
   home: ['accueil', 'home', 'tableau de bord', 'dashboard', 'principal'],
   unknown: [],
@@ -128,45 +137,40 @@ function detectEntity(text: string): { entity: EntityType; confidence: number } 
 /**
  * Extrait le nom de l'entité à partir du texte
  * Ex: "créer un skill React" → "React"
- * Ex: "modifier le profil de Jean" → "Jean"
+ * Ex: "modifier le département IT" → "IT"
+ *
+ * Utilise une approche par découpage de mots plutôt que \b (qui ne fonctionne
+ * pas avec les caractères accentués français : é, à, è, ù, ô, etc.)
  */
-function extractName(text: string, intent: Intent, entity: EntityType): string | null {
+function extractName(text: string, _intent: Intent, _entity: EntityType): string | null {
+  // Tronquer avant "par" pour "modifier X par Y" → traite seulement "modifier X"
   const lowerText = text.toLowerCase();
+  const parIndex  = lowerText.indexOf(' par ');
+  const searchText = parIndex !== -1 ? text.substring(0, parIndex) : text;
 
-  // Si "par" est présent, on ignore tout ce qui vient après
-  // ex: "modifier skill Hiba par test" → on traite seulement "modifier skill Hiba"
-  const parIndex = lowerText.indexOf(' par ');
-  let cleanedText = parIndex !== -1 ? lowerText.substring(0, parIndex) : lowerText;
+  // Construire l'ensemble des mots / expressions à exclure
+  const excluded = new Set<string>();
+  for (const kws of Object.values(INTENT_KEYWORDS))  kws.forEach(k => excluded.add(k.toLowerCase()));
+  for (const kws of Object.values(ENTITY_KEYWORDS))  kws.forEach(k => excluded.add(k.toLowerCase()));
+  STOP_WORDS.forEach(k => excluded.add(k.toLowerCase()));
 
-  // Supprimer les mots d'intention
-  for (const keywords of Object.values(INTENT_KEYWORDS)) {
-    for (const keyword of keywords) {
-      cleanedText = cleanedText.replace(new RegExp(`\\b${keyword}\\b`, 'gi'), '');
+  // Supprimer les expressions multi-mots (ex: "mettre à jour", "tous les", …)
+  let cleaned = searchText;
+  for (const k of excluded) {
+    if (k.includes(' ')) {
+      cleaned = cleaned.replace(new RegExp(k.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'gi'), ' ');
     }
   }
-  
-  // Supprimer les mots d'entité
-  for (const keywords of Object.values(ENTITY_KEYWORDS)) {
-    for (const keyword of keywords) {
-      cleanedText = cleanedText.replace(new RegExp(`\\b${keyword}\\b`, 'gi'), '');
-    }
-  }
-  
-  // Supprimer les stop words
-  for (const stopWord of STOP_WORDS) {
-    cleanedText = cleanedText.replace(new RegExp(`\\b${stopWord}\\b`, 'gi'), '');
-  }
-  
-  // Nettoyer les espaces multiples
-  cleanedText = cleanedText.replace(/\s+/g, ' ').trim();
-  
-  // Si le texte nettoyé n'est pas vide, c'est le nom
-  if (cleanedText.length > 0) {
-    // Capitaliser la première lettre
-    return cleanedText.charAt(0).toUpperCase() + cleanedText.slice(1);
-  }
-  
-  return null;
+
+  // Filtrer mot par mot (fonctionne avec les accents car pas de \b)
+  const words = cleaned
+    .split(/\s+/)
+    .map(w => w.replace(/[.,!?;:'"()\-]/g, '').trim())
+    .filter(w => w.length > 0 && !excluded.has(w.toLowerCase()));
+
+  const result = words.join(' ').trim();
+  if (!result) return null;
+  return result.charAt(0).toUpperCase() + result.slice(1);
 }
 
 /**
@@ -181,8 +185,18 @@ export function parseCommand(text: string): ParsedCommand {
   // Détecter l'entité
   const { entity, confidence: entityConfidence } = detectEntity(lowerText);
   
-  // Extraire le nom
+  // Extraire le nom courant (avant "par")
   const name = extractName(lowerText, intent, entity);
+
+  // Extraire le nouveau nom (après "par")
+  let newName: string | null = null;
+  const parIndex = lowerText.indexOf(' par ');
+  if (parIndex !== -1) {
+    const afterPar = text.substring(parIndex + 5).trim();
+    if (afterPar.length > 0) {
+      newName = afterPar.charAt(0).toUpperCase() + afterPar.slice(1);
+    }
+  }
   
   // Calculer la confiance globale
   const overallConfidence = (intentConfidence + entityConfidence) / 2;
@@ -191,6 +205,7 @@ export function parseCommand(text: string): ParsedCommand {
     intent,
     entity,
     name,
+    newName,
     confidence: overallConfidence,
     originalText: text,
   };
@@ -200,20 +215,25 @@ export function parseCommand(text: string): ParsedCommand {
  * Vérifie si la commande est valide (intention et entité détectées)
  */
 export function isValidCommand(parsed: ParsedCommand): boolean {
-  return parsed.intent !== 'unknown' && parsed.entity !== 'unknown';
+  if (parsed.intent === 'unknown') return false;
+  // Ces intents fonctionnent sans entité (inférée depuis la route)
+  const entityOptional: Intent[] = ['stats', 'list', 'confirm', 'cancel', 'help', 'greeting', 'thanks', 'logout', 'search', 'filter'];
+  if (entityOptional.includes(parsed.intent)) return true;
+  return parsed.entity !== 'unknown';
 }
 
 /**
  * Retourne un message d'erreur si la commande n'est pas valide
  */
 export function getErrorMessage(parsed: ParsedCommand): string {
+  if (parsed.intent === 'unknown' && parsed.entity === 'unknown') {
+    return "Je n'ai pas compris la commande. Dites aide pour voir les commandes disponibles.";
+  }
   if (parsed.intent === 'unknown') {
-    return `🤔 Je n'ai pas compris l'intention de "${parsed.originalText}". Essayez "aide" pour voir les commandes disponibles.`;
+    return `J'ai compris ${parsed.entity} mais pas l'action. Précisez créer, modifier ou supprimer.`;
   }
-  
   if (parsed.entity === 'unknown') {
-    return `🤔 Je n'ai pas compris ce que vous voulez ${parsed.intent}. Essayez "aide" pour voir les commandes disponibles.`;
+    return `Précisez l'entité : skill, employé ou département.`;
   }
-  
-  return `🤔 Je n'ai pas compris "${parsed.originalText}". Essayez "aide" pour voir les commandes disponibles.`;
+  return "Commande non reconnue. Dites aide pour de l'aide.";
 }

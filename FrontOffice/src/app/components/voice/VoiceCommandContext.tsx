@@ -17,6 +17,9 @@ export type VoiceCommandType =
   | 'filter-employee'
   | 'filter-skill'
   | 'filter-department'
+  | 'view-skill'
+  | 'view-employee'
+  | 'view-department'
   | null;
 
 interface VoiceCommandData {
