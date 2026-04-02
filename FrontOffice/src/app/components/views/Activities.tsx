@@ -1,6 +1,11 @@
 import { useState, useEffect } from 'react';
-import { Search, Plus, Users, Calendar, Target, Edit, Trash2 } from 'lucide-react';
+import { Search, Plus, X } from 'lucide-react';
+import axios from 'axios';
+import { ActivityCard } from '../activities/ActivityCard';
+import { Activity } from '../activities/types';
+import { ActivityRecommendations } from '../activities/ActivityRecommendations';
 import { useVoiceCommand } from '../voice/VoiceCommandContext';
+import Pagination from '../ui/Pagination';
 
 type UserRole = 'HR' | 'Manager' | 'Employee';
 
@@ -8,182 +13,182 @@ interface ActivitiesProps {
   userRole: UserRole;
 }
 
-interface Activity {
-  id: string;
-  title: string;
-  description: string;
-  context: 'Upskilling' | 'Expertise' | 'Development';
-  requiredSkills: { name: string; level: string }[];
-  seats: number;
-  enrolled: number;
-  status: 'Draft' | 'Validated' | 'In Progress' | 'Completed';
-  startDate: string;
-  endDate: string;
-}
+interface SkillEntry { skillId: string; level: string; contributionToScore: number; }
 
-const mockActivities: Activity[] = [
-  {
-    id: '1',
-    title: 'Cloud Migration Training',
-    description: 'Learn AWS cloud services and migration strategies',
-    context: 'Upskilling',
-    requiredSkills: [
-      { name: 'AWS', level: 'Medium' },
-      { name: 'DevOps', level: 'Good' },
-    ],
-    seats: 20,
-    enrolled: 15,
-    status: 'In Progress',
-    startDate: '2026-01-15',
-    endDate: '2026-03-15',
-  },
-  {
-    id: '2',
-    title: 'Advanced React Patterns',
-    description: 'Master advanced React concepts and design patterns',
-    context: 'Expertise',
-    requiredSkills: [
-      { name: 'React', level: 'Good' },
-      { name: 'TypeScript', level: 'Medium' },
-    ],
-    seats: 15,
-    enrolled: 12,
-    status: 'Validated',
-    startDate: '2026-02-20',
-    endDate: '2026-04-20',
-  },
-  {
-    id: '3',
-    title: 'Leadership Development Program',
-    description: 'Develop leadership and team management skills',
-    context: 'Development',
-    requiredSkills: [
-      { name: 'Team Leadership', level: 'Medium' },
-      { name: 'Communication', level: 'Good' },
-    ],
-    seats: 10,
-    enrolled: 8,
-    status: 'In Progress',
-    startDate: '2026-01-10',
-    endDate: '2026-06-10',
-  },
-  {
-    id: '4',
-    title: 'Data Science Fundamentals',
-    description: 'Introduction to data science and machine learning',
-    context: 'Upskilling',
-    requiredSkills: [
-      { name: 'Python', level: 'Medium' },
-      { name: 'Statistics', level: 'Low' },
-    ],
-    seats: 25,
-    enrolled: 0,
-    status: 'Draft',
-    startDate: '2026-03-01',
-    endDate: '2026-05-01',
-  },
-];
+const EMPTY_FORM = {
+  title: '',
+  description: '',
+  type: '',
+  context: '',
+  status: 'Draft',
+  startDate: '',
+  endDate: '',
+  maxRecommandation: 0,
+  targetedDepartmentId: '',
+};
+
+const LEVELS = ['Low', 'Medium', 'High', 'Expert'];
 
 export function Activities({ userRole }: ActivitiesProps) {
+  const [activities, setActivities] = useState<Activity[]>([]);
+  const [departments, setDepartments] = useState<any[]>([]);
+  const [skills, setSkills] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
-  const [showCreateModal, setShowCreateModal] = useState(false);
-  const [newActivity, setNewActivity] = useState({
-    title: '',
-    description: '',
-    context: 'Upskilling' as 'Upskilling' | 'Expertise' | 'Development',
-    seats: 10,
-  });
-  const [activities, setActivities] = useState<Activity[]>(mockActivities);
+  const [showModal, setShowModal] = useState(false);
+  const [editingActivity, setEditingActivity] = useState<Activity | null>(null);
+  const [form, setForm] = useState(EMPTY_FORM);
+  const [requiredSkills, setRequiredSkills] = useState<SkillEntry[]>([]);
+  const [skillPick, setSkillPick] = useState('');
+  const [levelPick, setLevelPick] = useState('Medium');
+  const [contribPick, setContribPick] = useState(1);
+  const [recommendActivity, setRecommendActivity] = useState<Activity | null>(null);
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 9;
   const { pendingCommand, commandData, clearPendingCommand } = useVoiceCommand();
 
-  // Écouter les commandes vocales pour créer une activité
+  useEffect(() => { fetchDepartments(); fetchActivities(); fetchSkills(); }, []);
+
   useEffect(() => {
     if (pendingCommand === 'create-activity') {
-      if (commandData?.name) {
-        // Créer directement l'activité avec le nom fourni
-        createActivityDirectly(commandData.name);
-      } else {
-        // Ouvrir le modal si pas de nom
-        setShowCreateModal(true);
-      }
+      if (commandData?.name) createActivityDirectly(commandData.name);
+      else openCreate();
       clearPendingCommand();
     }
   }, [pendingCommand, commandData, clearPendingCommand]);
 
-  const createActivityDirectly = (name: string) => {
-    const newActivityItem: Activity = {
-      id: String(activities.length + 1),
-      title: name,
-      description: `Description de l'activité ${name}`,
-      context: 'Upskilling',
-      requiredSkills: [],
-      seats: 20,
-      enrolled: 0,
-      status: 'Draft',
-      startDate: new Date().toISOString().split('T')[0],
-      endDate: new Date(Date.now() + 90 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
-    };
-    
-    setActivities([...activities, newActivityItem]);
-    alert(`Activité "${name}" créée avec succès !`);
+  const fetchDepartments = async () => {
+    try { const res = await axios.get('http://localhost:3000/departments'); setDepartments(res.data); }
+    catch { setDepartments([]); }
   };
 
-  const filteredActivities = activities.filter((activity) =>
-    activity.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    activity.description.toLowerCase().includes(searchTerm.toLowerCase())
+  const fetchSkills = async () => {
+    try { const res = await axios.get('http://localhost:3000/skills'); setSkills(res.data); }
+    catch { setSkills([]); }
+  };
+
+  const fetchActivities = async () => {
+    setLoading(true);
+    try { const res = await axios.get('http://localhost:3000/activities'); setActivities(res.data); }
+    catch { setActivities([]); }
+    finally { setLoading(false); }
+  };
+
+  const openCreate = () => {
+    setEditingActivity(null);
+    setForm(EMPTY_FORM);
+    setRequiredSkills([]);
+    setSkillPick('');
+    setLevelPick('Medium');
+    setContribPick(1);
+    setShowModal(true);
+  };
+
+  const openEdit = (activity: Activity) => {
+    setEditingActivity(activity);
+    setForm({
+      title: activity.title,
+      description: activity.description ?? '',
+      type: activity.type ?? '',
+      context: activity.context ?? '',
+      status: activity.status,
+      startDate: activity.startDate ? activity.startDate.slice(0, 10) : '',
+      endDate: activity.endDate ? activity.endDate.slice(0, 10) : '',
+      maxRecommandation: activity.maxRecommandation,
+      targetedDepartmentId: activity.targetedDepartmentId ?? '',
+    });
+    // normalize requiredSkills (populated or raw)
+    setRequiredSkills(
+      (activity.requiredSkills ?? []).map((rs) => ({
+        skillId: typeof rs.skillId === 'object' ? rs.skillId._id : rs.skillId,
+        level: rs.level,
+        contributionToScore: (rs as any).contributionToScore ?? 1,
+      }))
+    );
+    setSkillPick('');
+    setLevelPick('Medium');
+    setContribPick(1);
+    setShowModal(true);
+  };
+
+  const addSkill = () => {
+    if (!skillPick) return;
+    if (requiredSkills.some((rs) => rs.skillId === skillPick)) return;
+    setRequiredSkills([...requiredSkills, { skillId: skillPick, level: levelPick, contributionToScore: contribPick }]);
+    setSkillPick('');
+    setLevelPick('Medium');
+    setContribPick(1);
+  };
+
+  const removeSkill = (skillId: string) => {
+    setRequiredSkills(requiredSkills.filter((rs) => rs.skillId !== skillId));
+  };
+
+  const updateSkillLevel = (skillId: string, level: string) => {
+    setRequiredSkills(requiredSkills.map((rs) => rs.skillId === skillId ? { ...rs, level } : rs));
+  };
+
+  const updateSkillContrib = (skillId: string, contributionToScore: number) => {
+    setRequiredSkills(requiredSkills.map((rs) => rs.skillId === skillId ? { ...rs, contributionToScore } : rs));
+  };
+
+  const handleSubmit = async () => {
+    if (!form.title.trim()) return;
+    const payload = { ...form, requiredSkills };
+    try {
+      if (editingActivity) {
+        await axios.patch(`http://localhost:3000/activities/${editingActivity._id}`, payload);
+      } else {
+        await axios.post('http://localhost:3000/activities', payload);
+      }
+      fetchActivities();
+      setShowModal(false);
+    } catch { alert('Erreur lors de la sauvegarde'); }
+  };
+
+  const handleDelete = async (id: string) => {
+    if (!window.confirm('Supprimer cette activité ?')) return;
+    try { await axios.delete(`http://localhost:3000/activities/${id}`); fetchActivities(); }
+    catch { alert('Erreur lors de la suppression'); }
+  };
+
+  const createActivityDirectly = async (name: string) => {
+    try {
+      await axios.post('http://localhost:3000/activities', { title: name, status: 'Draft', maxRecommandation: 0, requiredSkills: [] });
+      fetchActivities();
+    } catch { alert(`Erreur lors de la création de "${name}"`); }
+  };
+
+  const filtered = activities.filter((a) =>
+    a.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    (a.description ?? '').toLowerCase().includes(searchTerm.toLowerCase())
   );
 
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'Draft':
-        return 'bg-gray-100 text-gray-700';
-      case 'Validated':
-        return 'bg-blue-100 text-blue-700';
-      case 'In Progress':
-        return 'bg-green-100 text-green-700';
-      case 'Completed':
-        return 'bg-purple-100 text-purple-700';
-      default:
-        return 'bg-gray-100 text-gray-700';
-    }
-  };
+  // Reset page on search change
+  useEffect(() => { setCurrentPage(1); }, [searchTerm]);
 
-  const getContextColor = (context: string) => {
-    switch (context) {
-      case 'Upskilling':
-        return 'bg-blue-100 text-blue-700';
-      case 'Expertise':
-        return 'bg-purple-100 text-purple-700';
-      case 'Development':
-        return 'bg-green-100 text-green-700';
-      default:
-        return 'bg-gray-100 text-gray-700';
-    }
-  };
+  const totalPages = Math.ceil(filtered.length / itemsPerPage);
+  const paginated = filtered.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
+
+  const canManage = userRole === 'HR' || userRole === 'Manager';
 
   return (
     <div className="p-6 space-y-6">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl mb-2 text-gray-900">Activities</h1>
-          <p className="text-muted-foreground">
-            Manage training programs and development activities
-          </p>
+          <h1 className="text-3xl mb-1 text-gray-900">Activities</h1>
+          <p className="text-muted-foreground">Manage training programs and development activities</p>
         </div>
-        {(userRole === 'HR' || userRole === 'Manager') && (
-          <button
-            onClick={() => setShowCreateModal(true)}
-            className="flex items-center gap-2 bg-primary text-white px-4 py-2 rounded-lg hover:bg-primary/90 transition-colors"
-          >
-            <Plus className="w-5 h-5" />
-            Create Activity
+        {canManage && (
+          <button onClick={openCreate} className="flex items-center gap-2 bg-primary text-white px-4 py-2 rounded-lg hover:bg-primary/90 transition-colors">
+            <Plus className="w-5 h-5" /> Create Activity
           </button>
         )}
       </div>
 
       {/* Search */}
-      <div className="bg-white rounded-lg shadow-sm p-6 border border-border">
+      <div className="bg-white rounded-lg shadow-sm p-4 border border-border">
         <div className="relative">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
           <input
@@ -191,198 +196,221 @@ export function Activities({ userRole }: ActivitiesProps) {
             placeholder="Search activities..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full pl-10 pr-4 py-2 border border-input rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
+            className="w-full pl-10 pr-4 py-2 border border-input rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
           />
         </div>
-        <div className="mt-4 text-sm text-muted-foreground">
-          Showing {filteredActivities.length} of {activities.length} activities
+        <p className="mt-2 text-sm text-muted-foreground">Showing {filtered.length} of {activities.length} activities</p>
+      </div>
+
+      {/* Cards */}
+      {loading ? (
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
+          {Array.from({ length: 6 }).map((_, i) => (
+            <div key={i} className="h-40 animate-pulse rounded-xl bg-slate-100 border border-slate-200" />
+          ))}
         </div>
-      </div>
-
-      {/* Activities List */}
-      <div className="grid grid-cols-1 gap-6">
-        {filteredActivities.map((activity) => (
-          <div
-            key={activity.id}
-            className="bg-white rounded-lg shadow-sm p-6 border border-border hover:shadow-md transition-shadow"
-          >
-            <div className="flex items-start justify-between mb-4">
-              <div className="flex-1">
-                <div className="flex items-center gap-3 mb-2">
-                  <h3 className="text-xl font-semibold text-gray-900">{activity.title}</h3>
-                  <span className={`text-xs px-2 py-1 rounded-full ${getStatusColor(activity.status)}`}>
-                    {activity.status}
-                  </span>
-                  <span className={`text-xs px-2 py-1 rounded-full ${getContextColor(activity.context)}`}>
-                    {activity.context}
-                  </span>
-                </div>
-                <p className="text-muted-foreground">{activity.description}</p>
-              </div>
-              {(userRole === 'HR' || userRole === 'Manager') && (
-                <div className="flex gap-2">
-                  <button className="p-2 hover:bg-secondary rounded-lg transition-colors">
-                    <Edit className="w-4 h-4 text-muted-foreground" />
-                  </button>
-                  <button className="p-2 hover:bg-secondary rounded-lg transition-colors">
-                    <Trash2 className="w-4 h-4 text-destructive" />
-                  </button>
-                </div>
-              )}
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
-              <div className="flex items-center gap-3">
-                <div className="p-2 bg-blue-100 rounded-lg">
-                  <Users className="w-5 h-5 text-blue-600" />
-                </div>
-                <div>
-                  <p className="text-sm text-muted-foreground">Enrollment</p>
-                  <p className="font-medium text-gray-900">
-                    {activity.enrolled} / {activity.seats} seats
-                  </p>
-                </div>
-              </div>
-
-              <div className="flex items-center gap-3">
-                <div className="p-2 bg-green-100 rounded-lg">
-                  <Calendar className="w-5 h-5 text-green-600" />
-                </div>
-                <div>
-                  <p className="text-sm text-muted-foreground">Duration</p>
-                  <p className="font-medium text-gray-900">
-                    {new Date(activity.startDate).toLocaleDateString()} -{' '}
-                    {new Date(activity.endDate).toLocaleDateString()}
-                  </p>
-                </div>
-              </div>
-
-              <div className="flex items-center gap-3">
-                <div className="p-2 bg-purple-100 rounded-lg">
-                  <Target className="w-5 h-5 text-purple-600" />
-                </div>
-                <div>
-                  <p className="text-sm text-muted-foreground">Required Skills</p>
-                  <p className="font-medium text-gray-900">{activity.requiredSkills.length}</p>
-                </div>
-              </div>
-            </div>
-
-            <div className="border-t border-border pt-4">
-              <p className="text-sm text-muted-foreground mb-2">Required Skills:</p>
-              <div className="flex flex-wrap gap-2">
-                {activity.requiredSkills.map((skill, index) => (
-                  <span
-                    key={index}
-                    className="px-3 py-1 bg-secondary rounded-full text-sm text-gray-700"
-                  >
-                    {skill.name} ({skill.level})
-                  </span>
-                ))}
-              </div>
-            </div>
-
-            {userRole === 'Employee' && activity.status === 'Validated' && (
-              <div className="mt-4">
-                <button className="w-full bg-primary text-white py-2 rounded-lg hover:bg-primary/90 transition-colors">
-                  Request Enrollment
-                </button>
-              </div>
-            )}
+      ) : filtered.length === 0 ? (
+        <div className="rounded-xl border border-dashed border-slate-200 bg-slate-50 p-10 text-center">
+          <p className="text-lg font-semibold text-slate-800">
+            {activities.length === 0 ? 'Aucune activité pour le moment' : 'Aucun résultat trouvé'}
+          </p>
+          <p className="mt-2 text-sm text-slate-500">
+            {activities.length === 0 ? 'Commence par créer ta première activité.' : 'Essaie une autre recherche.'}
+          </p>
+        </div>
+      ) : (
+        <>
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
+            {paginated.map((activity) => {
+              const dept = departments.find((d) => d._id === activity.targetedDepartmentId);
+              return (
+                <ActivityCard
+                  key={activity._id}
+                  activity={activity}
+                  departmentName={dept?.name}
+                  userRole={userRole}
+                  onEdit={openEdit}
+                  onDelete={handleDelete}
+                  onRecommend={canManage ? setRecommendActivity : undefined}
+                />
+              );
+            })}
           </div>
-        ))}
-      </div>
+          <Pagination
+            currentPage={currentPage}
+            totalPages={totalPages}
+            totalItems={filtered.length}
+            itemsPerPage={itemsPerPage}
+            onPageChange={setCurrentPage}
+          />
+        </>
+      )}
 
-      {/* Create Activity Modal */}
-      {showCreateModal && (
+      {/* Modal */}
+      {showModal && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-lg shadow-lg max-w-2xl w-full p-6 max-h-[90vh] overflow-y-auto">
-            <h2 className="text-2xl mb-6 text-gray-900">Create New Activity</h2>
+          <div className="bg-white rounded-xl shadow-lg w-full max-w-lg p-6 max-h-[90vh] overflow-y-auto">
+            <h2 className="text-xl font-semibold text-gray-900 mb-5">
+              {editingActivity ? "Modifier l'activité" : 'Nouvelle activité'}
+            </h2>
 
             <div className="space-y-4">
               <div>
-                <label htmlFor="activity-title" className="block text-sm mb-2 text-gray-700">
-                  Activity Title
-                </label>
-                <input
-                  id="activity-title"
-                  type="text"
-                  value={newActivity.title}
-                  onChange={(e) => setNewActivity({ ...newActivity, title: e.target.value })}
-                  className="w-full px-4 py-2 border border-input rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
-                  placeholder="e.g., Advanced Python Programming"
-                />
+                <label className="block text-sm text-gray-700 mb-1">Titre *</label>
+                <input type="text" value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })}
+                  className="w-full px-3 py-2 border border-input rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
+                  placeholder="Titre de l'activité" />
               </div>
 
               <div>
-                <label htmlFor="activity-description" className="block text-sm mb-2 text-gray-700">
-                  Description
-                </label>
-                <textarea
-                  id="activity-description"
-                  value={newActivity.description}
-                  onChange={(e) => setNewActivity({ ...newActivity, description: e.target.value })}
-                  className="w-full px-4 py-2 border border-input rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
-                  rows={4}
-                  placeholder="Describe the activity objectives and content..."
-                />
+                <label className="block text-sm text-gray-700 mb-1">Description</label>
+                <textarea value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })}
+                  className="w-full px-3 py-2 border border-input rounded-lg focus:outline-none focus:ring-2 focus:ring-primary" rows={3} />
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-sm text-gray-700 mb-1">Type</label>
+                  <input type="text" value={form.type} onChange={(e) => setForm({ ...form, type: e.target.value })}
+                    className="w-full px-3 py-2 border border-input rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
+                    placeholder="ex: Workshop" />
+                </div>
+                <div>
+                  <label className="block text-sm text-gray-700 mb-1">Contexte</label>
+                  <select value={form.context} onChange={(e) => setForm({ ...form, context: e.target.value })}
+                    className="w-full px-3 py-2 border border-input rounded-lg focus:outline-none focus:ring-2 focus:ring-primary">
+                    <option value="">-- Choisir --</option>
+                    <option value="Upskilling">Upskilling</option>
+                    <option value="Expertise">Expertise</option>
+                    <option value="Development">Development</option>
+                  </select>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-sm text-gray-700 mb-1">Statut</label>
+                  <select value={form.status} onChange={(e) => setForm({ ...form, status: e.target.value })}
+                    className="w-full px-3 py-2 border border-input rounded-lg focus:outline-none focus:ring-2 focus:ring-primary">
+                    <option value="Draft">Draft</option>
+                    <option value="Validated">Validated</option>
+                    <option value="In Progress">In Progress</option>
+                    <option value="Completed">Completed</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-sm text-gray-700 mb-1">Max recommandations</label>
+                  <input type="number" min={0} value={form.maxRecommandation}
+                    onChange={(e) => setForm({ ...form, maxRecommandation: parseInt(e.target.value) || 0 })}
+                    className="w-full px-3 py-2 border border-input rounded-lg focus:outline-none focus:ring-2 focus:ring-primary" />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-sm text-gray-700 mb-1">Date début</label>
+                  <input type="date" value={form.startDate} onChange={(e) => setForm({ ...form, startDate: e.target.value })}
+                    className="w-full px-3 py-2 border border-input rounded-lg focus:outline-none focus:ring-2 focus:ring-primary" />
+                </div>
+                <div>
+                  <label className="block text-sm text-gray-700 mb-1">Date fin</label>
+                  <input type="date" value={form.endDate} onChange={(e) => setForm({ ...form, endDate: e.target.value })}
+                    className="w-full px-3 py-2 border border-input rounded-lg focus:outline-none focus:ring-2 focus:ring-primary" />
+                </div>
               </div>
 
               <div>
-                <label htmlFor="activity-context" className="block text-sm mb-2 text-gray-700">
-                  Context
-                </label>
-                <select
-                  id="activity-context"
-                  value={newActivity.context}
-                  onChange={(e) => setNewActivity({ ...newActivity, context: e.target.value as any })}
-                  className="w-full px-4 py-2 border border-input rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
-                >
-                  <option value="Upskilling">Upskilling</option>
-                  <option value="Expertise">Expertise</option>
-                  <option value="Development">Development</option>
+                <label className="block text-sm text-gray-700 mb-1">Département cible</label>
+                <select value={form.targetedDepartmentId} onChange={(e) => setForm({ ...form, targetedDepartmentId: e.target.value })}
+                  className="w-full px-3 py-2 border border-input rounded-lg focus:outline-none focus:ring-2 focus:ring-primary">
+                  <option value="">-- Aucun --</option>
+                  {departments.map((d) => <option key={d._id} value={d._id}>{d.name}</option>)}
                 </select>
               </div>
 
+              {/* Required Skills */}
               <div>
-                <label htmlFor="activity-seats" className="block text-sm mb-2 text-gray-700">
-                  Number of Seats
-                </label>
-                <input
-                  id="activity-seats"
-                  type="number"
-                  value={newActivity.seats}
-                  onChange={(e) => setNewActivity({ ...newActivity, seats: parseInt(e.target.value) })}
-                  className="w-full px-4 py-2 border border-input rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
-                  min="1"
-                />
+                <label className="block text-sm text-gray-700 mb-2">Required Skills</label>
+
+                {/* Picker */}
+                <div className="flex gap-2 mb-3">
+                  <select value={skillPick} onChange={(e) => setSkillPick(e.target.value)}
+                    className="flex-1 px-3 py-2 border border-input rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary">
+                    <option value="">-- Choisir un skill --</option>
+                    {skills
+                      .filter((s) => !requiredSkills.some((rs) => rs.skillId === s._id))
+                      .map((s) => <option key={s._id} value={s._id}>{s.name}</option>)}
+                  </select>
+                  <select value={levelPick} onChange={(e) => setLevelPick(e.target.value)}
+                    className="px-2 py-2 border border-input rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary">
+                    {LEVELS.map((l) => <option key={l} value={l}>{l}</option>)}
+                  </select>
+                  <input
+                    type="number" min={1} max={100} value={contribPick}
+                    onChange={(e) => setContribPick(Math.max(1, parseInt(e.target.value) || 1))}
+                    className="w-16 px-2 py-2 border border-input rounded-lg text-sm text-center focus:outline-none focus:ring-2 focus:ring-primary"
+                    title="Poids (contribution au score)"
+                  />
+                  <button type="button" onClick={addSkill} disabled={!skillPick}
+                    className="px-3 py-2 bg-primary text-white rounded-lg text-sm hover:bg-primary/90 disabled:opacity-40 transition-colors">
+                    <Plus size={16} />
+                  </button>
+                </div>
+                <p className="text-xs text-gray-400 mb-3">Le poids détermine l'importance relative de chaque skill dans le score.</p>
+
+                {/* List */}
+                {requiredSkills.length > 0 && (
+                  <div className="space-y-2">
+                    {requiredSkills.map((rs) => {
+                      const skill = skills.find((s) => s._id === rs.skillId);
+                      const totalContrib = requiredSkills.reduce((s, r) => s + r.contributionToScore, 0);
+                      const pct = totalContrib > 0 ? Math.round((rs.contributionToScore / totalContrib) * 100) : 0;
+                      return (
+                        <div key={rs.skillId} className="flex items-center gap-2 bg-gray-50 rounded-lg px-3 py-2">
+                          <span className="flex-1 text-sm text-gray-800 min-w-0 truncate">{skill?.name ?? rs.skillId}</span>
+                          <span className="text-xs text-gray-400 w-8 text-right">{pct}%</span>
+                          <select value={rs.level} onChange={(e) => updateSkillLevel(rs.skillId, e.target.value)}
+                            className="text-xs px-2 py-1 border border-input rounded-lg focus:outline-none focus:ring-1 focus:ring-primary">
+                            {LEVELS.map((l) => <option key={l} value={l}>{l}</option>)}
+                          </select>
+                          <input
+                            type="number" min={1} max={100} value={rs.contributionToScore}
+                            onChange={(e) => updateSkillContrib(rs.skillId, Math.max(1, parseInt(e.target.value) || 1))}
+                            className="w-14 text-xs px-2 py-1 border border-input rounded-lg text-center focus:outline-none focus:ring-1 focus:ring-primary"
+                            title="Poids"
+                          />
+                          <button type="button" onClick={() => removeSkill(rs.skillId)}
+                            className="p-1 text-red-400 hover:text-red-600 transition-colors">
+                            <X size={14} />
+                          </button>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
               </div>
             </div>
 
             <div className="flex gap-3 mt-6">
-              <button
-                onClick={() => setShowCreateModal(false)}
-                className="flex-1 px-4 py-2 border border-input rounded-lg hover:bg-secondary transition-colors"
-              >
-                Cancel
+              <button onClick={() => setShowModal(false)}
+                className="flex-1 px-4 py-2 border border-input rounded-lg hover:bg-secondary transition-colors">
+                Annuler
               </button>
-              <button
-                onClick={() => {
-                  setShowCreateModal(false);
-                  setNewActivity({
-                    title: '',
-                    description: '',
-                    context: 'Upskilling',
-                    seats: 10,
-                  });
-                }}
-                className="flex-1 px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary/90 transition-colors"
-              >
-                Create Activity
+              <button onClick={handleSubmit} disabled={!form.title.trim()}
+                className="flex-1 px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary/90 transition-colors disabled:opacity-50">
+                {editingActivity ? 'Enregistrer' : 'Créer'}
               </button>
             </div>
           </div>
         </div>
+      )}
+      {/* Recommendations Panel */}
+      {recommendActivity && (
+        <ActivityRecommendations
+          activityId={recommendActivity._id}
+          activityTitle={recommendActivity.title}
+          onClose={() => setRecommendActivity(null)}
+        />
       )}
     </div>
   );
