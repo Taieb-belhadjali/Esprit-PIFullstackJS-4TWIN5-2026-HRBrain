@@ -5,6 +5,7 @@ import AddEmployeeModal from "../employees/AddEmployeeModel";
 import EditEmployeeModal from "../employees/EditEmployeeModel";
 import ViewEmployeeModal from "../employees/ViewEmployeeModel";
 import { deleteEmployee, getEmployees } from '../../../api/employeeApi';
+import { useVoiceCommand } from '../voice/VoiceCommandContext';
 
 type UserRole = 'HR' | 'Manager' | 'Employee';
 
@@ -34,6 +35,8 @@ export function Employees({ userRole }: EmployeesProps) {
   const [editingEmployee, setEditingEmployee] = useState<Employee | null>(null);
   const [viewEmployee, setViewEmployee] = useState<Employee | null>(null);
   const [viewOpen, setViewOpen] = useState(false);
+  const [prefilledName, setPrefilledName] = useState<string | null>(null);
+  const { pendingCommand, commandData, clearPendingCommand } = useVoiceCommand();
 
   // ✅ PAGINATION STATE
   const [currentPage, setCurrentPage] = useState(1);
@@ -60,6 +63,86 @@ export function Employees({ userRole }: EmployeesProps) {
   useEffect(() => {
     fetchEmployees();
   }, []);
+
+  // Écouter les commandes vocales pour créer un employé
+  useEffect(() => {
+    if (pendingCommand === 'create-employee') {
+      if (commandData?.name) {
+        // Pré-remplir le nom et ouvrir le formulaire
+        setPrefilledName(commandData.name);
+        setOpenModal(true);
+      } else {
+        // Ouvrir le formulaire sans pré-remplissage
+        setPrefilledName(null);
+        setOpenModal(true);
+      }
+      clearPendingCommand();
+    }
+  }, [pendingCommand, commandData, clearPendingCommand]);
+
+  // Écouter les commandes vocales pour modifier un employé
+  useEffect(() => {
+    if (pendingCommand === 'modify-employee') {
+      if (employees.length === 0) return; // attendre le chargement
+      if (commandData?.name) {
+        const searchName = commandData.name.toLowerCase();
+        const employeeToEdit = employees.find(
+          (emp) => emp.name.toLowerCase().includes(searchName)
+        );
+        if (employeeToEdit) {
+          setEditingEmployee(employeeToEdit);
+        } else {
+          alert(`Employé "${commandData.name}" non trouvé`);
+        }
+      } else {
+        alert('Veuillez spécifier le nom de l\'employé à modifier');
+      }
+      clearPendingCommand();
+    }
+  }, [pendingCommand, commandData, clearPendingCommand, employees]);
+
+  // Écouter les commandes vocales pour supprimer un employé
+  useEffect(() => {
+    if (pendingCommand === 'delete-employee') {
+      if (employees.length === 0) return; // attendre le chargement
+      if (commandData?.name) {
+        const searchName = commandData.name.toLowerCase();
+        const employeeToDelete = employees.find(
+          (emp) => emp.name.toLowerCase().includes(searchName)
+        );
+        if (employeeToDelete) {
+          if (window.confirm(`Voulez-vous vraiment supprimer l'employé "${employeeToDelete.name}" ?`)) {
+            handleDelete(employeeToDelete.id);
+          }
+        } else {
+          alert(`Employé "${commandData.name}" non trouvé`);
+        }
+      } else {
+        alert('Veuillez spécifier le nom de l\'employé à supprimer');
+      }
+      clearPendingCommand();
+    }
+  }, [pendingCommand, commandData, clearPendingCommand, employees]);
+
+  // Écouter les commandes vocales pour rechercher un employé
+  useEffect(() => {
+    if (pendingCommand === 'search-employee' || pendingCommand === 'filter-employee') {
+      if (commandData?.name) {
+        setSearchTerm(commandData.name);
+      }
+      clearPendingCommand();
+    }
+  }, [pendingCommand, commandData, clearPendingCommand]);
+
+  const handleDelete = async (id: string) => {
+    try {
+      await deleteEmployee(id);
+      fetchEmployees();
+    } catch (error) {
+      console.error('Failed to delete employee:', error);
+      alert('Erreur lors de la suppression de l\'employé');
+    }
+  };
 
   // ✅ FILTERING
   const filteredEmployees = employees.filter((emp) => {
@@ -109,7 +192,10 @@ export function Employees({ userRole }: EmployeesProps) {
 
         {userRole === 'HR' && (
           <button
-            onClick={() => setOpenModal(true)}
+            onClick={() => {
+              setPrefilledName(null);
+              setOpenModal(true);
+            }}
             className="flex items-center gap-2 bg-primary text-white px-4 py-2 rounded-lg hover:bg-primary/90 transition-colors"
           >
             <Plus className="w-5 h-5" />
@@ -173,10 +259,8 @@ export function Employees({ userRole }: EmployeesProps) {
           <thead className="bg-secondary border-b border-border">
             <tr>
               <th className="text-left px-6 py-4 text-sm font-medium text-gray-900">Employee</th>
-              <th className="text-left px-6 py-4 text-sm font-medium text-gray-900">Department</th>
-              <th className="text-left px-6 py-4 text-sm font-medium text-gray-900">Position</th>
+              <th className="text-left px-6 py-4 text-sm font-medium text-gray-900">Role</th>
               <th className="text-center px-6 py-4 text-sm font-medium text-gray-900">Skills</th>
-              <th className="text-center px-6 py-4 text-sm font-medium text-gray-900">Activities</th>
               <th className="text-right px-6 py-4 text-sm font-medium text-gray-900">Actions</th>
             </tr>
           </thead>
@@ -198,22 +282,18 @@ export function Employees({ userRole }: EmployeesProps) {
                 </td>
 
                 <td className="px-6 py-4">
-                  <span className="inline-flex px-3 py-1 rounded-full text-sm bg-blue-100 text-blue-700">
-                    {employee.department}
+                  <span className={`inline-flex px-3 py-1 rounded-full text-sm font-medium ${
+                    employee.role === 'HR' ? 'bg-red-100 text-red-700' :
+                    employee.role === 'MANAGER' ? 'bg-yellow-100 text-yellow-700' :
+                    'bg-green-100 text-green-700'
+                  }`}>
+                    {employee.role}
                   </span>
                 </td>
-
-                <td className="px-6 py-4 text-gray-900">{employee.position}</td>
 
                 <td className="px-6 py-4 text-center">
                   <span className="inline-flex px-3 py-1 rounded-full text-sm bg-purple-100 text-purple-700">
                     {employee.skillsCount || 0}
-                  </span>
-                </td>
-
-                <td className="px-6 py-4 text-center">
-                  <span className="inline-flex px-3 py-1 rounded-full text-sm bg-green-100 text-green-700">
-                    {employee.activitiesCount || 0}
                   </span>
                 </td>
 
@@ -305,8 +385,12 @@ export function Employees({ userRole }: EmployeesProps) {
       {/* MODALS */}
       <AddEmployeeModal
         open={openModal}
-        onClose={() => setOpenModal(false)}
+        onClose={() => {
+          setOpenModal(false);
+          setPrefilledName(null);
+        }}
         onCreated={fetchEmployees}
+        prefilledName={prefilledName}
       />
 
       <EditEmployeeModal

@@ -7,6 +7,7 @@ import { SkillsFilters } from '../skills/SkillsFilters';
 import { SkillsHeader } from '../skills/SkillsHeader';
 import { SkillsStats } from '../skills/SkillsStats';
 import { Skill, SkillSortBy } from '../skills/types';
+import { useVoiceCommand } from '../voice/VoiceCommandContext';
 
 
 type UserRole = 'HR' | 'Manager' | 'Employee';
@@ -26,6 +27,7 @@ export const Skills: React.FC<SkillsProps> = ({ userRole }) => {
   const [sortBy, setSortBy] = useState<SkillSortBy>('name-asc');
   const [departments, setDepartments] = useState<any[]>([]);
   const [selectedDepartment, setSelectedDepartment] = useState('');
+  const { pendingCommand, commandData, clearPendingCommand } = useVoiceCommand();
 
   useEffect(() => {
     fetchDepartments();
@@ -34,6 +36,92 @@ export const Skills: React.FC<SkillsProps> = ({ userRole }) => {
   useEffect(() => {
     fetchSkills();
   }, [selectedDepartment]);
+
+  // Écouter les commandes vocales pour créer un skill
+  useEffect(() => {
+    if (pendingCommand === 'create-skill') {
+      if (userRole !== 'HR') {
+        clearPendingCommand();
+        return;
+      }
+      if (commandData?.name) {
+        createSkillDirectly(commandData.name);
+      } else {
+        setShowForm(true);
+      }
+      clearPendingCommand();
+    }
+  }, [pendingCommand, commandData, clearPendingCommand, userRole]);
+
+  // Écouter les commandes vocales pour modifier un skill
+  useEffect(() => {
+    if (pendingCommand === 'modify-skill') {
+      if (skills.length === 0) return; // attendre le chargement
+      if (commandData?.name) {
+        const searchName = commandData.name.toLowerCase();
+        const skillToEdit = skills.find(
+          (skill) => skill.name.toLowerCase().includes(searchName)
+        );
+        if (skillToEdit) {
+          setEditingSkill(skillToEdit);
+          setShowForm(true);
+        } else {
+          alert(`Skill "${commandData.name}" non trouvé`);
+        }
+      } else {
+        setShowForm(true);
+      }
+      clearPendingCommand();
+    }
+  }, [pendingCommand, commandData, clearPendingCommand, skills]);
+
+  // Écouter les commandes vocales pour supprimer un skill
+  useEffect(() => {
+    if (pendingCommand === 'delete-skill') {
+      if (skills.length === 0) return; // attendre le chargement
+      if (commandData?.name) {
+        const searchName = commandData.name.toLowerCase();
+        const skillToDelete = skills.find(
+          (skill) => skill.name.toLowerCase().includes(searchName)
+        );
+        if (skillToDelete) {
+          if (window.confirm(`Voulez-vous vraiment supprimer le skill "${skillToDelete.name}" ?`)) {
+            handleDelete(skillToDelete._id);
+          }
+        } else {
+          alert(`Skill "${commandData.name}" non trouvé`);
+        }
+      } else {
+        alert('Veuillez spécifier le nom du skill à supprimer');
+      }
+      clearPendingCommand();
+    }
+  }, [pendingCommand, commandData, clearPendingCommand, skills]);
+
+  // Écouter les commandes vocales pour rechercher un skill
+  useEffect(() => {
+    if (pendingCommand === 'search-skill' || pendingCommand === 'filter-skill') {
+      if (commandData?.name) {
+        setSearchTerm(commandData.name);
+      }
+      clearPendingCommand();
+    }
+  }, [pendingCommand, commandData, clearPendingCommand]);
+
+  const createSkillDirectly = async (name: string) => {
+    try {
+      await axios.post('http://localhost:3000/skills', {
+        name: name,
+        description: '',
+        departmentId: departments[0]?._id || '',
+      });
+      await fetchSkills();
+      alert(`Skill "${name}" créé avec succès !`);
+    } catch (err) {
+      console.error(err);
+      alert(`Erreur lors de la création du skill "${name}"`);
+    }
+  };
 
   const fetchDepartments = async () => {
     try {
@@ -110,7 +198,7 @@ export const Skills: React.FC<SkillsProps> = ({ userRole }) => {
 
   return (
     <div className="p-6 space-y-6">
-      <SkillsHeader onAddSkill={() => setShowForm(true)} />
+      <SkillsHeader onAddSkill={() => setShowForm(true)} userRole={userRole} />
 
 
 
@@ -167,6 +255,7 @@ export const Skills: React.FC<SkillsProps> = ({ userRole }) => {
                 description={skill.description}
                 departmentName={department ? department.name : ''}
                 skillObj={skill}
+                userRole={userRole}
                 onEdit={() => handleEdit(skill)}
                 onDelete={() => handleDelete(skill._id)}
                 onPreview={setSelectedSkill}

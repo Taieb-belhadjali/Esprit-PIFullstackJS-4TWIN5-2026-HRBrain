@@ -11,12 +11,14 @@ interface Props {
   open: boolean;
   onClose: () => void;
   onCreated: () => void;
+  prefilledName?: string | null;
 }
 
 export default function AddEmployeeModal({
   open,
   onClose,
   onCreated,
+  prefilledName,
 }: Props) {
   const [form, setForm] = useState({
     name: "",
@@ -41,8 +43,16 @@ export default function AddEmployeeModal({
 
     if (open) {
       fetchSkills();
+      
+      // Pré-remplir le nom si fourni
+      if (prefilledName) {
+        setForm(prev => ({
+          ...prev,
+          name: prefilledName,
+        }));
+      }
     }
-  }, [open]);
+  }, [open, prefilledName]);
 
   if (!open) return null;
 

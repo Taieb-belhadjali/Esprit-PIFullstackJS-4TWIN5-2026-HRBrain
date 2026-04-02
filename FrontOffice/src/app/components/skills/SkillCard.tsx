@@ -1,7 +1,21 @@
 
 import React from 'react';
 import { Edit2, Trash2 } from 'lucide-react';
+import { Skill } from './types';
 
+type UserRole = 'HR' | 'Manager' | 'Employee';
+
+interface SkillCardProps {
+  id: string;
+  name: string;
+  description?: string;
+  departmentName?: string;
+  skillObj: Skill;
+  userRole?: UserRole;
+  onEdit: (id: string) => void;
+  onDelete: (id: string) => void;
+  onPreview?: (skill: Skill) => void;
+}
 
 const SkillCard: React.FC<SkillCardProps> = ({
   id,
@@ -9,9 +23,12 @@ const SkillCard: React.FC<SkillCardProps> = ({
   description,
   departmentName,
   skillObj,
+  userRole,
   onEdit,
   onDelete,
 }) => {
+  const canManage = userRole === 'HR';
+
   return (
     <div
       className="group cursor-pointer bg-white rounded-xl shadow-md hover:shadow-xl transition-all duration-300 border border-gray-100 overflow-hidden hover:border-blue-200"
@@ -32,7 +49,8 @@ const SkillCard: React.FC<SkillCardProps> = ({
           )}
         </div>
 
-        {/* Modern icon buttons */}
+        {/* Boutons Edit/Delete — visibles seulement pour HR */}
+        {canManage && (
         <div className="flex gap-2 ml-4 opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity duration-300">
           <button
             onClick={(event) => {
@@ -57,6 +75,7 @@ const SkillCard: React.FC<SkillCardProps> = ({
             <Trash2 size={18} />
           </button>
         </div>
+        )}
       </div>
     </div>
   );

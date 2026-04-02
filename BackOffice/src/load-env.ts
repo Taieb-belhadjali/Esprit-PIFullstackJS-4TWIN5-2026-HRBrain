@@ -1,2 +1,4 @@
 import { config } from 'dotenv';
-config();
+import { join } from 'path';
+
+config({ path: join(__dirname, '..', '.env') });

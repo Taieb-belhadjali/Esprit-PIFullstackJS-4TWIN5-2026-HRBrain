@@ -11,6 +11,8 @@ import { Notifications } from '../views/Notifications';
 import { Profile } from '../views/Profile';
 import { Settings } from '../views/Settings';
 import { Departments } from '../views/Departments';
+import { VoiceAssistant } from '../voice/VoiceAssistant';
+import { VoiceCommandProvider } from '../voice/VoiceCommandContext';
 
 type UserRole = 'HR' | 'Manager' | 'Employee';
 
@@ -102,18 +104,21 @@ export function Dashboard({ user, onLogout }: DashboardProps) {
   };
 
   return (
-    <div className="flex h-screen bg-secondary overflow-hidden">
-      <Sidebar
-        currentView={currentView}
-        onViewChange={(view) => navigate(`/dashboard/${view}`)}
-        userRole={user.role}
-        userName={user.name}
-        isCollapsed={isSidebarCollapsed}
-        onToggleCollapse={() => setIsSidebarCollapsed(!isSidebarCollapsed)}
-      />
-      <main className={`flex-1 overflow-auto transition-all duration-300 ${isSidebarCollapsed ? 'ml-16' : 'ml-64'}`}>
-        {renderView()}
-      </main>
-    </div>
+    <VoiceCommandProvider>
+      <div className="flex h-screen bg-secondary overflow-hidden">
+        <Sidebar
+          currentView={currentView}
+          onViewChange={(view) => navigate(`/dashboard/${view}`)}
+          userRole={user.role}
+          userName={user.name}
+          isCollapsed={isSidebarCollapsed}
+          onToggleCollapse={() => setIsSidebarCollapsed(!isSidebarCollapsed)}
+        />
+        <main className={`flex-1 overflow-auto transition-all duration-300 ${isSidebarCollapsed ? 'ml-16' : 'ml-64'}`}>
+          {renderView()}
+        </main>
+        <VoiceAssistant />
+      </div>
+    </VoiceCommandProvider>
   );
 }

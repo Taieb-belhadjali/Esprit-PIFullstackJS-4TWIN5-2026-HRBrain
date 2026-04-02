@@ -1,11 +1,14 @@
 import React from 'react';
 import { Plus, Sparkles } from 'lucide-react';
 
+type UserRole = 'HR' | 'Manager' | 'Employee';
+
 interface SkillsHeaderProps {
   onAddSkill: () => void;
+  userRole?: UserRole;
 }
 
-export const SkillsHeader: React.FC<SkillsHeaderProps> = ({ onAddSkill }) => {
+export const SkillsHeader: React.FC<SkillsHeaderProps> = ({ onAddSkill, userRole }) => {
   return (
     <div className="rounded-2xl border border-slate-200 bg-gradient-to-r from-blue-50 via-white to-indigo-50 p-6 shadow-sm">
       <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
@@ -19,6 +22,7 @@ export const SkillsHeader: React.FC<SkillsHeaderProps> = ({ onAddSkill }) => {
             Organise, recherche et trie tes compétences rapidement.
           </p>
         </div>
+        {userRole === 'HR' && (
         <button
           onClick={onAddSkill}
           className="inline-flex items-center justify-center gap-2 rounded-lg bg-blue-600 px-4 py-2.5 font-medium text-white transition hover:bg-blue-700"
@@ -26,6 +30,7 @@ export const SkillsHeader: React.FC<SkillsHeaderProps> = ({ onAddSkill }) => {
           <Plus size={18} />
           Ajouter Skill
         </button>
+        )}
       </div>
     </div>
   );

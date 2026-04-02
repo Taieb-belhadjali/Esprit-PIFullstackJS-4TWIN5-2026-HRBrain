@@ -1,0 +1,102 @@
+pipeline {
+  agent any
+  options {
+    timestamps()
+    ansiColor('xterm')
+    disableConcurrentBuilds()
+    timeout(time: 30, unit: 'MINUTES')
+  }
+  tools {
+    nodejs "node20"
+  }
+  environment {
+    SONARQUBE_SERVER = 'SonarQube'
+  }
+  stages {
+    stage('Checkout') {
+      steps {
+        retry(3) {
+          script {
+            bat 'git config --global http.version HTTP/1.1'
+            bat 'git config --global http.postBuffer 1048576000'
+            bat 'git config --global http.lowSpeedLimit 0'
+            bat 'git config --global http.lowSpeedTime 999999'
+            bat 'git config --global core.compression 0'
+            bat 'git config --global pack.windowMemory 100m'
+            bat 'git config --global pack.deltaCacheSize 2047m'
+            bat 'git config --global pack.packSizeLimit 2047m'
+            bat 'git config --global pack.threads 1'
+            bat 'git config --global pack.window 0'
+          }
+          checkout scm
+        }
+      }
+    }
+    stage('Install BackOffice') {
+      steps {
+        dir('BackOffice') {
+          bat 'npm ci'
+        }
+      }
+    }
+    stage('Test & Coverage BackOffice') {
+      steps {
+        dir('BackOffice') {
+          bat 'npm run test:cov -- src/skill src/users --testPathPattern="(skill|users)"'
+        }
+      }
+    }
+    stage('SonarQube Scan BackOffice') {
+      steps {
+        dir('BackOffice') {
+          withSonarQubeEnv("${SONARQUBE_SERVER}") {
+            bat """
+              sonar-scanner ^
+                -Dsonar.projectKey=BackOffice ^
+                -Dsonar.projectBaseDir=%WORKSPACE%\\BackOffice
+            """
+          }
+        }
+      }
+    }
+    stage('Install FrontOffice') {
+      steps {
+        dir('FrontOffice') {
+          bat 'npm ci'
+        }
+      }
+    }
+    stage('Test & Coverage FrontOffice') {
+      steps {
+        dir('FrontOffice') {
+          bat 'npm run test -- src/app/components/skills src/app/components/employees --coverage --passWithNoTests'
+        }
+      }
+    }
+    stage('SonarQube Scan FrontOffice') {
+      steps {
+        dir('FrontOffice') {
+          withSonarQubeEnv("${SONARQUBE_SERVER}") {
+            bat """
+              sonar-scanner ^
+                -Dsonar.projectKey=FrontOffice ^
+                -Dsonar.projectBaseDir=%WORKSPACE%\\FrontOffice
+            """
+          }
+        }
+      }
+    }
+    stage('Quality Gate') {
+      steps {
+        timeout(time: 15, unit: 'MINUTES') {
+          waitForQualityGate abortPipeline: false
+        }
+      }
+    }
+  }
+  post {
+    always {
+      archiveArtifacts artifacts: 'BackOffice/coverage/**,FrontOffice/coverage/**', onlyIfSuccessful: false
+    }
+  }
+}

@@ -1,5 +1,6 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Search, Plus, Users, Calendar, Target, Edit, Trash2 } from 'lucide-react';
+import { useVoiceCommand } from '../voice/VoiceCommandContext';
 
 type UserRole = 'HR' | 'Manager' | 'Employee';
 
@@ -92,8 +93,42 @@ export function Activities({ userRole }: ActivitiesProps) {
     context: 'Upskilling' as 'Upskilling' | 'Expertise' | 'Development',
     seats: 10,
   });
+  const [activities, setActivities] = useState<Activity[]>(mockActivities);
+  const { pendingCommand, commandData, clearPendingCommand } = useVoiceCommand();
 
-  const filteredActivities = mockActivities.filter((activity) =>
+  // Écouter les commandes vocales pour créer une activité
+  useEffect(() => {
+    if (pendingCommand === 'create-activity') {
+      if (commandData?.name) {
+        // Créer directement l'activité avec le nom fourni
+        createActivityDirectly(commandData.name);
+      } else {
+        // Ouvrir le modal si pas de nom
+        setShowCreateModal(true);
+      }
+      clearPendingCommand();
+    }
+  }, [pendingCommand, commandData, clearPendingCommand]);
+
+  const createActivityDirectly = (name: string) => {
+    const newActivityItem: Activity = {
+      id: String(activities.length + 1),
+      title: name,
+      description: `Description de l'activité ${name}`,
+      context: 'Upskilling',
+      requiredSkills: [],
+      seats: 20,
+      enrolled: 0,
+      status: 'Draft',
+      startDate: new Date().toISOString().split('T')[0],
+      endDate: new Date(Date.now() + 90 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+    };
+    
+    setActivities([...activities, newActivityItem]);
+    alert(`Activité "${name}" créée avec succès !`);
+  };
+
+  const filteredActivities = activities.filter((activity) =>
     activity.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
     activity.description.toLowerCase().includes(searchTerm.toLowerCase())
   );
@@ -160,7 +195,7 @@ export function Activities({ userRole }: ActivitiesProps) {
           />
         </div>
         <div className="mt-4 text-sm text-muted-foreground">
-          Showing {filteredActivities.length} of {mockActivities.length} activities
+          Showing {filteredActivities.length} of {activities.length} activities
         </div>
       </div>
 

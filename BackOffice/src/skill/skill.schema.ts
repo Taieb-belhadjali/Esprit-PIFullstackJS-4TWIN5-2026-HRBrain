@@ -14,8 +14,8 @@ export class Skill {
   @Prop({ trim: true })
   description?: string; // optionnel
 
-  @Prop({ type: Types.ObjectId, ref: 'Department', required: true })
-  departmentId: Types.ObjectId;
+  @Prop({ type: Types.ObjectId, ref: 'Department', required: false })
+  departmentId?: Types.ObjectId;
 }
 
 // Schema Mongoose pour la collection "skills"
