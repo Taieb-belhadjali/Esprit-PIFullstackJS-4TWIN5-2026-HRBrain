@@ -10,6 +10,7 @@ import {
 import { DepartmentsFilters } from '../departments/DepartmentsFilters';
 import { DepartmentsStats } from '../departments/DepartmentsStats';
 import type { DepartmentSortBy } from '../departments/types';
+import { useVoiceCommand } from '../voice/VoiceCommandContext';
 
 type UserRole = 'HR' | 'Manager' | 'Employee';
 
@@ -28,6 +29,7 @@ export function Departments({ userRole }: DepartmentsProps) {
   const [editManager, setEditManager] = useState('');
   const [searchTerm, setSearchTerm] = useState('');
   const [sortBy, setSortBy] = useState<DepartmentSortBy>('name-asc');
+  const { pendingCommand, commandData, clearPendingCommand } = useVoiceCommand();
 
   const loadDepartments = async () => {
     setLoading(true);
@@ -47,6 +49,90 @@ export function Departments({ userRole }: DepartmentsProps) {
       loadDepartments();
     }
   }, [userRole]);
+
+  // Écouter les commandes vocales pour créer un département
+  useEffect(() => {
+    if (pendingCommand === 'create-department') {
+      if (commandData?.name) {
+        // Créer directement le département avec le nom fourni
+        createDepartmentDirectly(commandData.name);
+      } else {
+        // Ouvrir le formulaire si pas de nom
+        setShowAddForm(true);
+      }
+      clearPendingCommand();
+    }
+  }, [pendingCommand, commandData, clearPendingCommand]);
+
+  // Écouter les commandes vocales pour modifier un département
+  useEffect(() => {
+    if (pendingCommand === 'modify-department') {
+      if (departments.length === 0) return; // attendre le chargement
+      if (commandData?.name) {
+        const searchName = commandData.name.toLowerCase();
+        const departmentToEdit = departments.find(
+          (dept) => dept.name.toLowerCase().includes(searchName)
+        );
+        if (departmentToEdit) {
+          setEditId(departmentToEdit._id);
+          setEditName(departmentToEdit.name);
+          setEditManager(departmentToEdit.user_id);
+        } else {
+          alert(`Département "${commandData.name}" non trouvé`);
+        }
+      } else {
+        alert('Veuillez spécifier le nom du département à modifier');
+      }
+      clearPendingCommand();
+    }
+  }, [pendingCommand, commandData, clearPendingCommand, departments]);
+
+  // Écouter les commandes vocales pour supprimer un département
+  useEffect(() => {
+    if (pendingCommand === 'delete-department') {
+      if (departments.length === 0) return; // attendre le chargement
+      if (commandData?.name) {
+        const searchName = commandData.name.toLowerCase();
+        const departmentToDelete = departments.find(
+          (dept) => dept.name.toLowerCase().includes(searchName)
+        );
+        if (departmentToDelete) {
+          if (window.confirm(`Voulez-vous vraiment supprimer le département "${departmentToDelete.name}" ?`)) {
+            handleDelete(departmentToDelete._id);
+          }
+        } else {
+          alert(`Département "${commandData.name}" non trouvé`);
+        }
+      } else {
+        alert('Veuillez spécifier le nom du département à supprimer');
+      }
+      clearPendingCommand();
+    }
+  }, [pendingCommand, commandData, clearPendingCommand, departments]);
+
+  // Écouter les commandes vocales pour rechercher un département
+  useEffect(() => {
+    if (pendingCommand === 'search-department' || pendingCommand === 'filter-department') {
+      if (commandData?.name) {
+        setSearchTerm(commandData.name);
+      }
+      clearPendingCommand();
+    }
+  }, [pendingCommand, commandData, clearPendingCommand]);
+
+  const createDepartmentDirectly = async (name: string) => {
+    try {
+      await createDepartment({ 
+        name: name, 
+        user_id: 'default-manager' 
+      });
+      await loadDepartments();
+      alert(`Département "${name}" créé avec succès !`);
+    } catch (err) {
+      console.error(err);
+      alert(`Erreur lors de la création du département "${name}"`);
+    }
+  };
 
   if (userRole !== 'HR') {
     return (
@@ -336,7 +422,7 @@ export function Departments({ userRole }: DepartmentsProps) {
       {!loading && departments.length === 0 && !showAddForm && (
         <div className="rounded-2xl border border-dashed border-slate-300 bg-slate-50 p-12">
           <div className="text-center">
-            <p className="text-slate-600">Aucun département pour l’instant.</p>
+            <p className="text-slate-600">Aucun département pour l'instant.</p>
             <button
               type="button"
               onClick={() => setShowAddForm(true)}

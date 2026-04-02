@@ -34,7 +34,7 @@ export class UsersController {
     }
     return { cvPath: user.cv };
   }
-
+//Download CV
   @Get(':id/cv/download')
   async downloadCv(@Param('id') id: string, @Res() res: Response) {
     try {

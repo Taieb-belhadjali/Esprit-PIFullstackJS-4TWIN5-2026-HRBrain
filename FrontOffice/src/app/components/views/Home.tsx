@@ -1,18 +1,19 @@
+// Correction pour Pie label
+const renderPieLabel = ({ name, percent }: any) => `${name} ${(percent * 100).toFixed(0)}%`;
 import { Users, Brain, Activity, Target, TrendingUp, AlertCircle } from 'lucide-react';
 import {
   BarChart,
-  Bar,
+  CartesianGrid,
   XAxis,
   YAxis,
-  CartesianGrid,
   Tooltip,
+  Bar,
   ResponsiveContainer,
   PieChart,
   Pie,
   Cell,
-  Legend,
+  Legend
 } from 'recharts';
-
 type UserRole = 'HR' | 'Manager' | 'Employee';
 
 interface HomeProps {
@@ -151,9 +152,7 @@ export function Home({ userRole }: HomeProps) {
                 cx="50%"
                 cy="50%"
                 labelLine={false}
-                label={({ name, percent }) =>
-                  `${name} ${(percent * 100).toFixed(0)}%`
-                }
+                label={renderPieLabel}
                 outerRadius={100}
                 fill="#8884d8"
                 dataKey="value"
