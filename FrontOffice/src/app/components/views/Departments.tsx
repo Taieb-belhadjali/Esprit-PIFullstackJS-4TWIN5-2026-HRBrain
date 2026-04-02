@@ -29,6 +29,7 @@ export function Departments({ userRole }: DepartmentsProps) {
   const [editManager, setEditManager] = useState('');
   const [searchTerm, setSearchTerm] = useState('');
   const [sortBy, setSortBy] = useState<DepartmentSortBy>('name-asc');
+  const [viewDept, setViewDept] = useState<Department | null>(null);
   const { pendingCommand, commandData, clearPendingCommand } = useVoiceCommand();
 
   const loadDepartments = async () => {
@@ -38,7 +39,6 @@ export function Departments({ userRole }: DepartmentsProps) {
       setDepartments(data);
     } catch (err) {
       console.error(err);
-      alert('Erreur lors du chargement des départements');
     } finally {
       setLoading(false);
     }
@@ -54,8 +54,8 @@ export function Departments({ userRole }: DepartmentsProps) {
   useEffect(() => {
     if (pendingCommand === 'create-department') {
       if (commandData?.name) {
-        // Créer directement le département avec le nom fourni
-        createDepartmentDirectly(commandData.name);
+        // L'item a déjà été créé par VoiceAssistant — juste recharger la liste
+        loadDepartments();
       } else {
         // Ouvrir le formulaire si pas de nom
         setShowAddForm(true);
@@ -65,50 +65,22 @@ export function Departments({ userRole }: DepartmentsProps) {
   }, [pendingCommand, commandData, clearPendingCommand]);
 
   // Écouter les commandes vocales pour modifier un département
+  // VoiceAssistant a déjà effectué le PATCH — on rafraîchit seulement la liste
   useEffect(() => {
     if (pendingCommand === 'modify-department') {
-      if (departments.length === 0) return; // attendre le chargement
-      if (commandData?.name) {
-        const searchName = commandData.name.toLowerCase();
-        const departmentToEdit = departments.find(
-          (dept) => dept.name.toLowerCase().includes(searchName)
-        );
-        if (departmentToEdit) {
-          setEditId(departmentToEdit._id);
-          setEditName(departmentToEdit.name);
-          setEditManager(departmentToEdit.user_id);
-        } else {
-          alert(`Département "${commandData.name}" non trouvé`);
-        }
-      } else {
-        alert('Veuillez spécifier le nom du département à modifier');
-      }
+      loadDepartments();
       clearPendingCommand();
     }
-  }, [pendingCommand, commandData, clearPendingCommand, departments]);
+  }, [pendingCommand, clearPendingCommand]);
 
   // Écouter les commandes vocales pour supprimer un département
+  // La suppression et confirmation sont gérées par VoiceAssistant — on rafraîchit juste la liste
   useEffect(() => {
     if (pendingCommand === 'delete-department') {
-      if (departments.length === 0) return; // attendre le chargement
-      if (commandData?.name) {
-        const searchName = commandData.name.toLowerCase();
-        const departmentToDelete = departments.find(
-          (dept) => dept.name.toLowerCase().includes(searchName)
-        );
-        if (departmentToDelete) {
-          if (window.confirm(`Voulez-vous vraiment supprimer le département "${departmentToDelete.name}" ?`)) {
-            handleDelete(departmentToDelete._id);
-          }
-        } else {
-          alert(`Département "${commandData.name}" non trouvé`);
-        }
-      } else {
-        alert('Veuillez spécifier le nom du département à supprimer');
-      }
+      loadDepartments();
       clearPendingCommand();
     }
-  }, [pendingCommand, commandData, clearPendingCommand, departments]);
+  }, [pendingCommand, clearPendingCommand]);
 
   // Écouter les commandes vocales pour rechercher un département
   useEffect(() => {
@@ -120,19 +92,20 @@ export function Departments({ userRole }: DepartmentsProps) {
     }
   }, [pendingCommand, commandData, clearPendingCommand]);
 
-  const createDepartmentDirectly = async (name: string) => {
-    try {
-      await createDepartment({ 
-        name: name, 
-        user_id: 'default-manager' 
-      });
-      await loadDepartments();
-      alert(`Département "${name}" créé avec succès !`);
-    } catch (err) {
-      console.error(err);
-      alert(`Erreur lors de la création du département "${name}"`);
+  // Écouter les commandes vocales pour afficher le détail d'un département
+  useEffect(() => {
+    if (pendingCommand === 'view-department') {
+      if (commandData?.name && departments.length > 0) {
+        const found = departments.find(
+          (d) => d.name.toLowerCase() === commandData.name!.toLowerCase()
+        ) || departments.find(
+          (d) => d.name.toLowerCase().includes(commandData.name!.toLowerCase())
+        );
+        if (found) setViewDept(found);
+      }
+      clearPendingCommand();
     }
-  };
+  }, [pendingCommand, commandData, clearPendingCommand, departments]);
 
   if (userRole !== 'HR') {
     return (
@@ -431,6 +404,68 @@ export function Departments({ userRole }: DepartmentsProps) {
               <Plus size={16} />
               Créer le premier département
             </button>
+          </div>
+        </div>
+      )}
+
+      {/* Modal détail département (commande vocale “afficher département X”) */}
+      {viewDept && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4"
+          onClick={() => setViewDept(null)}
+        >
+          <div
+            className="w-full max-w-md overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-2xl"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="h-1.5 bg-gradient-to-r from-blue-500 to-indigo-600" />
+            <div className="flex items-start justify-between p-6 pb-4">
+              <div className="flex items-center gap-3">
+                <div className="rounded-lg bg-blue-100 p-2 text-blue-700">
+                  <Building2 className="h-6 w-6" />
+                </div>
+                <div>
+                  <p className="text-xs font-semibold uppercase tracking-wide text-blue-600">Département</p>
+                  <h2 className="mt-0.5 text-2xl font-bold text-slate-900">{viewDept.name}</h2>
+                </div>
+              </div>
+              <button
+                onClick={() => setViewDept(null)}
+                className="rounded-lg p-2 text-slate-500 transition hover:bg-slate-100"
+                aria-label="Fermer"
+              >
+                ✕
+              </button>
+            </div>
+            <div className="px-6 pb-6 space-y-3">
+              <div className="rounded-xl border border-slate-200 bg-slate-50 p-4">
+                <p className="text-sm font-medium text-slate-700">Identifiant</p>
+                <p className="mt-1 font-mono text-xs text-slate-500">{viewDept._id}</p>
+              </div>
+              <div className="rounded-xl border border-slate-200 bg-slate-50 p-4">
+                <p className="text-sm font-medium text-slate-700">Manager (user_id)</p>
+                <p className="mt-1 text-slate-800">{viewDept.user_id || 'Non défini'}</p>
+              </div>
+              <div className="flex justify-end gap-2 pt-2">
+                <button
+                  onClick={() => {
+                    setViewDept(null);
+                    setEditId(viewDept._id);
+                    setEditName(viewDept.name);
+                    setEditManager(viewDept.user_id);
+                  }}
+                  className="rounded-lg border border-slate-300 px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-100"
+                >
+                  Modifier
+                </button>
+                <button
+                  onClick={() => setViewDept(null)}
+                  className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700"
+                >
+                  Fermer
+                </button>
+              </div>
+            </div>
           </div>
         </div>
       )}

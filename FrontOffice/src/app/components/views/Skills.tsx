@@ -45,7 +45,8 @@ export const Skills: React.FC<SkillsProps> = ({ userRole }) => {
         return;
       }
       if (commandData?.name) {
-        createSkillDirectly(commandData.name);
+        // L'item a déjà été créé par VoiceAssistant — juste recharger la liste
+        fetchSkills();
       } else {
         setShowForm(true);
       }
@@ -54,49 +55,22 @@ export const Skills: React.FC<SkillsProps> = ({ userRole }) => {
   }, [pendingCommand, commandData, clearPendingCommand, userRole]);
 
   // Écouter les commandes vocales pour modifier un skill
+  // VoiceAssistant a déjà effectué le PATCH — on rafraîchit seulement la liste
   useEffect(() => {
     if (pendingCommand === 'modify-skill') {
-      if (skills.length === 0) return; // attendre le chargement
-      if (commandData?.name) {
-        const searchName = commandData.name.toLowerCase();
-        const skillToEdit = skills.find(
-          (skill) => skill.name.toLowerCase().includes(searchName)
-        );
-        if (skillToEdit) {
-          setEditingSkill(skillToEdit);
-          setShowForm(true);
-        } else {
-          alert(`Skill "${commandData.name}" non trouvé`);
-        }
-      } else {
-        setShowForm(true);
-      }
+      fetchSkills();
       clearPendingCommand();
     }
-  }, [pendingCommand, commandData, clearPendingCommand, skills]);
+  }, [pendingCommand, clearPendingCommand]);
 
   // Écouter les commandes vocales pour supprimer un skill
+  // La suppression et confirmation sont gérées par VoiceAssistant — on rafraîchit juste la liste
   useEffect(() => {
     if (pendingCommand === 'delete-skill') {
-      if (skills.length === 0) return; // attendre le chargement
-      if (commandData?.name) {
-        const searchName = commandData.name.toLowerCase();
-        const skillToDelete = skills.find(
-          (skill) => skill.name.toLowerCase().includes(searchName)
-        );
-        if (skillToDelete) {
-          if (window.confirm(`Voulez-vous vraiment supprimer le skill "${skillToDelete.name}" ?`)) {
-            handleDelete(skillToDelete._id);
-          }
-        } else {
-          alert(`Skill "${commandData.name}" non trouvé`);
-        }
-      } else {
-        alert('Veuillez spécifier le nom du skill à supprimer');
-      }
+      fetchSkills();
       clearPendingCommand();
     }
-  }, [pendingCommand, commandData, clearPendingCommand, skills]);
+  }, [pendingCommand, clearPendingCommand]);
 
   // Écouter les commandes vocales pour rechercher un skill
   useEffect(() => {
@@ -108,20 +82,20 @@ export const Skills: React.FC<SkillsProps> = ({ userRole }) => {
     }
   }, [pendingCommand, commandData, clearPendingCommand]);
 
-  const createSkillDirectly = async (name: string) => {
-    try {
-      await axios.post('http://localhost:3000/skills', {
-        name: name,
-        description: '',
-        departmentId: departments[0]?._id || '',
-      });
-      await fetchSkills();
-      alert(`Skill "${name}" créé avec succès !`);
-    } catch (err) {
-      console.error(err);
-      alert(`Erreur lors de la création du skill "${name}"`);
+  // Écouter les commandes vocales pour afficher le détail d'un skill
+  useEffect(() => {
+    if (pendingCommand === 'view-skill') {
+      if (commandData?.name && skills.length > 0) {
+        const found = skills.find(
+          (s) => s.name.toLowerCase() === commandData.name!.toLowerCase()
+        ) || skills.find(
+          (s) => s.name.toLowerCase().includes(commandData.name!.toLowerCase())
+        );
+        if (found) setSelectedSkill(found);
+      }
+      clearPendingCommand();
     }
-  };
+  }, [pendingCommand, commandData, clearPendingCommand, skills]);
 
   const fetchDepartments = async () => {
     try {
@@ -277,6 +251,18 @@ export const Skills: React.FC<SkillsProps> = ({ userRole }) => {
             onCancel={handleFormClose}
           />
         </div>
+      )}
+
+      {/* Aperçu détaillé d'un skill (commande vocale "afficher skill X") */}
+      {selectedSkill && (
+        <SkillGrandFormatCard
+          skill={selectedSkill}
+          onClose={() => setSelectedSkill(null)}
+          onEdit={(skill) => {
+            setSelectedSkill(null);
+            handleEdit(skill);
+          }}
+        />
       )}
     </div>
   );

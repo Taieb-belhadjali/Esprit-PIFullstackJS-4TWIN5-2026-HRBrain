@@ -81,48 +81,22 @@ export function Employees({ userRole }: EmployeesProps) {
   }, [pendingCommand, commandData, clearPendingCommand]);
 
   // Écouter les commandes vocales pour modifier un employé
+  // VoiceAssistant a déjà effectué le PATCH — on rafraîchit seulement la liste
   useEffect(() => {
     if (pendingCommand === 'modify-employee') {
-      if (employees.length === 0) return; // attendre le chargement
-      if (commandData?.name) {
-        const searchName = commandData.name.toLowerCase();
-        const employeeToEdit = employees.find(
-          (emp) => emp.name.toLowerCase().includes(searchName)
-        );
-        if (employeeToEdit) {
-          setEditingEmployee(employeeToEdit);
-        } else {
-          alert(`Employé "${commandData.name}" non trouvé`);
-        }
-      } else {
-        alert('Veuillez spécifier le nom de l\'employé à modifier');
-      }
+      fetchEmployees();
       clearPendingCommand();
     }
-  }, [pendingCommand, commandData, clearPendingCommand, employees]);
+  }, [pendingCommand, clearPendingCommand]);
 
   // Écouter les commandes vocales pour supprimer un employé
+  // La suppression et confirmation sont gérées par VoiceAssistant — on rafraîchit juste la liste
   useEffect(() => {
     if (pendingCommand === 'delete-employee') {
-      if (employees.length === 0) return; // attendre le chargement
-      if (commandData?.name) {
-        const searchName = commandData.name.toLowerCase();
-        const employeeToDelete = employees.find(
-          (emp) => emp.name.toLowerCase().includes(searchName)
-        );
-        if (employeeToDelete) {
-          if (window.confirm(`Voulez-vous vraiment supprimer l'employé "${employeeToDelete.name}" ?`)) {
-            handleDelete(employeeToDelete.id);
-          }
-        } else {
-          alert(`Employé "${commandData.name}" non trouvé`);
-        }
-      } else {
-        alert('Veuillez spécifier le nom de l\'employé à supprimer');
-      }
+      fetchEmployees();
       clearPendingCommand();
     }
-  }, [pendingCommand, commandData, clearPendingCommand, employees]);
+  }, [pendingCommand, clearPendingCommand]);
 
   // Écouter les commandes vocales pour rechercher un employé
   useEffect(() => {
@@ -134,13 +108,27 @@ export function Employees({ userRole }: EmployeesProps) {
     }
   }, [pendingCommand, commandData, clearPendingCommand]);
 
+  // Écouter les commandes vocales pour afficher le détail d'un employé
+  useEffect(() => {
+    if (pendingCommand === 'view-employee') {
+      if (commandData?.name && employees.length > 0) {
+        const found = employees.find(
+          (e) => (e.name || e.email).toLowerCase() === commandData.name!.toLowerCase()
+        ) || employees.find(
+          (e) => (e.name || e.email).toLowerCase().includes(commandData.name!.toLowerCase())
+        );
+        if (found) { setViewEmployee(found); setViewOpen(true); }
+      }
+      clearPendingCommand();
+    }
+  }, [pendingCommand, commandData, clearPendingCommand, employees]);
+
   const handleDelete = async (id: string) => {
     try {
       await deleteEmployee(id);
       fetchEmployees();
     } catch (error) {
       console.error('Failed to delete employee:', error);
-      alert('Erreur lors de la suppression de l\'employé');
     }
   };
 
