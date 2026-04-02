@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { Building2, Plus, Sparkles } from 'lucide-react';
+import { Building2, Plus, Sparkles, Edit2, Trash2 } from 'lucide-react';
 import {
   getDepartments,
   createDepartment,
@@ -11,6 +11,7 @@ import { DepartmentsFilters } from '../departments/DepartmentsFilters';
 import { DepartmentsStats } from '../departments/DepartmentsStats';
 import type { DepartmentSortBy } from '../departments/types';
 import { useVoiceCommand } from '../voice/VoiceCommandContext';
+import Pagination from '../ui/Pagination';
 
 type UserRole = 'HR' | 'Manager' | 'Employee';
 
@@ -29,6 +30,8 @@ export function Departments({ userRole }: DepartmentsProps) {
   const [editManager, setEditManager] = useState('');
   const [searchTerm, setSearchTerm] = useState('');
   const [sortBy, setSortBy] = useState<DepartmentSortBy>('name-asc');
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 9;
   const { pendingCommand, commandData, clearPendingCommand } = useVoiceCommand();
 
   const loadDepartments = async () => {
@@ -224,6 +227,15 @@ export function Departments({ userRole }: DepartmentsProps) {
     return result;
   }, [departments, searchTerm, sortBy]);
 
+  // Reset page on filter change
+  useEffect(() => { setCurrentPage(1); }, [searchTerm, sortBy]);
+
+  const totalPages = Math.ceil(filteredDepartments.length / itemsPerPage);
+  const paginatedDepartments = filteredDepartments.slice(
+    (currentPage - 1) * itemsPerPage,
+    currentPage * itemsPerPage,
+  );
+
   const uniqueManagersCount = useMemo(() => {
     const ids = departments
       .map((d) => d.user_id?.trim())
@@ -337,86 +349,93 @@ export function Departments({ userRole }: DepartmentsProps) {
       )}
 
       {!loading && filteredDepartments.length > 0 && (
-        <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
-          {filteredDepartments.map((dept) => (
+        <>
+          <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
+            {paginatedDepartments.map((dept) => (
             <div
               key={dept._id}
-              className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm transition hover:shadow-md"
+              className="group cursor-pointer bg-white rounded-xl shadow-md hover:shadow-xl transition-all duration-300 border border-gray-100 overflow-hidden hover:border-blue-200"
             >
+              <div className="h-1 bg-gradient-to-r from-blue-500 to-indigo-600" />
+
               {editId === dept._id ? (
-                <div className="space-y-3">
+                <div className="p-5 space-y-3">
                   <div>
-                    <label className="block text-xs font-medium text-slate-600">Nom</label>
+                    <label className="block text-xs font-medium text-slate-600 mb-1">Nom</label>
                     <input
                       value={editName}
                       onChange={(e) => setEditName(e.target.value)}
-                      className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"
+                      className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
                     />
                   </div>
                   <div>
-                    <label className="block text-xs font-medium text-slate-600">user_id</label>
+                    <label className="block text-xs font-medium text-slate-600 mb-1">Manager (user_id)</label>
                     <input
                       value={editManager}
                       onChange={(e) => setEditManager(e.target.value)}
-                      className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"
+                      className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
                     />
                   </div>
-                  <div className="flex gap-2">
+                  <div className="flex gap-2 pt-1">
                     <button
                       type="button"
                       onClick={handleUpdate}
-                      className="flex-1 rounded-lg bg-emerald-600 py-2 text-sm font-medium text-white hover:bg-emerald-700"
+                      className="flex-1 rounded-lg bg-emerald-600 py-2 text-sm font-medium text-white hover:bg-emerald-700 transition-colors"
                     >
                       Sauver
                     </button>
                     <button
                       type="button"
                       onClick={() => setEditId(null)}
-                      className="flex-1 rounded-lg border border-slate-300 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50"
+                      className="flex-1 rounded-lg border border-slate-300 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 transition-colors"
                     >
                       Annuler
                     </button>
                   </div>
                 </div>
               ) : (
-                <>
-                  <div className="flex items-start gap-3">
-                    <div className="rounded-lg bg-blue-100 p-2 text-blue-700">
-                      <Building2 className="h-5 w-5" />
-                    </div>
-                    <div className="min-w-0 flex-1">
-                      <h3 className="truncate text-lg font-semibold text-slate-900">{dept.name}</h3>
-                      <p className="mt-1 font-mono text-xs text-slate-500">{dept._id}</p>
-                      <p className="mt-2 text-sm text-slate-600">
-                        <span className="font-medium text-slate-800">Manager :</span> {dept.user_id}
-                      </p>
-                    </div>
+                <div className="p-5 flex justify-between items-start">
+                  <div className="flex-1 min-w-0">
+                    <h3 className="text-lg font-bold text-gray-900 group-hover:text-blue-600 transition-colors truncate">
+                      {dept.name}
+                    </h3>
+                    <p className="text-xs text-blue-700 font-semibold mt-1">
+                      Manager : {dept.user_id || '—'}
+                    </p>
+                    <p className="text-gray-400 font-mono text-xs mt-2 truncate">{dept._id}</p>
                   </div>
-                  <div className="mt-4 flex gap-2">
+
+                  <div className="flex gap-2 ml-4 opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity duration-300">
                     <button
                       type="button"
-                      onClick={() => {
-                        setEditId(dept._id);
-                        setEditName(dept.name);
-                        setEditManager(dept.user_id);
-                      }}
-                      className="flex-1 rounded-lg bg-amber-500 py-2 text-sm font-medium text-white hover:bg-amber-600"
+                      onClick={() => { setEditId(dept._id); setEditName(dept.name); setEditManager(dept.user_id); }}
+                      className="p-2 rounded-lg bg-blue-50 hover:bg-blue-100 text-blue-600 hover:text-blue-700 transition-all hover:scale-110 active:scale-95"
+                      title="Modifier"
                     >
-                      Modifier
+                      <Edit2 size={18} />
                     </button>
                     <button
                       type="button"
                       onClick={() => handleDelete(dept._id)}
-                      className="flex-1 rounded-lg bg-red-600 py-2 text-sm font-medium text-white hover:bg-red-700"
+                      className="p-2 rounded-lg bg-red-50 hover:bg-red-100 text-red-600 hover:text-red-700 transition-all hover:scale-110 active:scale-95"
+                      title="Supprimer"
                     >
-                      Supprimer
+                      <Trash2 size={18} />
                     </button>
                   </div>
-                </>
+                </div>
               )}
             </div>
           ))}
         </div>
+          <Pagination
+            currentPage={currentPage}
+            totalPages={totalPages}
+            totalItems={filteredDepartments.length}
+            itemsPerPage={itemsPerPage}
+            onPageChange={setCurrentPage}
+          />
+        </>
       )}
 
       {!loading && departments.length === 0 && !showAddForm && (
