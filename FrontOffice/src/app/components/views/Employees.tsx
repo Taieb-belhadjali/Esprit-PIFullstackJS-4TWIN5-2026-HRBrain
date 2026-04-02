@@ -6,6 +6,7 @@ import EditEmployeeModal from "../employees/EditEmployeeModel";
 import ViewEmployeeModal from "../employees/ViewEmployeeModel";
 import { deleteEmployee, getEmployees } from '../../../api/employeeApi';
 import { useVoiceCommand } from '../voice/VoiceCommandContext';
+import Pagination from '../ui/Pagination';
 
 type UserRole = 'HR' | 'Manager' | 'Employee';
 
@@ -205,52 +206,34 @@ export function Employees({ userRole }: EmployeesProps) {
       </div>
 
       {/* FILTERS */}
-      <div className="bg-white rounded-lg shadow-sm p-6 border border-border">
-
-        <div className="flex flex-col md:flex-row gap-4">
-
-          {/* SEARCH */}
-          <div className="card mb-3 shadow-sm w-full">
-            <div className="card-body">
-              <div className="row g-2">
-
-                <div className="col-md-6">
-                  <input
-                    type="text"
-                    className="form-control"
-                    placeholder="Search by name or email..."
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                  />
-                </div>
-
-                <div className="col-md-6 text-md-end text-muted d-flex align-items-center justify-content-md-end">
-                  Showing {filteredEmployees.length} employees
-                </div>
-
-              </div>
-            </div>
+      <div className="bg-white rounded-lg shadow-sm p-4 border border-border">
+        <div className="flex flex-col md:flex-row gap-3">
+          <div className="relative flex-1">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+            <input
+              type="text"
+              placeholder="Search by name or email..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="w-full pl-9 pr-4 py-2 border border-input rounded-lg focus:outline-none focus:ring-2 focus:ring-primary text-sm"
+            />
           </div>
-
-          {/* DEPARTMENT FILTER */}
           <div className="flex items-center gap-2">
-            <Filter className="w-5 h-5 text-muted-foreground" />
+            <Filter className="w-4 h-4 text-muted-foreground shrink-0" />
             <select
               value={selectedDepartment}
               onChange={(e) => setSelectedDepartment(e.target.value)}
-              className="px-4 py-2 border border-input rounded-lg"
+              className="px-3 py-2 border border-input rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary"
             >
               {departments.map((dept) => (
                 <option key={dept} value={dept}>{dept}</option>
               ))}
             </select>
           </div>
-
         </div>
-
-        <div className="mt-4 text-sm text-muted-foreground">
+        <p className="mt-3 text-sm text-muted-foreground">
           Showing {filteredEmployees.length} of {employees.length} employees
-        </div>
+        </p>
       </div>
 
       {/* TABLE */}
@@ -341,43 +324,15 @@ export function Employees({ userRole }: EmployeesProps) {
           </tbody>
         </table>
 
-        {/* ✅ PAGINATION UI */}
-        <div className="flex justify-between items-center p-4 border-t">
-          <span className="text-sm text-muted-foreground">
-            Page {currentPage} of {totalPages || 1}
-          </span>
-
-          <div className="flex gap-2">
-
-            <button
-              className="px-3 py-1 rounded border"
-              disabled={currentPage === 1}
-              onClick={() => setCurrentPage(p => p - 1)}
-            >
-              Prev
-            </button>
-
-            {[...Array(totalPages)].map((_, i) => (
-              <button
-                key={i}
-                className={`px-3 py-1 rounded border ${
-                  currentPage === i + 1 ? "bg-primary text-white" : ""
-                }`}
-                onClick={() => setCurrentPage(i + 1)}
-              >
-                {i + 1}
-              </button>
-            ))}
-
-            <button
-              className="px-3 py-1 rounded border"
-              disabled={currentPage === totalPages || totalPages === 0}
-              onClick={() => setCurrentPage(p => p + 1)}
-            >
-              Next
-            </button>
-
-          </div>
+        {/* PAGINATION */}
+        <div className="border-t border-border px-4">
+          <Pagination
+            currentPage={currentPage}
+            totalPages={totalPages}
+            totalItems={filteredEmployees.length}
+            itemsPerPage={itemsPerPage}
+            onPageChange={setCurrentPage}
+          />
         </div>
 
       </div>

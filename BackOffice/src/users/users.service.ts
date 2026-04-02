@@ -23,52 +23,50 @@ export class UsersService {
   }
 
   private async detectSkillIdsFromText(text: string) {
-    // Récupérer tous les skills de la base
     const validLevels = ['LOW', 'MEDIUM', 'HIGH', 'EXPERT'];
+    // Alias acceptés à la saisie → normalisés
+    const levelAliases: Record<string, string> = { GOOD: 'HIGH' };
+
     const allSkills = await this.skillModel.find({}, { _id: 1, name: 1 }).lean();
-    
-    // Créer un map pour recherche rapide par nom
     const skillMap = new Map(
       allSkills.map(s => [s.name.toUpperCase(), String(s._id)])
     );
-    
-    // Parser le texte ligne par ligne
+
     const lines = (text || '')
       .split(/\n/)
       .map(line => line.trim())
       .filter(line => line.length > 0);
-    
-    // Fichier vide
+
     if (lines.length === 0) {
       throw new BadRequestException('Fichier vide. Format: SKILL:LEVEL (ex: JAVA:HIGH)');
     }
-    
+
     const foundSkillIds = new Set<string>();
     const errors: string[] = [];
     let lineNumber = 0;
-    
-    // Traiter chaque ligne
+
     for (const line of lines) {
       lineNumber++;
-      
-      // Format SKILL:LEVEL
-      const match = line.match(/^([A-Za-z0-9\s+#\-_.]+):([A-Z]+)$/);
-      
+
+      // Accepte : lettres, chiffres, espaces, #, +, ., -, _, @ avant le ":"
+      const match = line.match(/^([A-Za-z0-9\s#\+\.\-\_@]+):([A-Za-z]+)$/i);
+
       if (!match) {
         errors.push(`Ligne ${lineNumber}: Format invalide "${line}". Requis: SKILL:HIGH|MEDIUM|LOW|EXPERT`);
         continue;
       }
-      
+
       const skillName = match[1].trim().toUpperCase();
-      const level = match[2];
-      
-      // Vérifier que le niveau est valide (HIGH, MEDIUM ou LOW seulement)
+      let level = match[2].toUpperCase();
+
+      // Normaliser les alias (ex: GOOD → HIGH)
+      if (levelAliases[level]) level = levelAliases[level];
+
       if (!validLevels.includes(level)) {
-        errors.push(`Ligne ${lineNumber}: Niveau invalide "${level}". Accepté: HIGH, MEDIUM, LOW, EXPERT`);
+        errors.push(`Ligne ${lineNumber}: Niveau invalide "${match[2]}". Accepté: HIGH, MEDIUM, LOW, EXPERT`);
         continue;
       }
-      
-      // Créer le skill s'il n'existe pas
+
       let skillId = skillMap.get(skillName);
       if (!skillId) {
         try {
@@ -80,20 +78,18 @@ export class UsersService {
           continue;
         }
       }
-      
+
       foundSkillIds.add(skillId);
     }
-    
-    // Afficher les erreurs
+
     if (errors.length > 0) {
       throw new BadRequestException(errors.join(' | '));
     }
-    
-    // Aucun skill valide
+
     if (foundSkillIds.size === 0) {
       throw new BadRequestException('Aucun skill valide. Format: SKILL:HIGH|MEDIUM|LOW|EXPERT');
     }
-    
+
     return Array.from(foundSkillIds);
   }
 

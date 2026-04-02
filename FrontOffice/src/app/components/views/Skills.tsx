@@ -8,6 +8,7 @@ import { SkillsHeader } from '../skills/SkillsHeader';
 import { SkillsStats } from '../skills/SkillsStats';
 import { Skill, SkillSortBy } from '../skills/types';
 import { useVoiceCommand } from '../voice/VoiceCommandContext';
+import Pagination from '../ui/Pagination';
 
 
 type UserRole = 'HR' | 'Manager' | 'Employee';
@@ -27,6 +28,8 @@ export const Skills: React.FC<SkillsProps> = ({ userRole }) => {
   const [sortBy, setSortBy] = useState<SkillSortBy>('name-asc');
   const [departments, setDepartments] = useState<any[]>([]);
   const [selectedDepartment, setSelectedDepartment] = useState('');
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 9;
   const { pendingCommand, commandData, clearPendingCommand } = useVoiceCommand();
 
   useEffect(() => {
@@ -196,6 +199,15 @@ export const Skills: React.FC<SkillsProps> = ({ userRole }) => {
 
   const totalWithDescription = skills.filter((skill) => Boolean(skill.description?.trim())).length;
 
+  // Reset page on filter change
+  useEffect(() => { setCurrentPage(1); }, [searchTerm, sortBy, selectedDepartment]);
+
+  const totalPages = Math.ceil(filteredSkills.length / itemsPerPage);
+  const paginatedSkills = filteredSkills.slice(
+    (currentPage - 1) * itemsPerPage,
+    currentPage * itemsPerPage,
+  );
+
   return (
     <div className="p-6 space-y-6">
       <SkillsHeader onAddSkill={() => setShowForm(true)} userRole={userRole} />
@@ -244,25 +256,34 @@ export const Skills: React.FC<SkillsProps> = ({ userRole }) => {
           </p>
         </div>
       ) : (
-        <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
-          {filteredSkills.map((skill) => {
-            const department = departments.find(dep => dep._id === skill.departmentId);
-            return (
-              <SkillCard
-                key={skill._id}
-                id={skill._id}
-                name={skill.name}
-                description={skill.description}
-                departmentName={department ? department.name : ''}
-                skillObj={skill}
-                userRole={userRole}
-                onEdit={() => handleEdit(skill)}
-                onDelete={() => handleDelete(skill._id)}
-                onPreview={setSelectedSkill}
-              />
-            );
-          })}
-        </div>
+        <>
+          <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
+            {paginatedSkills.map((skill) => {
+              const department = departments.find(dep => dep._id === skill.departmentId);
+              return (
+                <SkillCard
+                  key={skill._id}
+                  id={skill._id}
+                  name={skill.name}
+                  description={skill.description}
+                  departmentName={department ? department.name : ''}
+                  skillObj={skill}
+                  userRole={userRole}
+                  onEdit={() => handleEdit(skill)}
+                  onDelete={() => handleDelete(skill._id)}
+                  onPreview={setSelectedSkill}
+                />
+              );
+            })}
+          </div>
+          <Pagination
+            currentPage={currentPage}
+            totalPages={totalPages}
+            totalItems={filteredSkills.length}
+            itemsPerPage={itemsPerPage}
+            onPageChange={setCurrentPage}
+          />
+        </>
       )}
 
       {/* Formulaire Create / Update */}

@@ -1,127 +1,109 @@
-import * as React from "react";
-import {
-  ChevronLeftIcon,
-  ChevronRightIcon,
-  MoreHorizontalIcon,
-} from "lucide-react";
+import React from 'react';
+import { ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight } from 'lucide-react';
 
-import { cn } from "./utils";
-import { Button, buttonVariants } from "./button";
+interface PaginationProps {
+  currentPage: number;
+  totalPages: number;
+  totalItems: number;
+  itemsPerPage: number;
+  onPageChange: (page: number) => void;
+}
 
-function Pagination({ className, ...props }: React.ComponentProps<"nav">) {
+const Pagination: React.FC<PaginationProps> = ({
+  currentPage,
+  totalPages,
+  totalItems,
+  itemsPerPage,
+  onPageChange,
+}) => {
+  if (totalPages <= 1) return null;
+
+  const from = Math.min((currentPage - 1) * itemsPerPage + 1, totalItems);
+  const to = Math.min(currentPage * itemsPerPage, totalItems);
+
+  // Build page numbers with ellipsis
+  const getPages = (): (number | '...')[] => {
+    if (totalPages <= 7) return Array.from({ length: totalPages }, (_, i) => i + 1);
+    const pages: (number | '...')[] = [1];
+    if (currentPage > 3) pages.push('...');
+    for (let i = Math.max(2, currentPage - 1); i <= Math.min(totalPages - 1, currentPage + 1); i++) {
+      pages.push(i);
+    }
+    if (currentPage < totalPages - 2) pages.push('...');
+    pages.push(totalPages);
+    return pages;
+  };
+
+  const btnBase = 'inline-flex items-center justify-center h-9 min-w-[2.25rem] px-2 rounded-lg text-sm font-medium transition-all duration-150 select-none';
+  const btnActive = 'bg-primary text-white shadow-sm';
+  const btnInactive = 'text-gray-600 hover:bg-gray-100 border border-gray-200';
+  const btnDisabled = 'text-gray-300 border border-gray-100 cursor-not-allowed';
+
   return (
-    <nav
-      role="navigation"
-      aria-label="pagination"
-      data-slot="pagination"
-      className={cn("mx-auto flex w-full justify-center", className)}
-      {...props}
-    />
+    <div className="flex flex-col sm:flex-row items-center justify-between gap-3 px-1 py-3">
+      <p className="text-sm text-gray-500 shrink-0">
+        Showing <span className="font-medium text-gray-700">{from}–{to}</span> of{' '}
+        <span className="font-medium text-gray-700">{totalItems}</span>
+      </p>
+
+      <div className="flex items-center gap-1">
+        {/* First */}
+        <button
+          onClick={() => onPageChange(1)}
+          disabled={currentPage === 1}
+          className={`${btnBase} ${currentPage === 1 ? btnDisabled : btnInactive}`}
+          title="First page"
+        >
+          <ChevronsLeft size={15} />
+        </button>
+
+        {/* Prev */}
+        <button
+          onClick={() => onPageChange(currentPage - 1)}
+          disabled={currentPage === 1}
+          className={`${btnBase} ${currentPage === 1 ? btnDisabled : btnInactive}`}
+          title="Previous page"
+        >
+          <ChevronLeft size={15} />
+        </button>
+
+        {/* Page numbers */}
+        {getPages().map((page, i) =>
+          page === '...' ? (
+            <span key={`ellipsis-${i}`} className="px-1 text-gray-400 text-sm">…</span>
+          ) : (
+            <button
+              key={page}
+              onClick={() => onPageChange(page as number)}
+              className={`${btnBase} ${currentPage === page ? btnActive : btnInactive}`}
+            >
+              {page}
+            </button>
+          )
+        )}
+
+        {/* Next */}
+        <button
+          onClick={() => onPageChange(currentPage + 1)}
+          disabled={currentPage === totalPages}
+          className={`${btnBase} ${currentPage === totalPages ? btnDisabled : btnInactive}`}
+          title="Next page"
+        >
+          <ChevronRight size={15} />
+        </button>
+
+        {/* Last */}
+        <button
+          onClick={() => onPageChange(totalPages)}
+          disabled={currentPage === totalPages}
+          className={`${btnBase} ${currentPage === totalPages ? btnDisabled : btnInactive}`}
+          title="Last page"
+        >
+          <ChevronsRight size={15} />
+        </button>
+      </div>
+    </div>
   );
-}
-
-function PaginationContent({
-  className,
-  ...props
-}: React.ComponentProps<"ul">) {
-  return (
-    <ul
-      data-slot="pagination-content"
-      className={cn("flex flex-row items-center gap-1", className)}
-      {...props}
-    />
-  );
-}
-
-function PaginationItem({ ...props }: React.ComponentProps<"li">) {
-  return <li data-slot="pagination-item" {...props} />;
-}
-
-type PaginationLinkProps = {
-  isActive?: boolean;
-} & Pick<React.ComponentProps<typeof Button>, "size"> &
-  React.ComponentProps<"a">;
-
-function PaginationLink({
-  className,
-  isActive,
-  size = "icon",
-  ...props
-}: PaginationLinkProps) {
-  return (
-    <a
-      aria-current={isActive ? "page" : undefined}
-      data-slot="pagination-link"
-      data-active={isActive}
-      className={cn(
-        buttonVariants({
-          variant: isActive ? "outline" : "ghost",
-          size,
-        }),
-        className,
-      )}
-      {...props}
-    />
-  );
-}
-
-function PaginationPrevious({
-  className,
-  ...props
-}: React.ComponentProps<typeof PaginationLink>) {
-  return (
-    <PaginationLink
-      aria-label="Go to previous page"
-      size="default"
-      className={cn("gap-1 px-2.5 sm:pl-2.5", className)}
-      {...props}
-    >
-      <ChevronLeftIcon />
-      <span className="hidden sm:block">Previous</span>
-    </PaginationLink>
-  );
-}
-
-function PaginationNext({
-  className,
-  ...props
-}: React.ComponentProps<typeof PaginationLink>) {
-  return (
-    <PaginationLink
-      aria-label="Go to next page"
-      size="default"
-      className={cn("gap-1 px-2.5 sm:pr-2.5", className)}
-      {...props}
-    >
-      <span className="hidden sm:block">Next</span>
-      <ChevronRightIcon />
-    </PaginationLink>
-  );
-}
-
-function PaginationEllipsis({
-  className,
-  ...props
-}: React.ComponentProps<"span">) {
-  return (
-    <span
-      aria-hidden
-      data-slot="pagination-ellipsis"
-      className={cn("flex size-9 items-center justify-center", className)}
-      {...props}
-    >
-      <MoreHorizontalIcon className="size-4" />
-      <span className="sr-only">More pages</span>
-    </span>
-  );
-}
-
-export {
-  Pagination,
-  PaginationContent,
-  PaginationLink,
-  PaginationItem,
-  PaginationPrevious,
-  PaginationNext,
-  PaginationEllipsis,
 };
+
+export default Pagination;
