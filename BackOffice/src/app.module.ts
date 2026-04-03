@@ -7,6 +7,8 @@ import { AuthModule } from './auth/auth.module';
 import { ConfigModule } from '@nestjs/config';
 import { SkillModule } from './skill/skill.module';
 import { DepartmentModule } from './department/department.module';
+import { ActivityModule } from './activity/activity.module';
+import { NlpModule } from './nlp/nlp.module';
 
 @Module({
   imports: [
@@ -18,6 +20,8 @@ import { DepartmentModule } from './department/department.module';
     AuthModule,
     SkillModule,
     DepartmentModule,
+    ActivityModule,
+    NlpModule,
   ],
   controllers: [AppController],
   providers: [AppService],
