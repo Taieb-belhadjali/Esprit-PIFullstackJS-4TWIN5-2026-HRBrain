@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react';
-import { Search, Plus, X } from 'lucide-react';
+import { Search, Plus, X, Sparkles } from 'lucide-react';
 import axios from 'axios';
 import { ActivityCard } from '../activities/ActivityCard';
+import { extractSkills } from '../../../api/nlpApi';
 import { Activity } from '../activities/types';
 import { ActivityRecommendations } from '../activities/ActivityRecommendations';
 import { useVoiceCommand } from '../voice/VoiceCommandContext';
@@ -72,6 +73,46 @@ export function Activities({ userRole }: ActivitiesProps) {
     try { const res = await axios.get('http://localhost:3000/activities'); setActivities(res.data); }
     catch { setActivities([]); }
     finally { setLoading(false); }
+  };
+
+  // Extract skills from description using NLP with level detection
+  const handleExtractSkills = async () => {
+    if (!form.description || form.description.trim() === '') return;
+    
+    try {
+      const res = await extractSkills(form.description);
+      const extractedSkills = res.data.skills || [];
+      
+      // Map NLP levels to our levels
+      const levelMap: Record<string, string> = {
+        'Beginner': 'Low',
+        'Intermediate': 'Medium', 
+        'Advanced': 'High',
+        'Expert': 'Expert'
+      };
+      
+      // Add extracted skills to requiredSkills if not already present
+      const newSkills: SkillEntry[] = [];
+      for (const extracted of extractedSkills) {
+        const skillName = typeof extracted === 'string' ? extracted : extracted.skill;
+        const skillLevel = typeof extracted === 'string' ? 'Medium' : extracted.level;
+        
+        const skill = skills.find((s: any) => s.name.toLowerCase() === skillName.toLowerCase());
+        if (skill && !requiredSkills.find(rs => rs.skillId === skill._id)) {
+          newSkills.push({
+            skillId: skill._id,
+            level: levelMap[skillLevel] || 'Medium',
+            contributionToScore: 1
+          });
+        }
+      }
+      
+      if (newSkills.length > 0) {
+        setRequiredSkills([...requiredSkills, ...newSkills]);
+      }
+    } catch (err) {
+      console.error('Error extracting skills:', err);
+    }
   };
 
   const openCreate = () => {
@@ -263,9 +304,18 @@ export function Activities({ userRole }: ActivitiesProps) {
               </div>
 
               <div>
-                <label className="block text-sm text-gray-700 mb-1">Description</label>
+                <label className="block text-sm text-gray-700 mb-1">
+                  Description
+                  <button type="button" onClick={handleExtractSkills}
+                    className="ml-2 inline-flex items-center px-2 py-1 text-xs font-medium text-blue-600 hover:text-blue-800 hover:bg-blue-50 rounded transition"
+                    title="Extraire automatiquement les compétences">
+                    <Sparkles className="w-3 h-3 mr-1" />
+                    Extraire
+                  </button>
+                </label>
                 <textarea value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })}
-                  className="w-full px-3 py-2 border border-input rounded-lg focus:outline-none focus:ring-2 focus:ring-primary" rows={3} />
+                  className="w-full px-3 py-2 border border-input rounded-lg focus:outline-none focus:ring-2 focus:ring-primary" rows={3}
+                  placeholder="Décrivez l'activité... (ex: Formation React et Node.js pour équipe frontend)" />
               </div>
 
               <div className="grid grid-cols-2 gap-3">

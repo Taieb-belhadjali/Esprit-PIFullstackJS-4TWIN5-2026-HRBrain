@@ -8,6 +8,7 @@ import { ConfigModule } from '@nestjs/config';
 import { SkillModule } from './skill/skill.module';
 import { DepartmentModule } from './department/department.module';
 import { ActivityModule } from './activity/activity.module';
+import { NlpModule } from './nlp/nlp.module';
 
 @Module({
   imports: [
@@ -20,6 +21,7 @@ import { ActivityModule } from './activity/activity.module';
     SkillModule,
     DepartmentModule,
     ActivityModule,
+    NlpModule,
   ],
   controllers: [AppController],
   providers: [AppService],
