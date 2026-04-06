@@ -20,20 +20,43 @@ interface AuthState {
   mustChangePassword: boolean;
 }
 
-export default function App() {
-  const [auth, setAuth] = useState<AuthState | null>(null);
+const AUTH_KEY = 'hrbrain_auth';
 
-    const handleLogin = (result: { token: string; mustChangePassword: boolean; user: User }) => {
-        setAuth(result);
-    };
+function loadAuth(): AuthState | null {
+  try {
+    const raw = localStorage.getItem(AUTH_KEY);
+    return raw ? (JSON.parse(raw) as AuthState) : null;
+  } catch {
+    return null;
+  }
+}
+
+function saveAuth(auth: AuthState) {
+  localStorage.setItem(AUTH_KEY, JSON.stringify(auth));
+}
+
+function clearAuth() {
+  localStorage.removeItem(AUTH_KEY);
+}
+
+export default function App() {
+  const [auth, setAuth] = useState<AuthState | null>(loadAuth);
+
+  const handleLogin = (result: { token: string; mustChangePassword: boolean; user: User }) => {
+    saveAuth(result);
+    setAuth(result);
+  };
 
   const handlePasswordChanged = () => {
     if (auth) {
-      setAuth({ ...auth, mustChangePassword: false });
+      const updated = { ...auth, mustChangePassword: false };
+      saveAuth(updated);
+      setAuth(updated);
     }
   };
 
   const handleLogout = () => {
+    clearAuth();
     setAuth(null);
   };
 

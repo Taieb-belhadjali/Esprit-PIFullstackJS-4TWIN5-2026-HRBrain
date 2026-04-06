@@ -13,7 +13,7 @@ import { User, UserSchema } from '../users/shemas/user.shema';
     PassportModule,
     JwtModule.register({
       secret: 'hrbrain_secret_key',
-      signOptions: { expiresIn: '8h' },
+      signOptions: { expiresIn: '24h' },
     }),
     MongooseModule.forFeature([{ name: User.name, schema: UserSchema }]),
   ],
