@@ -242,8 +242,7 @@ export function Activities({ userRole }: ActivitiesProps) {
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
           <input
             type="text"
-            placeholder="Search activities..."
-            value={searchTerm}
+            placeholder="Search activities..."              aria-label="Rechercher une activité"            value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             className="w-full pl-10 pr-4 py-2 border border-input rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
           />
@@ -443,11 +442,12 @@ export function Activities({ userRole }: ActivitiesProps) {
                     type="number" min={1} max={100} value={contribPick}
                     onChange={(e) => setContribPick(Math.max(1, parseInt(e.target.value) || 1))}
                     className="w-16 px-2 py-2 border border-input rounded-lg text-sm text-center focus:outline-none focus:ring-2 focus:ring-primary"
-                    title="Poids (contribution au score)"
+                    aria-label="Poids (contribution au score)"
                   />
                   <button type="button" onClick={addSkill} disabled={!skillPick}
+                    aria-label="Ajouter le skill sélectionné"
                     className="px-3 py-2 bg-primary text-white rounded-lg text-sm hover:bg-primary/90 disabled:opacity-40 transition-colors">
-                    <Plus size={16} />
+                    <Plus size={16} aria-hidden="true" />
                   </button>
                 </div>
                 <p className="text-xs text-gray-400 mb-3">Le poids détermine l'importance relative de chaque skill dans le score.</p>
@@ -474,8 +474,9 @@ export function Activities({ userRole }: ActivitiesProps) {
                             title="Poids"
                           />
                           <button type="button" onClick={() => removeSkill(rs.skillId)}
+                            aria-label={`Retirer le skill ${skills.find(s => s._id === rs.skillId)?.name ?? rs.skillId}`}
                             className="p-1 text-red-400 hover:text-red-600 transition-colors">
-                            <X size={14} />
+                            <X size={14} aria-hidden="true" />
                           </button>
                         </div>
                       );

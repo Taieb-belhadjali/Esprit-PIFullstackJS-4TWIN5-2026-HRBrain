@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState, useCallback } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { Sidebar } from './Sidebar';
 import { Home } from '../views/Home';
@@ -13,6 +13,7 @@ import { Settings } from '../views/Settings';
 import { Departments } from '../views/Departments';
 import { VoiceAssistant } from '../voice/VoiceAssistant';
 import { VoiceCommandProvider } from '../voice/VoiceCommandContext';
+import { KeyboardShortcutsPanel } from '../ui/KeyboardShortcutsPanel';
 
 type UserRole = 'HR' | 'Manager' | 'Employee';
 
@@ -43,6 +44,7 @@ export function Dashboard({ user, onLogout }: DashboardProps) {
   const navigate = useNavigate();
   const location = useLocation();
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
+  const [showShortcuts, setShowShortcuts] = useState(false);
 
   const viewRoles: Record<ViewType, UserRole[]> = {
     home: ['HR', 'Manager', 'Employee'],
@@ -75,6 +77,84 @@ export function Dashboard({ user, onLogout }: DashboardProps) {
       navigate('/dashboard/home', { replace: true });
     }
   }, [currentView, location.pathname, navigate, user.role]);
+
+  // ── Raccourcis clavier globaux ─────────────────────────────────────────────
+  const handleKeyShortcuts = useCallback((e: KeyboardEvent) => {
+    // Ignorer si l'utilisateur tape dans un champ texte
+    const tag = (e.target as HTMLElement).tagName;
+    const isTyping = tag === 'INPUT' || tag === 'TEXTAREA' || (e.target as HTMLElement).isContentEditable;
+    if (isTyping) return;
+
+    // Alt+E → Employés  (e.code = touche physique, fonctionne sur macOS & Windows)
+    if (e.altKey && e.code === 'KeyE') {
+      e.preventDefault();
+      navigate('/dashboard/employees');
+      return;
+    }
+    // Alt+S → Skills
+    if (e.altKey && e.code === 'KeyS') {
+      e.preventDefault();
+      navigate('/dashboard/skills');
+      return;
+    }
+    // Alt+D → Départements
+    if (e.altKey && e.code === 'KeyD') {
+      e.preventDefault();
+      navigate('/dashboard/departments');
+      return;
+    }
+    // Alt+T → Activités  (Alt+A est réservé par Chrome sur macOS)
+    if (e.altKey && e.code === 'KeyT') {
+      e.preventDefault();
+      navigate('/dashboard/activities');
+      return;
+    }
+    // Alt+R → Recommandations
+    if (e.altKey && e.code === 'KeyR') {
+      e.preventDefault();
+      navigate('/dashboard/recommendations');
+      return;
+    }
+    // Alt+L → Analytics
+    if (e.altKey && e.code === 'KeyL') {
+      e.preventDefault();
+      navigate('/dashboard/analytics');
+      return;
+    }
+    // Alt+N → Notifications
+    if (e.altKey && e.code === 'KeyN') {
+      e.preventDefault();
+      navigate('/dashboard/notifications');
+      return;
+    }
+    // Alt+P → Profil
+    if (e.altKey && e.code === 'KeyP') {
+      e.preventDefault();
+      navigate('/dashboard/profile');
+      return;
+    }
+    // Alt+H → Accueil
+    if (e.altKey && e.code === 'KeyH') {
+      e.preventDefault();
+      navigate('/dashboard/home');
+      return;
+    }
+    // ? → Aide raccourcis
+    if (e.key === '?') {
+      e.preventDefault();
+      setShowShortcuts(s => !s);
+      return;
+    }
+    // Échap → Fermer panneau
+    if (e.key === 'Escape') {
+      setShowShortcuts(false);
+    }
+  }, [navigate]);
+
+  useEffect(() => {
+    window.addEventListener('keydown', handleKeyShortcuts, { capture: true });
+    return () => window.removeEventListener('keydown', handleKeyShortcuts, { capture: true });
+  }, [handleKeyShortcuts]);
 
   const renderView = () => {
     switch (currentView) {
@@ -119,6 +199,11 @@ export function Dashboard({ user, onLogout }: DashboardProps) {
         </main>
         <VoiceAssistant />
       </div>
+
+      {/* Panneau raccourcis clavier (touche ?) */}
+      {showShortcuts && (
+        <KeyboardShortcutsPanel onClose={() => setShowShortcuts(false)} />
+      )}
     </VoiceCommandProvider>
   );
 }

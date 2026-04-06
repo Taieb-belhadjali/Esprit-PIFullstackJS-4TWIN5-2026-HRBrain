@@ -19,6 +19,7 @@ export class SkillService {
     return createdSkill.save();
   }
 
+  // Retourne tous les skills, filtrés par département si fourni
   async findAll(departmentId?: string): Promise<SkillDocument[]> {
     const filter: any = {};
     if (departmentId) {
@@ -35,6 +36,7 @@ export class SkillService {
     return skill;
   }
 
+  // Met à jour un skill (PATCH partiel)
   async update(
     id: string,
     updateSkillDto: UpdateSkillDto,
@@ -49,7 +51,6 @@ export class SkillService {
     return updatedSkill;
   }
 
- 
   async remove(id: string): Promise<SkillDocument> {
     const deletedSkill = await this.skillModel.findByIdAndDelete(id).exec();
     if (!deletedSkill) {

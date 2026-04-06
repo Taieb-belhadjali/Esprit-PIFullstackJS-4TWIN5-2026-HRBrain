@@ -84,15 +84,15 @@ export function Profile({ user }: ProfileProps) {
               <h2 className="text-2xl mb-2 text-gray-900">{user.name}</h2>
               <div className="space-y-2 text-muted-foreground">
                 <div className="flex items-center gap-2">
-                  <Mail className="w-4 h-4" />
+                  <Mail className="w-4 h-4" aria-hidden="true" />
                   <span>{user.email}</span>
                 </div>
                 <div className="flex items-center gap-2">
-                  <Briefcase className="w-4 h-4" />
+                  <Briefcase className="w-4 h-4" aria-hidden="true" />
                   <span>{user.role}</span>
                 </div>
                 <div className="flex items-center gap-2">
-                  <Calendar className="w-4 h-4" />
+                  <Calendar className="w-4 h-4" aria-hidden="true" />
                   <span>Joined January 2022</span>
                 </div>
               </div>
