@@ -1,4 +1,0 @@
-Parcel Communication:HIGH:69cce23b8574b42b914945c3
-Authentication:EXPERT:69cce23b8574b42b914945c3
-Jest Testing:MEDIUM:69cce23b8574b42b914945c3
-Bulma:MEDIUM:69cce23b8574b42b914945c3

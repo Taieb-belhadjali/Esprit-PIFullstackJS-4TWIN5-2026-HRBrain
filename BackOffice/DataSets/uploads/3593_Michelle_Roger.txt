@@ -1,5 +1,0 @@
-Web Performance:LOW:69cce23b8574b42b914945c3
-Revel:HIGH:69cce23b8574b42b914945c3
-Nim Integration:MEDIUM:69cce23b8574b42b914945c3
-Server-Sent Events:MEDIUM:69cce23b8574b42b914945c3
-Delphi Communication:LOW:69cce23b8574b42b914945c3

@@ -1,3 +1,0 @@
-Playwright:LOW:69cce23b8574b42b914945c3
-Aurelia Creative:MEDIUM:69cce23b8574b42b914945c3
-Server-Sent Events:EXPERT:69cce23b8574b42b914945c3

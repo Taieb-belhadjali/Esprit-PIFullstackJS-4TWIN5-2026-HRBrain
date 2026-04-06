@@ -1,3 +1,0 @@
-Unsupervised Learning:EXPERT:69cce23b8574b42b914945c3
-Redis Pub/Sub Debugging:EXPERT:69cce23b8574b42b914945c3
-Prolog:LOW:69cce23b8574b42b914945c3

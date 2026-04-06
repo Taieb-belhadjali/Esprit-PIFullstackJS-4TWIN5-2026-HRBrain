@@ -1,4 +1,0 @@
-Event-Driven Architecture Integration:LOW:69cce23b8574b42b914945c3
-Monolithic:HIGH:69cce23b8574b42b914945c3
-OCaml:LOW:69cce23b8574b42b914945c3
-Terraform:EXPERT:69cce23b8574b42b914945c3

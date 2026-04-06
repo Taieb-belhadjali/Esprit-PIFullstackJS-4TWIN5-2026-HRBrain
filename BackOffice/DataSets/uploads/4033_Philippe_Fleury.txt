@@ -1,4 +1,0 @@
-Product Metrics:LOW:69cce23b8574b42b914945c3
-Entity Framework:HIGH:69cce23b8574b42b914945c3
-RabbitMQ:MEDIUM:69cce23b8574b42b914945c3
-Styled Components:MEDIUM:69cce23b8574b42b914945c3

@@ -1,4 +1,0 @@
-Ruby on Rails:LOW:69cce23b8574b42b914945c3
-Hyperapp Integration:HIGH:69cce23b8574b42b914945c3
-ISO 27001:MEDIUM:69cce23b8574b42b914945c3
-Cross-Cultural Communication:EXPERT:69cce23b8574b42b914945c3

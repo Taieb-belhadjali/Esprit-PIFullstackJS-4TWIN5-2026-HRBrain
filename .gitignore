@@ -34,6 +34,9 @@ Thumbs.db
 BackOffice/uploads/
 FrontOffice/uploads/
 
+# Dataset CV files (large dataset, not needed in git)
+BackOffice/DataSets/uploads/
+
 # Database
 .mongodb/
 

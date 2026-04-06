@@ -1,3 +1,0 @@
-Jasmine:MEDIUM:69cce23b8574b42b914945c3
-Entity Framework Communication:MEDIUM:69cce23b8574b42b914945c3
-Delphi:EXPERT:69cce23b8574b42b914945c3

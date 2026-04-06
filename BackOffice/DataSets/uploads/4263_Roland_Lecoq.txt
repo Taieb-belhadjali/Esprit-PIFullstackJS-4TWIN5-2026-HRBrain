@@ -1,6 +1,0 @@
-Asynchronous Communication:MEDIUM:69cce23b8574b42b914945c3
-Erlang:HIGH:69cce23b8574b42b914945c3
-Snowpack:MEDIUM:69cce23b8574b42b914945c3
-Vert.x:HIGH:69cce23b8574b42b914945c3
-Mithril:HIGH:69cce23b8574b42b914945c3
-Server-Sent Events Communication:EXPERT:69cce23b8574b42b914945c3

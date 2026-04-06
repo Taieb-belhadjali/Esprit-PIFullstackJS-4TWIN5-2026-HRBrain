@@ -1,3 +1,0 @@
-Shell Scripting:HIGH:69cce23b8574b42b914945c3
-Bottle:HIGH:69cce23b8574b42b914945c3
-CSRF Protection Testing:MEDIUM:69cce23b8574b42b914945c3

@@ -1,4 +1,0 @@
-Recoil Deployment:LOW:69cce23b8574b42b914945c3
-Slim Integration:HIGH:69cce23b8574b42b914945c3
-Bottle Strategic:MEDIUM:69cce23b8574b42b914945c3
-Apache Pulsar:MEDIUM:69cce23b8574b42b914945c3

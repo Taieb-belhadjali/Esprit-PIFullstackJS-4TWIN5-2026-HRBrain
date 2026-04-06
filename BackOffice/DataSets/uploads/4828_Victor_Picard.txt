@@ -1,5 +1,0 @@
-Testing Library:EXPERT:69cce23b8574b42b914945c3
-Crystal Strategic:LOW:69cce23b8574b42b914945c3
-Dapper:LOW:69cce23b8574b42b914945c3
-Solid.js:MEDIUM:69cce23b8574b42b914945c3
-Express.js Testing:LOW:69cce23b8574b42b914945c3

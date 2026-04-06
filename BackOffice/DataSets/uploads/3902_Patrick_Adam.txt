@@ -1,6 +1,0 @@
-Apache Kafka Communication:HIGH:69cce23b8574b42b914945c3
-PostCSS:HIGH:69cce23b8574b42b914945c3
-Redis Pub/Sub Operations:EXPERT:69cce23b8574b42b914945c3
-Mobile-First:HIGH:69cce23b8574b42b914945c3
-esbuild:MEDIUM:69cce23b8574b42b914945c3
-Authentication:HIGH:69cce23b8574b42b914945c3

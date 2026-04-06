@@ -1,4 +1,0 @@
-Symfony Creative:LOW:69cce23b8574b42b914945c3
-High Availability:MEDIUM:69cce23b8574b42b914945c3
-PostgreSQL:LOW:69cce23b8574b42b914945c3
-Objective-C:MEDIUM:69cce23b8574b42b914945c3

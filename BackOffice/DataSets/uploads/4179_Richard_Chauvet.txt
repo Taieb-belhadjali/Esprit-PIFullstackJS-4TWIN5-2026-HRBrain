@@ -1,4 +1,0 @@
-Slim Communication:MEDIUM:69cce23b8574b42b914945c3
-Spring Boot:LOW:69cce23b8574b42b914945c3
-Oracle:EXPERT:69cce23b8574b42b914945c3
-Revel Integration:EXPERT:69cce23b8574b42b914945c3

@@ -1,3 +1,0 @@
-CodeIgniter:HIGH:69cce23b8574b42b914945c3
-XState:LOW:69cce23b8574b42b914945c3
-Authorization:LOW:69cce23b8574b42b914945c3
