@@ -1,0 +1,7 @@
+Polymer:HIGH:69cce23b8574b42b914945c3
+Recoil:LOW:69cce23b8574b42b914945c3
+GraphQL Communication:LOW:69cce23b8574b42b914945c3
+Accessibility Testing:LOW:69cce23b8574b42b914945c3
+Pinia:HIGH:69cce23b8574b42b914945c3
+Cypress Creative:HIGH:69cce23b8574b42b914945c3
+Styled Components:HIGH:69cce23b8574b42b914945c3

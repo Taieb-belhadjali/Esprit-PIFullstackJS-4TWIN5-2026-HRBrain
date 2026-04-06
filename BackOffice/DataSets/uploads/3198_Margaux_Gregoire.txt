@@ -1,0 +1,7 @@
+ARIA:MEDIUM:69cce23b8574b42b914945c3
+Web Performance:MEDIUM:69cce23b8574b42b914945c3
+Entity Framework:EXPERT:69cce23b8574b42b914945c3
+Testing Library:MEDIUM:69cce23b8574b42b914945c3
+TimescaleDB:MEDIUM:69cce23b8574b42b914945c3
+Monolithic Architecture Creative:LOW:69cce23b8574b42b914945c3
+Go Integration:LOW:69cce23b8574b42b914945c3

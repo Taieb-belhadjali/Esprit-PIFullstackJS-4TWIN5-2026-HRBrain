@@ -44,7 +44,7 @@ export class Activity {
   createdById?: Types.ObjectId;
 
   @Prop({ default: 0 })
-  maxRecommandation: number;
+  nombreDePlaces: number;
 
   @Prop({ type: Types.ObjectId, ref: 'Department', required: false })
   targetedDepartmentId?: Types.ObjectId;

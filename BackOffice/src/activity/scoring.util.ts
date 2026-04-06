@@ -26,7 +26,8 @@ export function parseCvSkillLevels(
   const result: EmployeeSkillLevel[] = [];
   for (const line of cvText.split('\n')) {
     const trimmed = line.trim();
-    const match = trimmed.match(/^([A-Za-z0-9\s#\+\.\-\_@]+):([A-Za-z]+)$/i);
+    // Accept both "NAME:LEVEL" and "NAME:LEVEL:optionalId"
+    const match = trimmed.match(/^([A-Za-z0-9\s#\+\.\-\_@]+):([A-Za-z]+)(?::[^\s]*)?$/i);
     if (!match) continue;
     const name = match[1].trim().toUpperCase();
     const level = match[2].toUpperCase();
@@ -132,7 +133,7 @@ export function calculateProgressionScore(
 export function calculateContextScore(activityContext: string): number {
   const ctx = (activityContext ?? '').toLowerCase();
   let bonus = 0;
-  if (ctx === 'upskilling')    bonus = 20;
+  if (ctx === 'upskilling')         bonus = 20;
   else if (ctx === 'consolidation') bonus = 15;
   else if (ctx === 'expertise')     bonus = 25;
   return Math.min(50 + bonus, 100);

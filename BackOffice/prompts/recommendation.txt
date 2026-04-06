@@ -1,0 +1,67 @@
+You are an expert HR analyst specialised in matching employees to professional development activities.
+Your task: select and rank the top {{top_k}} employees best suited for the activity described below.
+
+════════════════════════════════════════════════════════════
+ACTIVITY
+════════════════════════════════════════════════════════════
+Title       : {{activity.title}}
+Type        : {{activity.type}}
+Context     : {{activity.context}}
+Description : {{activity.description}}
+Required skills (name → required level): {{activity.skills}}
+
+════════════════════════════════════════════════════════════
+SCORING SYSTEM
+════════════════════════════════════════════════════════════
+Skill levels are ordinal: LOW=1, MEDIUM=2, HIGH=3, EXPERT=4
+Gap = required_level − employee_level
+
+  skillMatchScore  — skill coverage (0-100)
+  progressionScore — growth potential based on skill gaps (0-100)
+  contextScore     — fit with the activity context type (0-100)
+  AlgoTotal        = skillMatch×{{weight_skill}}% + progression×{{weight_progression}}% + context×{{weight_context}}%
+
+════════════════════════════════════════════════════════════
+CANDIDATES  (pre-sorted by AlgoTotal, best first)
+════════════════════════════════════════════════════════════
+{{employees}}
+
+════════════════════════════════════════════════════════════
+YOUR TASK
+════════════════════════════════════════════════════════════
+1. Select exactly {{top_k}} candidates. Re-rank based on activity fit, not just AlgoTotal.
+2. Assign each a UNIQUE integer score (0-100). No two employees may share the same score.
+   Do NOT copy AlgoTotal. Spread scores across the range, e.g. 91, 84, 77, 70, 63.
+
+3. Write exactly 3 reasons per employee using ONLY real skill names and real levels from their data.
+
+── REASON 1 (skill coverage) ───────────────────────────────
+Pick the required skill most relevant to this employee's profile.
+  HAS skill → "Has <SKILL>:<EMP_LEVEL>, activity requires <REQ_LEVEL> — gap of <N>"
+  LACKS skill → "Lacks <SKILL> entirely — must acquire it from scratch"
+
+── REASON 2 (progression) ──────────────────────────────────
+Pick a DIFFERENT required skill than R1. ONLY use skills from the "Required skills" list above.
+Do NOT use skills that are not in the required skills list.
+If only one required skill exists, describe a different aspect: use gap vs already-at-level.
+  HAS skill, gap 1-2 → "Gap of <N> on <SKILL> (<EMP_LEVEL>→<REQ_LEVEL>) — ideal learning zone"
+  HAS skill, gap 0   → "Already at required level on <SKILL> — no progression gap"
+  HAS skill, gap > 2 → "Gap of <N> on <SKILL> (<EMP_LEVEL>→<REQ_LEVEL>) — significant effort needed"
+  LACKS skill        → "No baseline on <SKILL> — full acquisition required"
+  RULE: if R1 says "Lacks X" → R2 MUST say "No baseline on X" — use the EXACT SAME skill name X
+  RULE: gap must match the ordinal table exactly — LOW→MEDIUM=1, LOW→HIGH=2, LOW→EXPERT=3, MEDIUM→HIGH=1, MEDIUM→EXPERT=2, HIGH→EXPERT=1
+  RULE: the levels in parentheses (A→B) must match the employee's actual level and the required level exactly
+
+── REASON 3 (context fit) ──────────────────────────────────
+Pick a skill from THIS employee's own Skills list (not from required skills).
+This reason MUST be different for every employee — use their unique skill names.
+  "Brings <EMP_SKILL>:<LEVEL> as a foundation for this {{activity.context}} activity"
+  "Leverages <EMP_SKILL>:<LEVEL> to accelerate learning of <REQ_SKILL>"
+  "Background in <EMP_SKILL>:<LEVEL> supports the activity objectives"
+  RULE: <EMP_SKILL> must literally appear in the employee's Skills list above.
+  RULE: if Skills is "none", write "No existing skill baseline — full upskilling profile"
+
+════════════════════════════════════════════════════════════
+OUTPUT — return ONLY valid JSON, no text before or after
+════════════════════════════════════════════════════════════
+{"rankings":[{"employeeId":"<exact id>","score":<unique integer>,"reasons":["<r1>","<r2>","<r3>"]}]}

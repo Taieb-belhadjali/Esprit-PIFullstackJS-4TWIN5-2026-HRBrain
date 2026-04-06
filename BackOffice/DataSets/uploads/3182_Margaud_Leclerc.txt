@@ -1,0 +1,10 @@
+Micronaut Strategic:LOW:69cce23b8574b42b914945c3
+Playwright Communication:EXPERT:69cce23b8574b42b914945c3
+Server-Sent Events:LOW:69cce23b8574b42b914945c3
+FastAPI:LOW:69cce23b8574b42b914945c3
+UIKit Strategic:MEDIUM:69cce23b8574b42b914945c3
+Jest:LOW:69cce23b8574b42b914945c3
+React Query:HIGH:69cce23b8574b42b914945c3
+XState Expert:HIGH:69cce23b8574b42b914945c3
+Event Sourcing Communication:EXPERT:69cce23b8574b42b914945c3
+Authorization:MEDIUM:69cce23b8574b42b914945c3

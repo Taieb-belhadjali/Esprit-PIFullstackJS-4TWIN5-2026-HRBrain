@@ -14,7 +14,7 @@ export interface Activity {
   startDate?: string;
   endDate?: string;
   createdById?: string;
-  maxRecommandation: number;
+  nombreDePlaces: number;
   targetedDepartmentId?: string;
   requiredSkills: RequiredSkill[];
   createdAt?: string;

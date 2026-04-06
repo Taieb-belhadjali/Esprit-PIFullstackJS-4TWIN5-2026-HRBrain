@@ -1,0 +1,6 @@
+Firebase Firestore:MEDIUM:69cce23b8574b42b914945c3
+Caching Strategies:LOW:69cce23b8574b42b914945c3
+Event-Driven Architecture Strategic:LOW:69cce23b8574b42b914945c3
+C#:HIGH:69cce23b8574b42b914945c3
+Oracle:HIGH:69cce23b8574b42b914945c3
+Hapi:LOW:69cce23b8574b42b914945c3

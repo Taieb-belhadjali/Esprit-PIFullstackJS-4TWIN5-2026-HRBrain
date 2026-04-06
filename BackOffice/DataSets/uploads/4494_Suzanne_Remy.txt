@@ -1,0 +1,4 @@
+GraphQL API:LOW:69cce23b8574b42b914945c3
+Responsive Design Communication:LOW:69cce23b8574b42b914945c3
+MariaDB Communication:EXPERT:69cce23b8574b42b914945c3
+Monday.com:MEDIUM:69cce23b8574b42b914945c3

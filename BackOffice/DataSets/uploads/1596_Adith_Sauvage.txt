@@ -1,0 +1,4 @@
+Erlang:HIGH:69cce23b8574b42b914945c3
+Crystal Deployment:MEDIUM:69cce23b8574b42b914945c3
+Testing Library Strategic:MEDIUM:69cce23b8574b42b914945c3
+Vert.x:MEDIUM:69cce23b8574b42b914945c3

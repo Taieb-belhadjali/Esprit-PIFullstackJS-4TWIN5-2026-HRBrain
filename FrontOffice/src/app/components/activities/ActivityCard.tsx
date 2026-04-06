@@ -1,5 +1,5 @@
 import React from 'react';
-import { Calendar, Target, Edit, Trash2, Tag, Building2, BookOpen, Users } from 'lucide-react';
+import { Calendar, Target, Edit, Trash2, Tag, Building2, BookOpen, Users, History } from 'lucide-react';
 import { Activity, RequiredSkill } from './types';
 
 type UserRole = 'HR' | 'Manager' | 'Employee';
@@ -11,6 +11,7 @@ interface ActivityCardProps {
   onEdit: (activity: Activity) => void;
   onDelete: (id: string) => void;
   onRecommend?: (activity: Activity) => void;
+  onHistory?: (activity: Activity) => void;
 }
 
 const statusColors: Record<string, string> = {
@@ -23,7 +24,7 @@ const statusColors: Record<string, string> = {
 const contextColors: Record<string, string> = {
   Upskilling: 'bg-blue-50 text-blue-600',
   Expertise: 'bg-purple-50 text-purple-600',
-  Development: 'bg-green-50 text-green-600',
+  Consolidation: 'bg-green-50 text-green-600',
 };
 
 const levelColors: Record<string, string> = {
@@ -45,6 +46,7 @@ const ActivityCard: React.FC<ActivityCardProps> = ({
   onEdit,
   onDelete,
   onRecommend,
+  onHistory,
 }) => {
   const canManage = userRole === 'HR' || userRole === 'Manager';
 
@@ -79,6 +81,15 @@ const ActivityCard: React.FC<ActivityCardProps> = ({
 
           {canManage && (
             <div className="flex gap-2 ml-3 opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity">
+              {onHistory && (
+                <button
+                  onClick={() => onHistory(activity)}
+                  className="p-2 rounded-lg bg-purple-50 hover:bg-purple-100 text-purple-600 transition-all hover:scale-110"
+                  title="Historique recommandations"
+                >
+                  <History size={16} />
+                </button>
+              )}
               {onRecommend && (
                 <button
                   onClick={() => onRecommend(activity)}
@@ -125,10 +136,10 @@ const ActivityCard: React.FC<ActivityCardProps> = ({
               </span>
             </div>
           )}
-          {activity.maxRecommandation > 0 && (
+          {activity.nombreDePlaces > 0 && (
             <div className="flex items-center gap-1.5">
               <Target size={14} className="text-purple-500" />
-              <span>{activity.maxRecommandation} recommandation(s)</span>
+              <span>{activity.nombreDePlaces} place(s)</span>
             </div>
           )}
           {departmentName && (

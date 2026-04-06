@@ -1,0 +1,5 @@
+React Native:HIGH:69cce23b8574b42b914945c3
+Karma Expert:LOW:69cce23b8574b42b914945c3
+Foundation Deployment:HIGH:69cce23b8574b42b914945c3
+MariaDB:HIGH:69cce23b8574b42b914945c3
+Snowpack:LOW:69cce23b8574b42b914945c3

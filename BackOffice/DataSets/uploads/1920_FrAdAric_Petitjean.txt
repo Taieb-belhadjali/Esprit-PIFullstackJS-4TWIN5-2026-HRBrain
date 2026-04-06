@@ -1,0 +1,9 @@
+Oracle Communication:LOW:69cce23b8574b42b914945c3
+Ember.js Integration:LOW:69cce23b8574b42b914945c3
+Actix Creative:MEDIUM:69cce23b8574b42b914945c3
+MongoDB Creative:LOW:69cce23b8574b42b914945c3
+Prolog:EXPERT:69cce23b8574b42b914945c3
+R:MEDIUM:69cce23b8574b42b914945c3
+Testing Library:LOW:69cce23b8574b42b914945c3
+Bootstrap Communication:LOW:69cce23b8574b42b914945c3
+Confluence:EXPERT:69cce23b8574b42b914945c3

@@ -5,6 +5,7 @@ import { ActivityCard } from '../activities/ActivityCard';
 import { extractSkills } from '../../../api/nlpApi';
 import { Activity } from '../activities/types';
 import { ActivityRecommendations } from '../activities/ActivityRecommendations';
+import { ActivityRecommendationHistory } from '../activities/ActivityRecommendationHistory';
 import { useVoiceCommand } from '../voice/VoiceCommandContext';
 import Pagination from '../ui/Pagination';
 
@@ -24,7 +25,7 @@ const EMPTY_FORM = {
   status: 'Draft',
   startDate: '',
   endDate: '',
-  maxRecommandation: 0,
+  nombreDePlaces: 0,
   targetedDepartmentId: '',
 };
 
@@ -43,9 +44,13 @@ export function Activities({ userRole }: ActivitiesProps) {
   const [skillPick, setSkillPick] = useState('');
   const [levelPick, setLevelPick] = useState('Medium');
   const [contribPick, setContribPick] = useState(1);
+  const [skillSearch, setSkillSearch] = useState('');
+  const [showSkillDropdown, setShowSkillDropdown] = useState(false);
   const [recommendActivity, setRecommendActivity] = useState<Activity | null>(null);
+  const [historyActivity, setHistoryActivity] = useState<Activity | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 9;
+
   const { pendingCommand, commandData, clearPendingCommand } = useVoiceCommand();
 
   useEffect(() => { fetchDepartments(); fetchActivities(); fetchSkills(); }, []);
@@ -122,6 +127,7 @@ export function Activities({ userRole }: ActivitiesProps) {
     setSkillPick('');
     setLevelPick('Medium');
     setContribPick(1);
+    setSkillSearch('');
     setShowModal(true);
   };
 
@@ -135,7 +141,7 @@ export function Activities({ userRole }: ActivitiesProps) {
       status: activity.status,
       startDate: activity.startDate ? activity.startDate.slice(0, 10) : '',
       endDate: activity.endDate ? activity.endDate.slice(0, 10) : '',
-      maxRecommandation: activity.maxRecommandation,
+      nombreDePlaces: activity.nombreDePlaces,
       targetedDepartmentId: activity.targetedDepartmentId ?? '',
     });
     // normalize requiredSkills (populated or raw)
@@ -149,6 +155,7 @@ export function Activities({ userRole }: ActivitiesProps) {
     setSkillPick('');
     setLevelPick('Medium');
     setContribPick(1);
+    setSkillSearch('');
     setShowModal(true);
   };
 
@@ -157,6 +164,7 @@ export function Activities({ userRole }: ActivitiesProps) {
     if (requiredSkills.some((rs) => rs.skillId === skillPick)) return;
     setRequiredSkills([...requiredSkills, { skillId: skillPick, level: levelPick, contributionToScore: contribPick }]);
     setSkillPick('');
+    setSkillSearch('');
     setLevelPick('Medium');
     setContribPick(1);
   };
@@ -195,7 +203,7 @@ export function Activities({ userRole }: ActivitiesProps) {
 
   const createActivityDirectly = async (name: string) => {
     try {
-      await axios.post('http://localhost:3000/activities', { title: name, status: 'Draft', maxRecommandation: 0, requiredSkills: [] });
+      await axios.post('http://localhost:3000/activities', { title: name, status: 'Draft', nombreDePlaces: 0, requiredSkills: [] });
       fetchActivities();
     } catch { alert(`Erreur lors de la création de "${name}"`); }
   };
@@ -273,6 +281,7 @@ export function Activities({ userRole }: ActivitiesProps) {
                   onEdit={openEdit}
                   onDelete={handleDelete}
                   onRecommend={canManage ? setRecommendActivity : undefined}
+                  onHistory={canManage ? setHistoryActivity : undefined}
                 />
               );
             })}
@@ -332,7 +341,7 @@ export function Activities({ userRole }: ActivitiesProps) {
                     <option value="">-- Choisir --</option>
                     <option value="Upskilling">Upskilling</option>
                     <option value="Expertise">Expertise</option>
-                    <option value="Development">Development</option>
+                    <option value="Consolidation">Consolidation</option>
                   </select>
                 </div>
               </div>
@@ -349,9 +358,9 @@ export function Activities({ userRole }: ActivitiesProps) {
                   </select>
                 </div>
                 <div>
-                  <label className="block text-sm text-gray-700 mb-1">Max recommandations</label>
-                  <input type="number" min={0} value={form.maxRecommandation}
-                    onChange={(e) => setForm({ ...form, maxRecommandation: parseInt(e.target.value) || 0 })}
+                  <label className="block text-sm text-gray-700 mb-1">Nombre de places</label>
+                  <input type="number" min={0} value={form.nombreDePlaces}
+                    onChange={(e) => setForm({ ...form, nombreDePlaces: parseInt(e.target.value) || 0 })}
                     className="w-full px-3 py-2 border border-input rounded-lg focus:outline-none focus:ring-2 focus:ring-primary" />
                 </div>
               </div>
@@ -384,13 +393,48 @@ export function Activities({ userRole }: ActivitiesProps) {
 
                 {/* Picker */}
                 <div className="flex gap-2 mb-3">
-                  <select value={skillPick} onChange={(e) => setSkillPick(e.target.value)}
-                    className="flex-1 px-3 py-2 border border-input rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary">
-                    <option value="">-- Choisir un skill --</option>
-                    {skills
-                      .filter((s) => !requiredSkills.some((rs) => rs.skillId === s._id))
-                      .map((s) => <option key={s._id} value={s._id}>{s.name}</option>)}
-                  </select>
+                  {/* Autocomplete skill search */}
+                  <div className="relative flex-1">
+                    <input
+                      type="text"
+                      value={skillSearch}
+                      onChange={(e) => { setSkillSearch(e.target.value); setSkillPick(''); setShowSkillDropdown(true); }}
+                      onFocus={() => setShowSkillDropdown(true)}
+                      onBlur={() => setTimeout(() => setShowSkillDropdown(false), 150)}
+                      placeholder="Rechercher un skill..."
+                      className="w-full px-3 py-2 border border-input rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary"
+                    />
+                    {showSkillDropdown && skillSearch.trim().length > 0 && (
+                      <div className="absolute z-10 top-full left-0 right-0 mt-1 bg-white border border-gray-200 rounded-lg shadow-lg max-h-48 overflow-y-auto">
+                        {skills
+                          .filter((s) =>
+                            s.name.toLowerCase().includes(skillSearch.toLowerCase()) &&
+                            !requiredSkills.some((rs) => rs.skillId === s._id)
+                          )
+                          .slice(0, 20)
+                          .map((s) => (
+                            <button
+                              key={s._id}
+                              type="button"
+                              onMouseDown={() => {
+                                setSkillPick(s._id);
+                                setSkillSearch(s.name);
+                                setShowSkillDropdown(false);
+                              }}
+                              className="w-full text-left px-3 py-2 text-sm hover:bg-primary/10 hover:text-primary transition-colors"
+                            >
+                              {s.name}
+                            </button>
+                          ))}
+                        {skills.filter((s) =>
+                          s.name.toLowerCase().includes(skillSearch.toLowerCase()) &&
+                          !requiredSkills.some((rs) => rs.skillId === s._id)
+                        ).length === 0 && (
+                          <p className="px-3 py-2 text-sm text-gray-400">Aucun skill trouvé</p>
+                        )}
+                      </div>
+                    )}
+                  </div>
                   <select value={levelPick} onChange={(e) => setLevelPick(e.target.value)}
                     className="px-2 py-2 border border-input rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary">
                     {LEVELS.map((l) => <option key={l} value={l}>{l}</option>)}
@@ -460,6 +504,15 @@ export function Activities({ userRole }: ActivitiesProps) {
           activityId={recommendActivity._id}
           activityTitle={recommendActivity.title}
           onClose={() => setRecommendActivity(null)}
+        />
+      )}
+
+      {/* History Panel */}
+      {historyActivity && (
+        <ActivityRecommendationHistory
+          activityId={historyActivity._id}
+          activityTitle={historyActivity.title}
+          onClose={() => setHistoryActivity(null)}
         />
       )}
     </div>

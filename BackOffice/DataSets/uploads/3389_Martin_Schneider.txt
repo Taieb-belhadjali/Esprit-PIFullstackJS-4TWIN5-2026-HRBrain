@@ -1,0 +1,6 @@
+Spring Boot Communication:MEDIUM:69cce23b8574b42b914945c3
+Monolithic Architecture Expert:LOW:69cce23b8574b42b914945c3
+B2C Sales:LOW:69cce23b8574b42b914945c3
+Backbone.js:MEDIUM:69cce23b8574b42b914945c3
+Mobile-First:HIGH:69cce23b8574b42b914945c3
+Julia:LOW:69cce23b8574b42b914945c3
