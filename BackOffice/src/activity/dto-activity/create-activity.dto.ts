@@ -49,7 +49,7 @@ export class CreateActivityDto {
 
   @IsOptional()
   @IsNumber()
-  maxRecommandation?: number;
+  nombreDePlaces?: number;
 
   @IsOptional()
   @IsMongoId()
