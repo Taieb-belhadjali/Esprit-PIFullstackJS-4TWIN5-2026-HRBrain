@@ -199,7 +199,7 @@ export const VoiceAssistant: React.FC<{}> = () => {
   // ── Keyboard shortcut Alt+M ───────────────────────────────────────────────
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
-      if (e.altKey && e.key.toLowerCase() === 'm') {
+      if (e.altKey && e.code === 'KeyM') {
         e.preventDefault();
         if (!listening && !speaking && recognitionRef.current) {
           setIsOpen(true);

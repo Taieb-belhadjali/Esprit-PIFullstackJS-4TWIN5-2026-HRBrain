@@ -278,6 +278,10 @@ export const Skills: React.FC<SkillsProps> = ({ userRole }) => {
       {selectedSkill && (
         <SkillGrandFormatCard
           skill={selectedSkill}
+          departmentName={(() => {
+            const department = departments.find((dep) => dep._id === selectedSkill.departmentId);
+            return department ? department.name : undefined;
+          })()}
           onClose={() => setSelectedSkill(null)}
           onEdit={(skill) => {
             setSelectedSkill(null);

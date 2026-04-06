@@ -26,26 +26,37 @@ const SkillCard: React.FC<SkillCardProps> = ({
   userRole,
   onEdit,
   onDelete,
+  onPreview,
 }) => {
   const canManage = userRole === 'HR';
 
   return (
     <div
-      className="group cursor-pointer bg-white rounded-xl shadow-md hover:shadow-xl transition-all duration-300 border border-gray-100 overflow-hidden hover:border-blue-200"
+      className="group cursor-pointer bg-white rounded-xl shadow-sm hover:shadow-md transition-all duration-300 border border-border overflow-hidden hover:border-primary/40"
+      onClick={() => {
+        if (onPreview) {
+          onPreview(skillObj);
+        }
+      }}
     >
       {/* Header with gradient accent */}
-      <div className="h-1 bg-gradient-to-r from-blue-500 to-indigo-600"></div>
+      <div className="h-1 bg-gradient-to-r from-primary via-primary/70 to-primary/40"></div>
 
       <div className="p-5 flex justify-between items-start">
         <div className="flex-1">
-          <h3 className="text-lg font-bold text-gray-900 group-hover:text-blue-600 transition-colors">
+          <h3 className="text-base font-semibold text-gray-900 group-hover:text-primary transition-colors">
             {name}
           </h3>
           {departmentName && (
-            <p className="text-xs text-blue-700 font-semibold mt-1">Département : {departmentName}</p>
+            <p className="mt-1 inline-flex items-center gap-1 rounded-full bg-secondary px-2.5 py-0.5 text-[11px] font-medium text-muted-foreground">
+              <span className="h-1.5 w-1.5 rounded-full bg-primary" />
+              Département : {departmentName}
+            </p>
           )}
           {description && (
-            <p className="text-gray-600 text-sm mt-2 leading-relaxed">{description}</p>
+            <p className="mt-2 text-sm text-muted-foreground leading-relaxed line-clamp-3">
+              {description}
+            </p>
           )}
         </div>
 
@@ -57,7 +68,7 @@ const SkillCard: React.FC<SkillCardProps> = ({
               event.stopPropagation();
               onEdit(id);
             }}
-            className="p-2 rounded-lg bg-blue-50 hover:bg-blue-100 text-blue-600 hover:text-blue-700 transition-all hover:scale-110 active:scale-95"
+            className="p-2 rounded-lg bg-primary/10 hover:bg-primary/15 text-primary hover:text-primary transition-all hover:scale-110 active:scale-95"
             title="Modifier"
             aria-label="Modifier"
           >

@@ -134,7 +134,7 @@ export function Recommendations({ userRole }: RecommendationsProps) {
         </select>
 
         <div className="mt-4 p-4 bg-blue-50 border border-blue-200 rounded-lg flex items-start gap-3">
-          <Info className="w-5 h-5 text-blue-600 mt-0.5 flex-shrink-0" />
+          <Info className="w-5 h-5 text-blue-600 mt-0.5 flex-shrink-0" aria-hidden="true" />
           <div className="text-sm text-blue-900">
             <p className="font-medium mb-1">AI-Powered Matching</p>
             <p>Our AI analyzes employee skills, experience levels, and learning patterns to provide the most suitable recommendations. Scores reflect overall fit and growth potential.</p>
@@ -147,7 +147,7 @@ export function Recommendations({ userRole }: RecommendationsProps) {
         <div className="flex items-center justify-between">
           <h2 className="text-xl text-gray-900">Recommended Employees</h2>
           <div className="flex items-center gap-2 text-sm text-muted-foreground">
-            <Brain className="w-4 h-4" />
+            <Brain className="w-4 h-4" aria-hidden="true" />
             <span>AI Confidence: High</span>
           </div>
         </div>
@@ -281,7 +281,7 @@ export function Recommendations({ userRole }: RecommendationsProps) {
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
           <div className="flex items-start gap-3">
             <div className="p-2 bg-blue-100 rounded-lg flex-shrink-0">
-              <Target className="w-5 h-5 text-blue-600" />
+              <Target className="w-5 h-5 text-blue-600" aria-hidden="true" />
             </div>
             <div>
               <p className="font-medium text-gray-900 mb-1">Skill Matching</p>
@@ -290,7 +290,7 @@ export function Recommendations({ userRole }: RecommendationsProps) {
           </div>
           <div className="flex items-start gap-3">
             <div className="p-2 bg-purple-100 rounded-lg flex-shrink-0">
-              <Brain className="w-5 h-5 text-purple-600" />
+              <Brain className="w-5 h-5 text-purple-600" aria-hidden="true" />
             </div>
             <div>
               <p className="font-medium text-gray-900 mb-1">Learning Potential</p>
@@ -299,7 +299,7 @@ export function Recommendations({ userRole }: RecommendationsProps) {
           </div>
           <div className="flex items-start gap-3">
             <div className="p-2 bg-green-100 rounded-lg flex-shrink-0">
-              <CheckCircle className="w-5 h-5 text-green-600" />
+              <CheckCircle className="w-5 h-5 text-green-600" aria-hidden="true" />
             </div>
             <div>
               <p className="font-medium text-gray-900 mb-1">Transparent Decisions</p>

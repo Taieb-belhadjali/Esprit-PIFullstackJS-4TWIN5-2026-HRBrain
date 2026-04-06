@@ -12,7 +12,7 @@ export class Skill {
   name: string;
 
   @Prop({ trim: true })
-  description?: string; // optionnel
+  description?: string; 
 
   @Prop({ type: Types.ObjectId, ref: 'Department', required: false })
   departmentId?: Types.ObjectId;

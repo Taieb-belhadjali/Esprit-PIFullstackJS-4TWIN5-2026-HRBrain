@@ -235,9 +235,9 @@ export function Notifications() {
                     <button
                       onClick={() => deleteNotification(notification.id)}
                       className="p-2 hover:bg-secondary rounded-lg transition-colors ml-2"
-                      title="Delete notification"
+                      aria-label={`Supprimer la notification : ${notification.title}`}
                     >
-                      <Trash2 className="w-4 h-4 text-muted-foreground" />
+                      <Trash2 className="w-4 h-4 text-muted-foreground" aria-hidden="true" />
                     </button>
                   </div>
 
