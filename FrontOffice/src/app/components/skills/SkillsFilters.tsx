@@ -1,3 +1,4 @@
+// Filtres de la liste skills : recherche texte, filtre département, tri
 import React from 'react';
 import { Search, SlidersHorizontal, Building2, RotateCcw } from 'lucide-react';
 import { SkillSortBy } from './types';

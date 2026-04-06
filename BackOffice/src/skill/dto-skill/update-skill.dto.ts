@@ -1,3 +1,4 @@
+// DTO modification : hérite de CreateSkillDto avec tous les champs optionnels (PartialType)
 import { PartialType } from '@nestjs/mapped-types';
 import { CreateSkillDto } from './create-skill.dto';
 import { IsMongoId, IsOptional } from 'class-validator';

@@ -1,3 +1,4 @@
+// Assistant vocal : écoute, parse la commande et exécute l’action (CRUD, navigation, recherche)
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import axios from 'axios';
@@ -42,9 +43,7 @@ interface PendingCreate {
   departments?: { _id: string; name: string }[];
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// Fuzzy match: trouve le meilleur nom même si mal prononcé
-// ─────────────────────────────────────────────────────────────────────────────
+// Fuzzy match : trouve le meilleur nom même si mal prononcé
 function similarity(a: string, b: string): number {
   const s = a.toLowerCase(); const t = b.toLowerCase();
   if (s === t) return 1;
@@ -70,9 +69,7 @@ function fuzzyFind(items: any[], query: string): any | null {
   return candidates[0]?.score >= 0.4 ? candidates[0].item : null;
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// Animated wave bars
-// ─────────────────────────────────────────────────────────────────────────────
+// Animation de barres sonores pendant l’écoute/réponse
 const WaveBars: React.FC<{ color: string }> = ({ color }) => (
   <div className="flex items-end justify-center gap-0.5 h-6" aria-hidden="true">
     {[3, 5, 8, 6, 4, 7, 5, 3].map((h, i) => (
@@ -85,9 +82,7 @@ const WaveBars: React.FC<{ color: string }> = ({ color }) => (
   </div>
 );
 
-// ─────────────────────────────────────────────────────────────────────────────
-// Main component
-// ─────────────────────────────────────────────────────────────────────────────
+// Composant principal
 export const VoiceAssistant: React.FC<{}> = () => {
   const [listening, setListening]               = useState(false);
   const [speaking, setSpeaking]                 = useState(false);
@@ -194,9 +189,7 @@ export const VoiceAssistant: React.FC<{}> = () => {
     }
   }, []);
 
-  // ── No auto-greeting on mount: assistant waits for user to say "Bonjour" ──
-
-  // ── Keyboard shortcut Alt+M ───────────────────────────────────────────────
+  // Raccourci Alt+M pour ouvrir l’assistant et démarrer l’écoute
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       if (e.altKey && e.code === 'KeyM') {

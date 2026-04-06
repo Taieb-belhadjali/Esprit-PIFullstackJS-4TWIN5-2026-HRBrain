@@ -1,3 +1,4 @@
+// Panneau des raccourcis clavier : s’ouvre avec "?" et se ferme avec Échap
 import { useEffect, useRef } from 'react';
 import { Keyboard, X } from 'lucide-react';
 
@@ -6,6 +7,7 @@ interface ShortcutEntry {
   description: string;
 }
 
+// Liste de tous les raccourcis affichés dans le panneau
 const SHORTCUTS: ShortcutEntry[] = [
   { keys: ['Alt', 'H'], description: 'Naviguer vers Accueil' },
   { keys: ['Alt', 'E'], description: 'Naviguer vers Employés' },
@@ -29,12 +31,12 @@ export function KeyboardShortcutsPanel({ onClose }: KeyboardShortcutsPanelProps)
   const panelRef = useRef<HTMLDivElement>(null);
   const closeButtonRef = useRef<HTMLButtonElement>(null);
 
-  // Focus le bouton fermer à l'ouverture
+// Focus le bouton fermer à l’ouverture du panneau
   useEffect(() => {
     closeButtonRef.current?.focus();
   }, []);
 
-  // Fermer avec Échap
+  // Ferme le panneau avec la touche Échap
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       if (e.key === 'Escape') onClose();

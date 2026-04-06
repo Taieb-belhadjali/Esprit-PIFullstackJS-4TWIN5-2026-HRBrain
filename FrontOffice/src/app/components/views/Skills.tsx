@@ -1,3 +1,4 @@
+// Vue principale Skills : liste, filtres, pagination, export CSV, graphique départements
 import React, { useState, useEffect, useMemo } from 'react';
 import axios from 'axios';
 import { SkillCard } from '../skills/SkillCard';
@@ -9,6 +10,7 @@ import { SkillsStats } from '../skills/SkillsStats';
 import { Skill, SkillSortBy } from '../skills/types';
 import { useVoiceCommand } from '../voice/VoiceCommandContext';
 import Pagination from '../ui/Pagination';
+import { SkillsDepartmentChart } from '../skills/SkillsDepartmentChart';
 
 
 type UserRole = 'HR' | 'Manager' | 'Employee';
@@ -100,6 +102,7 @@ export const Skills: React.FC<SkillsProps> = ({ userRole }) => {
     }
   }, [pendingCommand, commandData, clearPendingCommand, skills]);
 
+  // Chargement initial des départements
   const fetchDepartments = async () => {
     try {
       const res = await axios.get('http://localhost:3000/departments');
@@ -109,6 +112,7 @@ export const Skills: React.FC<SkillsProps> = ({ userRole }) => {
     }
   };
 
+  // Chargement des skills (filtrés par département si sélectionné)
   const fetchSkills = async () => {
     setLoading(true);
     try {
@@ -126,11 +130,13 @@ export const Skills: React.FC<SkillsProps> = ({ userRole }) => {
     }
   };
 
+  // Ouvre le formulaire en mode édition
   const handleEdit = (skill: Skill) => {
     setEditingSkill(skill);
     setShowForm(true);
   };
 
+  // Supprime un skill après confirmation
   const handleDelete = async (id: string) => {
     if (!window.confirm('Voulez-vous vraiment supprimer ce skill ?')) return;
     try {
@@ -141,11 +147,13 @@ export const Skills: React.FC<SkillsProps> = ({ userRole }) => {
     }
   };
 
+  // Ferme le formulaire et réinitialise l’édition
   const handleFormClose = () => {
     setShowForm(false);
     setEditingSkill(null);
   };
 
+  // Filtre par recherche + tri local
   const filteredSkills = useMemo(() => {
     const normalizedSearch = searchTerm.trim().toLowerCase();
     const result = skills.filter((skill) => {
@@ -173,6 +181,32 @@ export const Skills: React.FC<SkillsProps> = ({ userRole }) => {
 
   const totalWithDescription = skills.filter((skill) => Boolean(skill.description?.trim())).length;
 
+  // Génère le fichier CSV avec BOM UTF-8 pour Excel
+  const handleExportCsv = () => {
+    if (filteredSkills.length === 0) return;
+    const header = ['Nom', 'Description', 'Département', 'Date de création'];
+    const rows = filteredSkills.map((skill: any) => {
+      const depId = skill.departmentId?._id || skill.departmentId;
+      const dep = departments.find((d: any) => d._id === depId);
+      return [
+        skill.name || '',
+        skill.description || '—',
+        dep ? dep.name : '—',
+        skill.createdAt ? new Date(skill.createdAt).toLocaleDateString('fr-FR') : '—',
+      ];
+    });
+    const csvContent = [header, ...rows]
+      .map((row) => row.map((cell) => `"${String(cell).replace(/"/g, '""')}"`).join(','))
+      .join('\n');
+    const blob = new Blob(['\uFEFF' + csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `skills_export_${new Date().toISOString().slice(0, 10)}.csv`;
+    link.click();
+    URL.revokeObjectURL(url);
+  };
+
   // Reset page on filter change
   useEffect(() => { setCurrentPage(1); }, [searchTerm, sortBy, selectedDepartment]);
 
@@ -184,15 +218,14 @@ export const Skills: React.FC<SkillsProps> = ({ userRole }) => {
 
   return (
     <div className="p-6 space-y-6">
-      <SkillsHeader onAddSkill={() => setShowForm(true)} userRole={userRole} />
-
-
+      <SkillsHeader onAddSkill={() => setShowForm(true)} onExportCsv={handleExportCsv} userRole={userRole} />
 
       <SkillsStats
         totalSkills={skills.length}
         totalWithDescription={totalWithDescription}
-        totalShown={filteredSkills.length}
       />
+
+      <SkillsDepartmentChart skills={skills} departments={departments} />
 
       <SkillsFilters
         searchTerm={searchTerm}
@@ -289,6 +322,7 @@ export const Skills: React.FC<SkillsProps> = ({ userRole }) => {
           }}
         />
       )}
+
     </div>
   );
 };

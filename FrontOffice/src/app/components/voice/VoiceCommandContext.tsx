@@ -1,5 +1,7 @@
+// Contexte global : partage la commande vocale en attente entre les pages
 import React, { createContext, useContext, useState, useCallback, ReactNode } from 'react';
 
+// Types de commandes supportées par l’assistant vocal
 export type VoiceCommandType = 
   | 'create-skill'
   | 'create-employee'
@@ -22,6 +24,7 @@ export type VoiceCommandType =
   | 'view-department'
   | null;
 
+// Données additionnelles associées à une commande (nom, département, etc.)
 interface VoiceCommandData {
   name?: string;
   description?: string;
@@ -41,6 +44,7 @@ interface VoiceCommandContextType {
 
 const VoiceCommandContext = createContext<VoiceCommandContextType | undefined>(undefined);
 
+// Provider : expose pendingCommand et les setters à toute l’app
 export const VoiceCommandProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const [pendingCommand, setPendingCommandState] = useState<VoiceCommandType>(null);
   const [commandData, setCommandData] = useState<VoiceCommandData | null>(null);
@@ -69,6 +73,7 @@ export const VoiceCommandProvider: React.FC<{ children: ReactNode }> = ({ childr
   );
 };
 
+// Hook utilitaire pour consommer le contexte dans n’importe quelle page
 export const useVoiceCommand = (): VoiceCommandContextType => {
   const context = useContext(VoiceCommandContext);
   if (context === undefined) {

@@ -1,3 +1,4 @@
+// Formulaire ajout employé : inclut assignation de skills (checkboxes) et upload CV
 import { useEffect, useState } from "react";
 import { createEmployee } from "../../../api/employeeApi";
 import axios from "axios";

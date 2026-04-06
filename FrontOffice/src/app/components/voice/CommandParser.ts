@@ -1,5 +1,4 @@
-// Parseur intelligent de commandes vocales
-// Détecte l'intention et extrait les entités dynamiquement
+// Parseur de commandes vocales : détecte l’intention et l’entité dans le texte
 
 export type Intent = 
   | 'create'
@@ -94,9 +93,7 @@ const STOP_WORDS = [
   'très', 'trop', 'peu', 'beaucoup', 'plus', 'moins',
 ];
 
-/**
- * Détecte l'intention à partir du texte
- */
+// Détecte l’intention à partir du texte (créer, modifier, supprimer...)
 function detectIntent(text: string): { intent: Intent; confidence: number } {
   const lowerText = text.toLowerCase();
   
@@ -114,9 +111,7 @@ function detectIntent(text: string): { intent: Intent; confidence: number } {
   return { intent: 'unknown', confidence: 0 };
 }
 
-/**
- * Détecte l'entité à partir du texte
- */
+// Détecte l’entité concernée (skill, employé, département...)
 function detectEntity(text: string): { entity: EntityType; confidence: number } {
   const lowerText = text.toLowerCase();
   
@@ -134,14 +129,7 @@ function detectEntity(text: string): { entity: EntityType; confidence: number } 
   return { entity: 'unknown', confidence: 0 };
 }
 
-/**
- * Extrait le nom de l'entité à partir du texte
- * Ex: "créer un skill React" → "React"
- * Ex: "modifier le département IT" → "IT"
- *
- * Utilise une approche par découpage de mots plutôt que \b (qui ne fonctionne
- * pas avec les caractères accentués français : é, à, è, ù, ô, etc.)
- */
+// Extrait le nom de l’entité après retrait des mots-clés et stop words
 function extractName(text: string, _intent: Intent, _entity: EntityType): string | null {
   // Tronquer avant "par" pour "modifier X par Y" → traite seulement "modifier X"
   const lowerText = text.toLowerCase();
@@ -173,9 +161,7 @@ function extractName(text: string, _intent: Intent, _entity: EntityType): string
   return result.charAt(0).toUpperCase() + result.slice(1);
 }
 
-/**
- * Parse une commande vocale et retourne l'intention, l'entité et le nom
- */
+// Parse une commande vocale : retourne intention, entité, nom et confiance
 export function parseCommand(text: string): ParsedCommand {
   const lowerText = text.toLowerCase().trim();
   
@@ -211,9 +197,7 @@ export function parseCommand(text: string): ParsedCommand {
   };
 }
 
-/**
- * Vérifie si la commande est valide (intention et entité détectées)
- */
+// Vérifie si la commande est valide (intention et entité reconnues)
 export function isValidCommand(parsed: ParsedCommand): boolean {
   if (parsed.intent === 'unknown') return false;
   // Ces intents fonctionnent sans entité (inférée depuis la route)
@@ -222,9 +206,7 @@ export function isValidCommand(parsed: ParsedCommand): boolean {
   return parsed.entity !== 'unknown';
 }
 
-/**
- * Retourne un message d'erreur si la commande n'est pas valide
- */
+// Retourne un message vocal explicatif si la commande n’est pas reconnue
 export function getErrorMessage(parsed: ParsedCommand): string {
   if (parsed.intent === 'unknown' && parsed.entity === 'unknown') {
     return "Je n'ai pas compris la commande. Dites aide pour voir les commandes disponibles.";

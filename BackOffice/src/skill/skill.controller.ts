@@ -1,9 +1,10 @@
+// Contrôleur REST des skills : expose les routes GET, POST, PATCH, DELETE
 import { Controller, Get, Post, Patch, Delete, Param, Body, Logger, Query } from '@nestjs/common';
 import { SkillService } from './skill.service';
 import { CreateSkillDto } from './dto-skill/create-skill.dto';
 import { UpdateSkillDto } from './dto-skill/update-skill.dto';
 
-@Controller('skills') 
+@Controller('skills')
 export class SkillController {
   private readonly logger = new Logger(SkillController.name);
 

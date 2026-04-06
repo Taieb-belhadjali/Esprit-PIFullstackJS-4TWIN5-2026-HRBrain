@@ -1,3 +1,4 @@
+// DTO création : valide name (requis), description (optionnel), departmentId (ObjectId requis)
 import { IsNotEmpty, IsOptional, IsString } from 'class-validator';
 import { IsMongoId } from 'class-validator';
 
