@@ -15,7 +15,7 @@ import { VoiceAssistant } from '../voice/VoiceAssistant';
 import { VoiceCommandProvider } from '../voice/VoiceCommandContext';
 import { KeyboardShortcutsPanel } from '../ui/KeyboardShortcutsPanel';
 
-type UserRole = 'HR' | 'Manager' | 'Employee';
+type UserRole = 'HR' | 'Manager' | 'Employee' | 'SUPERADMIN';
 
 interface User {
   email: string;
@@ -47,16 +47,16 @@ export function Dashboard({ user, onLogout }: DashboardProps) {
   const [showShortcuts, setShowShortcuts] = useState(false);
 
   const viewRoles: Record<ViewType, UserRole[]> = {
-    home: ['HR', 'Manager', 'Employee'],
-    employees: ['HR', 'Manager'],
-    departments: ['HR'],
-    skills: ['HR', 'Manager', 'Employee'],
-    activities: ['HR', 'Manager', 'Employee'],
-    recommendations: ['HR', 'Manager'],
-    analytics: ['HR', 'Manager'],
-    notifications: ['HR', 'Manager', 'Employee'],
-    profile: ['HR', 'Manager', 'Employee'],
-    settings: ['HR', 'Manager', 'Employee'],
+    home: ['HR', 'Manager', 'Employee', 'SUPERADMIN'],
+    employees: ['HR', 'Manager', 'SUPERADMIN'],
+    departments: ['HR', 'SUPERADMIN'],
+    skills: ['HR', 'Manager', 'Employee', 'SUPERADMIN'],
+    activities: ['HR', 'Manager', 'Employee', 'SUPERADMIN'],
+    recommendations: ['HR', 'Manager', 'SUPERADMIN'],
+    analytics: ['HR', 'Manager', 'SUPERADMIN'],
+    notifications: ['HR', 'Manager', 'Employee', 'SUPERADMIN'],
+    profile: ['HR', 'Manager', 'Employee', 'SUPERADMIN'],
+    settings: ['HR', 'Manager', 'Employee', 'SUPERADMIN'],
   };
 
   const currentView = useMemo<ViewType>(() => {

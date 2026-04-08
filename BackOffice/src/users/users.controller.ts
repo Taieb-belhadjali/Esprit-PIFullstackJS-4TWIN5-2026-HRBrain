@@ -12,6 +12,8 @@ import {
   Res,
   BadRequestException,
   UseGuards,
+  ForbiddenException,
+  Request,
 } from '@nestjs/common';
 import type { Response } from 'express';
 import { UsersService } from './users.service';
@@ -25,6 +27,13 @@ import { RolesGuard, Roles } from '../auth/roles.guard';
 @Controller('users')
 export class UsersController {
   constructor(private readonly usersService: UsersService) {}
+
+  @Get('me')
+  @UseGuards(JwtAuthGuard)
+  async getMe(@Request() req: any) {
+    const user = await this.usersService.findOne(req.user.sub);
+    return user;
+  }
 
   @Get(':id/cv')
   async getCvFile(@Param('id') id: string) {
@@ -98,10 +107,11 @@ export class UsersController {
       },
     }),
   )
-  create(@Body() body: any, @UploadedFile() file: Express.Multer.File) {
-    console.log('BODY:', body);
-    console.log('FILE:', file);
-
+  create(@Body() body: any, @UploadedFile() file: Express.Multer.File, @Request() req: any) {
+    // Seul SUPERADMIN peut créer un compte HR
+    if (body.role === 'HR' && req.user?.role !== 'SUPERADMIN') {
+      throw new ForbiddenException('Seul le SUPERADMIN peut créer un compte HR');
+    }
     return this.usersService.create(body, file);
   }
 

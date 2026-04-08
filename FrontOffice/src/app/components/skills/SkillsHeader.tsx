@@ -2,7 +2,7 @@
 import React from 'react';
 import { Plus, Download, Brain } from 'lucide-react';
 
-type UserRole = 'HR' | 'Manager' | 'Employee';
+type UserRole = 'HR' | 'Manager' | 'Employee' | 'SUPERADMIN';
 
 // onAddSkill : ouvre le formulaire | onExportCsv : optionnel | userRole : seul HR voit "Ajouter"
 interface SkillsHeaderProps {

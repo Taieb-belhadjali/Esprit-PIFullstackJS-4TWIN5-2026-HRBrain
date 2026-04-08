@@ -66,4 +66,10 @@ export class RecommendationController {
     if (!state) return { status: 'idle', activityId };
     return { activityId, ...state };
   }
+
+  /** Activités approuvées pour un employee (pour la page profil) */
+  @Get('employee/:employeeId/approved')
+  getApprovedForEmployee(@Param('employeeId') employeeId: string) {
+    return this.recoService.getApprovedActivitiesForEmployee(employeeId);
+  }
 }

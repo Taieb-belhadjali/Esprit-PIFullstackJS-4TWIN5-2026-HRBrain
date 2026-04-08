@@ -61,7 +61,8 @@ export default function App() {
   };
 
   // Map backend roles to frontend roles
-  const mapRole = (role: string): 'HR' | 'Manager' | 'Employee' => {
+  const mapRole = (role: string): 'HR' | 'Manager' | 'Employee' | 'SUPERADMIN' => {
+    if (role === 'SUPERADMIN') return 'SUPERADMIN';
     if (role === 'HR') return 'HR';
     if (role === 'MANAGER') return 'Manager';
     return 'Employee';

@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Search, Plus, X, Sparkles } from 'lucide-react';
-import axios from 'axios';
+import API from '../../../api/api';
 import { ActivityCard } from '../activities/ActivityCard';
 import { extractSkills } from '../../../api/nlpApi';
 import { Activity } from '../activities/types';
@@ -9,7 +9,7 @@ import { ActivityRecommendationHistory } from '../activities/ActivityRecommendat
 import { useVoiceCommand } from '../voice/VoiceCommandContext';
 import Pagination from '../ui/Pagination';
 
-type UserRole = 'HR' | 'Manager' | 'Employee';
+type UserRole = 'HR' | 'Manager' | 'Employee' | 'SUPERADMIN';
 
 interface ActivitiesProps {
   userRole: UserRole;
@@ -53,7 +53,7 @@ export function Activities({ userRole }: ActivitiesProps) {
 
   const { pendingCommand, commandData, clearPendingCommand } = useVoiceCommand();
 
-  useEffect(() => { fetchDepartments(); fetchActivities(); fetchSkills(); }, []);
+  useEffect(() => { fetchDepartments(); fetchActivities(); fetchSkills(); }, [userRole]);
 
   useEffect(() => {
     if (pendingCommand === 'create-activity') {
@@ -64,18 +64,23 @@ export function Activities({ userRole }: ActivitiesProps) {
   }, [pendingCommand, commandData, clearPendingCommand]);
 
   const fetchDepartments = async () => {
-    try { const res = await axios.get('http://localhost:3000/departments'); setDepartments(res.data); }
+    try {
+      // Manager → seulement ses départements, sinon tous
+      const url = userRole === 'Manager' ? '/departments/my' : '/departments';
+      const res = await API.get(url);
+      setDepartments(res.data);
+    }
     catch { setDepartments([]); }
   };
 
   const fetchSkills = async () => {
-    try { const res = await axios.get('http://localhost:3000/skills'); setSkills(res.data); }
+    try { const res = await API.get('/skills'); setSkills(res.data); }
     catch { setSkills([]); }
   };
 
   const fetchActivities = async () => {
     setLoading(true);
-    try { const res = await axios.get('http://localhost:3000/activities'); setActivities(res.data); }
+    try { const res = await API.get('/activities'); setActivities(res.data); }
     catch { setActivities([]); }
     finally { setLoading(false); }
   };
@@ -189,9 +194,9 @@ export function Activities({ userRole }: ActivitiesProps) {
     const payload = { ...form, requiredSkills };
     try {
       if (editingActivity) {
-        await axios.patch(`http://localhost:3000/activities/${editingActivity._id}`, payload);
+        await API.patch(`/activities/${editingActivity._id}`, payload);
       } else {
-        await axios.post('http://localhost:3000/activities', payload);
+        await API.post('/activities', payload);
       }
       fetchActivities();
       setShowModal(false);
@@ -200,13 +205,13 @@ export function Activities({ userRole }: ActivitiesProps) {
 
   const handleDelete = async (id: string) => {
     if (!window.confirm('Supprimer cette activité ?')) return;
-    try { await axios.delete(`http://localhost:3000/activities/${id}`); fetchActivities(); }
+    try { await API.delete(`/activities/${id}`); fetchActivities(); }
     catch { alert('Erreur lors de la suppression'); }
   };
 
   const createActivityDirectly = async (name: string) => {
     try {
-      await axios.post('http://localhost:3000/activities', { title: name, status: 'Draft', nombreDePlaces: 0, requiredSkills: [] });
+      await API.post('/activities', { title: name, status: 'Draft', nombreDePlaces: 0, requiredSkills: [] });
       fetchActivities();
     } catch { alert(`Erreur lors de la création de "${name}"`); }
   };
@@ -222,7 +227,7 @@ export function Activities({ userRole }: ActivitiesProps) {
   const totalPages = Math.ceil(filtered.length / itemsPerPage);
   const paginated = filtered.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
 
-  const canManage = userRole === 'HR' || userRole === 'Manager';
+  const canManage = userRole === 'Manager' || userRole === 'SUPERADMIN';
 
   return (
     <div className="p-6 space-y-6">
@@ -280,8 +285,8 @@ export function Activities({ userRole }: ActivitiesProps) {
                   activity={activity}
                   departmentName={dept?.name}
                   userRole={userRole}
-                  onEdit={openEdit}
-                  onDelete={handleDelete}
+                  onEdit={canManage ? openEdit : () => {}}
+                  onDelete={canManage ? handleDelete : () => {}}
                   onRecommend={canManage ? setRecommendActivity : undefined}
                   onHistory={canManage ? setHistoryActivity : undefined}
                 />
