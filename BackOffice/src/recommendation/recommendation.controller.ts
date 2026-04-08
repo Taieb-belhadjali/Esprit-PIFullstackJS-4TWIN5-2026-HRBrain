@@ -59,4 +59,11 @@ export class RecommendationController {
   getTop100(@Param('activityId') activityId: string) {
     return this.recoService.getTop100(activityId);
   }
+
+  @Get(':activityId/status')
+  getStatus(@Param('activityId') activityId: string) {
+    const state = this.recoService.getGenerationStatus(activityId);
+    if (!state) return { status: 'idle', activityId };
+    return { activityId, ...state };
+  }
 }

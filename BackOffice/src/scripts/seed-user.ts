@@ -10,31 +10,49 @@ async function seed() {
 
   const db = mongoose.connection.db!;
 
-  const email = 'admin.hr@hrbrain.com';
-  const existing = await db.collection('users').findOne({ email });
+  // Create SUPERADMIN
+  const superAdminEmail = 'superadmin@hrbrain.com';
+  const existingSuperAdmin = await db.collection('users').findOne({ email: superAdminEmail });
 
-  if (existing) {
-    console.log('User already exists:', email);
-    await mongoose.disconnect();
-    return;
+  if (!existingSuperAdmin) {
+    const hashed = await bcrypt.hash('SuperAdmin123!', 10);
+    await db.collection('users').insertOne({
+      name: 'Super Admin',
+      email: superAdminEmail,
+      password: hashed,
+      role: 'SUPERADMIN',
+      mustChangePassword: false,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    });
+    console.log('SUPERADMIN created:', superAdminEmail);
+  } else {
+    console.log('SUPERADMIN already exists:', superAdminEmail);
   }
 
-  const hashed = await bcrypt.hash('Admin123', 10);
+  // Create HR Admin
+  const hrEmail = 'admin.hr@hrbrain.com';
+  const existingHR = await db.collection('users').findOne({ email: hrEmail });
 
-  await db.collection('users').insertOne({
-    name: 'Admin HR',
-    email,
-    password: hashed,
-    role: 'HR',
-    mustChangePassword: true,
-    createdAt: new Date(),
-    updatedAt: new Date(),
-  });
+  if (!existingHR) {
+    const hashed = await bcrypt.hash('Admin123', 10);
+    await db.collection('users').insertOne({
+      name: 'Admin HR',
+      email: hrEmail,
+      password: hashed,
+      role: 'HR',
+      mustChangePassword: true,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    });
+    console.log('HR Admin created:', hrEmail);
+  } else {
+    console.log('HR Admin already exists:', hrEmail);
+  }
 
-  console.log('User created successfully!');
-  console.log('Email   :', email);
-  console.log('Password: Admin123');
-  console.log('Role    : HR');
+  console.log('\nCredentials:');
+  console.log('SUPERADMIN — Email:', superAdminEmail, '| Password: SuperAdmin123!');
+  console.log('HR Admin   — Email:', hrEmail, '| Password: Admin123');
 
   await mongoose.disconnect();
 }

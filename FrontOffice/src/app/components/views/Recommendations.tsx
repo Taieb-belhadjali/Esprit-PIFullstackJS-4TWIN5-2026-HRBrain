@@ -36,6 +36,18 @@ const MOCK_CARD: ApiRecommendation = {
   ],
 };
 
+/** Affiche le temps écoulé depuis startedAt, mis à jour chaque seconde */
+function ElapsedTimer({ startedAt }: { startedAt: Date }) {
+  const [elapsed, setElapsed] = React.useState(0);
+  React.useEffect(() => {
+    const id = setInterval(() => setElapsed(Math.floor((Date.now() - startedAt.getTime()) / 1000)), 1000);
+    return () => clearInterval(id);
+  }, [startedAt]);
+  const m = Math.floor(elapsed / 60);
+  const s = elapsed % 60;
+  return <span className="ml-2 text-indigo-500">{m > 0 ? `${m}m ` : ''}{s}s</span>;
+}
+
 interface CardProps {
   rec: ApiRecommendation;
   index: number;
@@ -182,8 +194,11 @@ export function Recommendations({ userRole }: RecommendationsProps) {
   const [apiResults, setApiResults] = useState<ApiRecommendation[]>([]);
   const [loadingActivities, setLoadingActivities] = useState(true);
   const [loadingReco, setLoadingReco] = useState(false);
+  const [generationStatus, setGenerationStatus] = useState<'idle' | 'running' | 'done' | 'error'>('idle');
+  const [generationStartedAt, setGenerationStartedAt] = useState<Date | null>(null);
   const [loadingAll, setLoadingAll] = useState(false);
   const [loadingLast, setLoadingLast] = useState(false);
+  const [hasNoReco, setHasNoReco] = useState(false);
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [elapsedMs, setElapsedMs] = useState<number | null>(null);
   const [runAllResults, setRunAllResults] = useState<RunAllResult[]>([]);
@@ -192,6 +207,7 @@ export function Recommendations({ userRole }: RecommendationsProps) {
   const [loadingDetail, setLoadingDetail] = useState<string | null>(null);
   const [lastNSeats, setLastNSeats] = useState(5);
   const cancelledRef = useRef(false);
+  const currentActivityRef = useRef<string>('');
 
   const mergeRankingsWithCandidates = (
     rankings: { employeeId: string; score: number; reasons: string[] }[],
@@ -215,21 +231,49 @@ export function Recommendations({ userRole }: RecommendationsProps) {
 
   const loadLastRecommendation = async (activityId: string) => {
     if (!activityId) return;
+    currentActivityRef.current = activityId;
     setLoadingLast(true);
     setApiResults([]);
     setElapsedMs(null);
+    setHasNoReco(false);
     try {
-      const [recoRes, top100Res, decisionsRes] = await Promise.all([
-        axios.get(`http://localhost:3000/recommendations/${activityId}`),
-        axios.get(`http://localhost:3000/recommendations/${activityId}/top100`),
-        axios.get(`http://localhost:3000/recommendations/${activityId}/decisions`),
-      ]);
+      const recoRes = await axios.get(`http://localhost:3000/recommendations/${activityId}`);
+
+      // Stale response — user already switched to another activity
+      if (currentActivityRef.current !== activityId) return;
+
       const ollamaJson = recoRes.data?.jsonOllama;
-      if (!ollamaJson?.rankings?.length) return;
+      if (!ollamaJson?.rankings?.length) {
+        if (currentActivityRef.current === activityId) setHasNoReco(true);
+        return;
+      }
+
       setElapsedMs(ollamaJson.elapsedMs ?? null);
-      setApiResults(mergeRankingsWithCandidates(ollamaJson.rankings, top100Res.data?.candidates ?? [], decisionsRes.data ?? []));
+
+      const decisionsRes = await axios.get(`http://localhost:3000/recommendations/${activityId}/decisions`);
+      if (currentActivityRef.current !== activityId) return;
+
+      let candidates: ApiRecommendation[] = [];
+      if (ollamaJson.candidates?.length) {
+        candidates = ollamaJson.candidates.map((c: any) => ({
+          employee: { _id: c.employeeId, name: c.name, email: c.email },
+          skillMatchScore: c.skillMatchScore ?? 0,
+          contextScore: c.contextScore ?? 0,
+          progressionScore: c.progressionScore ?? 0,
+          finalScore: 0,
+          employeeSkills: c.employeeSkills ?? [],
+        }));
+      } else {
+        const top100Res = await axios.get(`http://localhost:3000/recommendations/${activityId}/top100`);
+        if (currentActivityRef.current !== activityId) return;
+        candidates = top100Res.data?.candidates ?? [];
+      }
+
+      setApiResults(mergeRankingsWithCandidates(ollamaJson.rankings, candidates, decisionsRes.data ?? []));
     } catch { }
-    finally { setLoadingLast(false); }
+    finally {
+      if (currentActivityRef.current === activityId) setLoadingLast(false);
+    }
   };
 
   useEffect(() => {
@@ -254,23 +298,33 @@ export function Recommendations({ userRole }: RecommendationsProps) {
     if (!selectedActivityId) return;
     cancelledRef.current = false;
     setLoadingReco(true);
+    setGenerationStatus('running');
+    setGenerationStartedAt(new Date());
     setApiResults([]);
     setElapsedMs(null);
-    const launchTime = new Date().toISOString(); // timestamp avant lancement
+    const launchTime = new Date().toISOString();
     try {
-      // 1. Lance la génération en arrière-plan
       await axios.post(
         `http://localhost:3000/recommendations/${selectedActivityId}/generate`,
         { top_k: selectedActivity?.nombreDePlaces || lastNSeats },
       );
 
-      // 2. Poll toutes les 5s — cherche une entrée PLUS RÉCENTE que launchTime
+      // Poll /status toutes les 3s pour afficher l'état, puis /history pour les résultats
       let ollamaJson: any = null;
-      for (let attempt = 0; attempt < 120; attempt++) {
+      for (let attempt = 0; attempt < 200; attempt++) {
         if (cancelledRef.current) return;
-        await new Promise((r) => setTimeout(r, 5000));
+        await new Promise((r) => setTimeout(r, 3000));
         if (cancelledRef.current) return;
+
         try {
+          // Vérifier le statut
+          const statusRes = await axios.get(`http://localhost:3000/recommendations/${selectedActivityId}/status`);
+          const st = statusRes.data?.status;
+          if (st === 'done' || st === 'error') {
+            setGenerationStatus(st);
+          }
+
+          // Chercher le résultat dans l'historique
           const histRes = await axios.get(`http://localhost:3000/recommendations/${selectedActivityId}/history`);
           const newEntry = (histRes.data ?? []).find(
             (e: any) => new Date(e.createdAt) > new Date(launchTime) && e.jsonOllama?.rankings?.length > 0
@@ -288,7 +342,9 @@ export function Recommendations({ userRole }: RecommendationsProps) {
       const candidates: ApiRecommendation[] = top100Res.data?.candidates ?? [];
       const decisionsRes = await axios.get(`http://localhost:3000/recommendations/${selectedActivityId}/decisions`);
       setApiResults(mergeRankingsWithCandidates(rankings, candidates, decisionsRes.data ?? []));
+      setHasNoReco(false);
     } catch (err: any) {
+      setGenerationStatus('error');
       alert(`Erreur : ${err?.response?.data?.message ?? err.message}`);
     } finally {
       setLoadingReco(false);
@@ -423,7 +479,7 @@ export function Recommendations({ userRole }: RecommendationsProps) {
             {loadingReco
               ? <span className="w-4 h-4 border-2 border-white/40 border-t-white rounded-full animate-spin" />
               : <Sparkles className="w-4 h-4" />}
-            {loadingReco ? 'Calcul...' : 'Recommandation IA'}
+            {loadingReco ? 'Génération Ollama...' : 'Recommandation IA'}
           </button>
 
           {/* Cancel button */}
@@ -450,6 +506,19 @@ export function Recommendations({ userRole }: RecommendationsProps) {
           <div className="flex items-center gap-2 text-sm text-gray-500 mt-2">
             <Clock size={14} className="text-green-500" />
             <span>Généré en <span className="font-medium text-gray-700">{formatElapsed(elapsedMs)}</span></span>
+          </div>
+        )}
+
+        {/* Generation status banner */}
+        {loadingReco && generationStatus === 'running' && (
+          <div className="mt-3 flex items-center gap-3 px-4 py-3 bg-indigo-50 border border-indigo-200 rounded-lg text-sm text-indigo-700">
+            <span className="w-4 h-4 border-2 border-indigo-300 border-t-indigo-600 rounded-full animate-spin shrink-0" />
+            <div>
+              <span className="font-medium">Ollama génère les recommandations…</span>
+              {generationStartedAt && (
+                <ElapsedTimer startedAt={generationStartedAt} />
+              )}
+            </div>
           </div>
         )}
       </div>
@@ -526,15 +595,37 @@ export function Recommendations({ userRole }: RecommendationsProps) {
         </div>
       )}
 
-      {/* Mock card */}
+      {/* Empty state */}
       {apiResults.length === 0 && !loadingReco && !loadingLast && runAllResults.length === 0 && (
-        <div className="space-y-4">
-          <div className="flex items-center gap-2 text-sm text-gray-400">
-            <Brain className="w-4 h-4" />
-            <span>Exemple de card — les vraies données apparaîtront après le calcul</span>
+        hasNoReco ? (
+          <div className="flex flex-col items-center justify-center py-20 gap-4 text-center">
+            <div className="p-5 bg-indigo-50 rounded-full">
+              <Sparkles className="w-10 h-10 text-indigo-400" />
+            </div>
+            <div>
+              <p className="text-lg font-semibold text-gray-800 mb-1">Aucune recommandation pour cette activité</p>
+              <p className="text-sm text-gray-500 max-w-sm">
+                Cette activité n'a pas encore été analysée par l'IA. Lance une recommandation pour obtenir le classement des meilleurs candidats.
+              </p>
+            </div>
+            <button
+              onClick={handleRecommend}
+              disabled={!selectedActivityId || loadingReco || loadingActivities}
+              className="flex items-center gap-2 px-6 py-2.5 bg-primary text-white rounded-lg hover:bg-primary/90 transition-colors disabled:opacity-50 font-medium"
+            >
+              <Sparkles className="w-4 h-4" />
+              Lancer la recommandation IA
+            </button>
           </div>
-          <RecommendationCard rec={MOCK_CARD} index={0} activityId="" expandedId={expandedId} setExpandedId={setExpandedId} getScoreColor={getScoreColor} getScoreBg={getScoreBg} />
-        </div>
+        ) : (
+          <div className="space-y-4">
+            <div className="flex items-center gap-2 text-sm text-gray-400">
+              <Brain className="w-4 h-4" />
+              <span>Exemple de card — les vraies données apparaîtront après le calcul</span>
+            </div>
+            <RecommendationCard rec={MOCK_CARD} index={0} activityId="" expandedId={expandedId} setExpandedId={setExpandedId} getScoreColor={getScoreColor} getScoreBg={getScoreBg} />
+          </div>
+        )
       )}
 
       {/* Results */}

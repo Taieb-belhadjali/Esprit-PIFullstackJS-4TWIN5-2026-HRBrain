@@ -56,13 +56,15 @@ export function calculateSkillMatchScore(
   const totalWeight = requiredSkills.reduce((s, r) => s + r.contributionToScore, 0);
   if (totalWeight === 0) return 0;
 
-  const empMap = new Map(employeeSkills.map((s) => [s.skillId, s]));
+  // Match by ID first, then by name (handles duplicate skill names in DB)
+  const empById  = new Map(employeeSkills.map((s) => [s.skillId, s]));
+  const empByName = new Map(employeeSkills.map((s) => [s.skillName.toUpperCase(), s]));
   let score = 0;
 
   for (const req of requiredSkills) {
     const weight = req.contributionToScore / totalWeight;
-    const emp = empMap.get(req.skillId);
-    if (!emp) continue; // pas la compétence → 0
+    const emp = empById.get(req.skillId) ?? empByName.get(req.skillName.toUpperCase());
+    if (!emp) continue;
 
     const empOrdinal = LEVEL_ORDINAL[emp.level] ?? 1;
     const reqOrdinal = LEVEL_ORDINAL[req.level] ?? 1;
@@ -81,11 +83,15 @@ export function calculateSkillMatchScore(
  *
  *   Si l'employé A la compétence :
  *     gap = reqOrdinal - empOrdinal
- *     si gap == 1 ou gap == 2 → contribution = (gap / 2) × weight × 100
- *     sinon (gap ≤ 0 ou gap > 2) → contribution = 0
+ *     gap 1 ou 2 → contribution = (gap / 2) × weight × 100  ← zone idéale
+ *     gap 0      → 0  (déjà au niveau, rien à apprendre)
+ *     gap > 2    → weight × 50  (trop loin, crédit partiel)
  *
  *   Si l'employé N'A PAS la compétence :
- *     contribution = weight × 50   (bonus fixe "à acquérir")
+ *     contribution = weight × 25   (bonus acquisition réduit — moins bien que gap idéal)
+ *
+ * Différenciation : avoir le skill à LOW avec gap=1 (score 50) > absent (score 25)
+ * Cela évite que "aucun skill" == "skill à LOW" dans le classement.
  */
 export function calculateProgressionScore(
   employeeSkills: EmployeeSkillLevel[],
@@ -96,16 +102,17 @@ export function calculateProgressionScore(
   const totalWeight = requiredSkills.reduce((s, r) => s + r.contributionToScore, 0);
   if (totalWeight === 0) return 0;
 
-  const empMap = new Map(employeeSkills.map((s) => [s.skillId, s]));
+  // Match by ID first, then by name
+  const empById   = new Map(employeeSkills.map((s) => [s.skillId, s]));
+  const empByName = new Map(employeeSkills.map((s) => [s.skillName.toUpperCase(), s]));
   let score = 0;
 
   for (const req of requiredSkills) {
     const weight = req.contributionToScore / totalWeight;
-    const emp = empMap.get(req.skillId);
+    const emp = empById.get(req.skillId) ?? empByName.get(req.skillName.toUpperCase());
 
     if (!emp) {
-      // Compétence absente → bonus fixe
-      score += weight * 50;
+      score += weight * 25;
     } else {
       const empOrdinal = LEVEL_ORDINAL[emp.level] ?? 1;
       const reqOrdinal = LEVEL_ORDINAL[req.level] ?? 1;
@@ -113,8 +120,9 @@ export function calculateProgressionScore(
 
       if (gap === 1 || gap === 2) {
         score += (gap / 2) * weight * 100;
+      } else if (gap > 2) {
+        score += weight * 50;
       }
-      // gap <= 0 (déjà au niveau) ou gap > 2 (trop loin) → 0
     }
   }
 
@@ -122,21 +130,20 @@ export function calculateProgressionScore(
 }
 
 /**
- * Score 3 — Context (50–75)
+ * Score 3 — Context (fixe par activité)
  *
  * Identique pour tous les employés d'une même activité.
- * base = 50
- * + Upskilling    → +20 → 70
- * + Consolidation → +15 → 65
- * + Expertise     → +25 → 75
+ * Upskilling    → 70
+ * Expertise     → 75
+ * Consolidation → 65
+ * Autre         → 65 (valeur par défaut)
  */
 export function calculateContextScore(activityContext: string): number {
   const ctx = (activityContext ?? '').toLowerCase();
-  let bonus = 0;
-  if (ctx === 'upskilling')         bonus = 20;
-  else if (ctx === 'consolidation') bonus = 15;
-  else if (ctx === 'expertise')     bonus = 25;
-  return Math.min(50 + bonus, 100);
+  if (ctx === 'upskilling')    return 70;
+  if (ctx === 'expertise')     return 75;
+  if (ctx === 'consolidation') return 65;
+  return 65;
 }
 
 /**
