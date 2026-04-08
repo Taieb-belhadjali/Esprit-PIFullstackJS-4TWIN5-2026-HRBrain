@@ -1,33 +1,31 @@
-import axios from 'axios';
+import API from "../../../api/api";
 
 export interface Department {
   _id: string;
   name: string;
-  user_id: string;
+  managerIds: string[];
 }
 
-const API_URL = 'http://localhost:3000/departments';
-
 export const getDepartments = async (): Promise<Department[]> => {
-  const response = await axios.get<Department[]>(API_URL);
+  const response = await API.get<Department[]>('/departments');
   return response.data;
 };
 
 export const createDepartment = async (
-  data: Pick<Department, 'name' | 'user_id'>,
+  data: Pick<Department, 'name' | 'managerIds'>,
 ): Promise<Department> => {
-  const response = await axios.post<Department>(API_URL, data);
+  const response = await API.post<Department>('/departments', data);
   return response.data;
 };
 
 export const updateDepartment = async (
   id: string,
-  data: Partial<Pick<Department, 'name' | 'user_id'>>,
+  data: Partial<Pick<Department, 'name' | 'managerIds'>>,
 ): Promise<Department> => {
-  const response = await axios.patch<Department>(`${API_URL}/${id}`, data);
+  const response = await API.patch<Department>(`/departments/${id}`, data);
   return response.data;
 };
 
 export const deleteDepartment = async (id: string): Promise<void> => {
-  await axios.delete(`${API_URL}/${id}`);
+  await API.delete(`/departments/${id}`);
 };

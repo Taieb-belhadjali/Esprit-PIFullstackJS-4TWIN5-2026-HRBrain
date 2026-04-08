@@ -360,10 +360,16 @@ export class RecommendationService {
 
       // Filter out hallucinated IDs — keep only IDs that exist in filteredCandidates
       const validIds = new Set(filteredCandidates.map((c) => String(c.employee._id)));
-      const validRankings = parsed.rankings.filter((r: any) => validIds.has(String(r.employeeId)));
+      const seenIds = new Set<string>();
+      const validRankings = parsed.rankings.filter((r: any) => {
+        const id = String(r.employeeId);
+        if (!validIds.has(id) || seenIds.has(id)) return false;
+        seenIds.add(id);
+        return true;
+      });
 
       if (validRankings.length < parsed.rankings.length) {
-        this.logger.warn(`[LLM] ${parsed.rankings.length - validRankings.length} hallucinated ID(s) removed`);
+        this.logger.warn(`[LLM] ${parsed.rankings.length - validRankings.length} invalid/duplicate ID(s) removed`);
       }
 
       // If LLM returned fewer valid rankings than top_k, fill with best remaining candidates
@@ -479,7 +485,7 @@ export class RecommendationService {
       decidedAt: new Date(),
     };
 
-    return this.decisionModel.findOneAndUpdate(
+    const doc = await this.decisionModel.findOneAndUpdate(
       { activityId, employeeId: body.employeeId },
       {
         $set: {
@@ -492,10 +498,55 @@ export class RecommendationService {
       },
       { upsert: true, returnDocument: 'after' },
     );
+
+    // Si approuvé → ajouter les required skills de l'activité au profil de l'employee
+    if (body.decision === 'approved') {
+      try {
+        const activity = await this.activityModel
+          .findById(activityId)
+          .populate('requiredSkills.skillId')
+          .lean();
+        if (activity) {
+          const skillIds = ((activity as any).requiredSkills ?? [])
+            .filter((rs: any) => rs.skillId != null && typeof rs.skillId === 'object')
+            .map((rs: any) => (rs.skillId as any)._id);
+
+          if (skillIds.length > 0) {
+            await this.userModel.findByIdAndUpdate(
+              body.employeeId,
+              { $addToSet: { skills: { $each: skillIds } } },
+            );
+            this.logger.log(`[Decision] Employee ${body.employeeId} approved — ${skillIds.length} skills added`);
+          }
+        }
+      } catch (err: any) {
+        this.logger.warn(`[Decision] Failed to update employee skills: ${err.message}`);
+      }
+    }
+
+    return doc;
   }
 
   async getDecisions(activityId: string): Promise<HrDecisionDocument[]> {
     return this.decisionModel.find({ activityId }).lean();
+  }
+
+  /** Retourne les activités où l'employee a été approuvé (pour la page profil) */
+  async getApprovedActivitiesForEmployee(employeeId: string) {
+    const decisions = await this.decisionModel
+      .find({ employeeId, decision: 'approved' })
+      .lean();
+
+    const activityIds = decisions.map(d => d.activityId);
+    const activities = await this.activityModel
+      .find({ _id: { $in: activityIds } })
+      .populate('requiredSkills.skillId')
+      .lean();
+
+    return activities.map(a => {
+      const dec = decisions.find(d => String(d.activityId) === String(a._id));
+      return { ...a, aiScore: dec?.aiScore, aiReasons: dec?.aiReasons, decidedAt: dec?.history?.slice(-1)[0]?.decidedAt };
+    });
   }
 
   // ── 6. Ollama streaming call ──────────────────────────────────────────────

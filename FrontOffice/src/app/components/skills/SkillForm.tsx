@@ -1,6 +1,6 @@
 // Formulaire création / modification d’un skill : appelle POST ou PATCH /skills
 import React, { useState, useEffect } from 'react';
-import axios from 'axios';
+import API from '../../../api/api';
 import { X, Plus, Edit2, Building2, FileText, Tag, AlertCircle, CheckCircle2 } from 'lucide-react';
 import { Department, getDepartments } from '../departments/departmentService';
 
@@ -62,9 +62,9 @@ export const SkillForm: React.FC<SkillFormProps> = ({
     setSubmitting(true);
     try {
       if (skillToEdit) {
-        await axios.patch(`http://localhost:3000/skills/${skillToEdit._id}`, { name, description, departmentId });
+        await API.patch(`/skills/${skillToEdit._id}`, { name, description, departmentId });
       } else {
-        await axios.post('http://localhost:3000/skills', { name, description, departmentId });
+        await API.post('/skills', { name, description, departmentId });
       }
       showToast('success', skillToEdit ? 'Skill mis à jour avec succès !' : 'Skill créé avec succès !');
       onCreatedOrUpdated();

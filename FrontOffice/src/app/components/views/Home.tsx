@@ -14,7 +14,7 @@ import {
   Cell,
   Legend
 } from 'recharts';
-type UserRole = 'HR' | 'Manager' | 'Employee';
+type UserRole = 'HR' | 'Manager' | 'Employee' | 'SUPERADMIN';
 
 interface HomeProps {
   userRole: UserRole;

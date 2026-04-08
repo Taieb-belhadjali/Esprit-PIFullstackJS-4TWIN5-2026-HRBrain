@@ -1,8 +1,8 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Target, Brain, CheckCircle, XCircle, TrendingUp, Sparkles, ChevronDown, Clock, PlayCircle, Users, X } from 'lucide-react';
-import axios from 'axios';
+import API from '../../../api/api';
 
-type UserRole = 'HR' | 'Manager' | 'Employee';
+type UserRole = 'HR' | 'Manager' | 'Employee' | 'SUPERADMIN';
 interface RecommendationsProps { userRole: UserRole; }
 
 interface ApiRecommendation {
@@ -65,7 +65,7 @@ function RecommendationCard({ rec, index, activityId, expandedId, setExpandedId,
   const handleDecision = async (d: 'approved' | 'rejected') => {
     setSaving(true);
     try {
-      await axios.post(`http://localhost:3000/recommendations/${activityId}/decision`, {
+      await API.post(`/recommendations/${activityId}/decision`, {
         employeeId: rec.employee._id,
         decision: d,
         aiScore: rec.finalScore,
@@ -237,7 +237,7 @@ export function Recommendations({ userRole }: RecommendationsProps) {
     setElapsedMs(null);
     setHasNoReco(false);
     try {
-      const recoRes = await axios.get(`http://localhost:3000/recommendations/${activityId}`);
+      const recoRes = await API.get(`/recommendations/${activityId}`);
 
       // Stale response — user already switched to another activity
       if (currentActivityRef.current !== activityId) return;
@@ -250,7 +250,7 @@ export function Recommendations({ userRole }: RecommendationsProps) {
 
       setElapsedMs(ollamaJson.elapsedMs ?? null);
 
-      const decisionsRes = await axios.get(`http://localhost:3000/recommendations/${activityId}/decisions`);
+      const decisionsRes = await API.get(`/recommendations/${activityId}/decisions`);
       if (currentActivityRef.current !== activityId) return;
 
       let candidates: ApiRecommendation[] = [];
@@ -264,7 +264,7 @@ export function Recommendations({ userRole }: RecommendationsProps) {
           employeeSkills: c.employeeSkills ?? [],
         }));
       } else {
-        const top100Res = await axios.get(`http://localhost:3000/recommendations/${activityId}/top100`);
+        const top100Res = await API.get(`/recommendations/${activityId}/top100`);
         if (currentActivityRef.current !== activityId) return;
         candidates = top100Res.data?.candidates ?? [];
       }
@@ -277,7 +277,7 @@ export function Recommendations({ userRole }: RecommendationsProps) {
   };
 
   useEffect(() => {
-    axios.get('http://localhost:3000/activities')
+    API.get('/activities')
       .then((res) => {
         setActivities(res.data);
         if (res.data.length > 0) {
@@ -304,8 +304,8 @@ export function Recommendations({ userRole }: RecommendationsProps) {
     setElapsedMs(null);
     const launchTime = new Date().toISOString();
     try {
-      await axios.post(
-        `http://localhost:3000/recommendations/${selectedActivityId}/generate`,
+      await API.post(
+        `/recommendations/${selectedActivityId}/generate`,
         { top_k: selectedActivity?.nombreDePlaces || lastNSeats },
       );
 
@@ -318,14 +318,14 @@ export function Recommendations({ userRole }: RecommendationsProps) {
 
         try {
           // Vérifier le statut
-          const statusRes = await axios.get(`http://localhost:3000/recommendations/${selectedActivityId}/status`);
+          const statusRes = await API.get(`/recommendations/${selectedActivityId}/status`);
           const st = statusRes.data?.status;
           if (st === 'done' || st === 'error') {
             setGenerationStatus(st);
           }
 
           // Chercher le résultat dans l'historique
-          const histRes = await axios.get(`http://localhost:3000/recommendations/${selectedActivityId}/history`);
+          const histRes = await API.get(`/recommendations/${selectedActivityId}/history`);
           const newEntry = (histRes.data ?? []).find(
             (e: any) => new Date(e.createdAt) > new Date(launchTime) && e.jsonOllama?.rankings?.length > 0
           );
@@ -338,9 +338,9 @@ export function Recommendations({ userRole }: RecommendationsProps) {
       setElapsedMs(ollamaJson?.elapsedMs ?? null);
       const rankings: { employeeId: string; score: number; reasons: string[] }[] = ollamaJson?.rankings ?? [];
 
-      const top100Res = await axios.get(`http://localhost:3000/recommendations/${selectedActivityId}/top100`);
+      const top100Res = await API.get(`/recommendations/${selectedActivityId}/top100`);
       const candidates: ApiRecommendation[] = top100Res.data?.candidates ?? [];
-      const decisionsRes = await axios.get(`http://localhost:3000/recommendations/${selectedActivityId}/decisions`);
+      const decisionsRes = await API.get(`/recommendations/${selectedActivityId}/decisions`);
       setApiResults(mergeRankingsWithCandidates(rankings, candidates, decisionsRes.data ?? []));
       setHasNoReco(false);
     } catch (err: any) {
@@ -362,8 +362,8 @@ export function Recommendations({ userRole }: RecommendationsProps) {
     setLoadingDetail(activityId);
     try {
       const [recoRes, top100Res] = await Promise.all([
-        axios.get(`http://localhost:3000/recommendations/${activityId}`),
-        axios.get(`http://localhost:3000/recommendations/${activityId}/top100`),
+        API.get(`/recommendations/${activityId}`),
+        API.get(`/recommendations/${activityId}/top100`),
       ]);
       const rankings: { employeeId: string; score: number; reasons: string[] }[] =
         recoRes.data?.jsonOllama?.rankings ?? [];
@@ -394,7 +394,7 @@ export function Recommendations({ userRole }: RecommendationsProps) {
     setLoadingAll(true);
     setRunAllResults([]);
     // Fire-and-forget — le backend tourne en arrière-plan
-    axios.post('http://localhost:3000/recommendations/generate-all', { top_k: lastNSeats })
+    API.post('/recommendations/generate-all', { top_k: lastNSeats })
       .catch((err: any) => alert(`Erreur : ${err?.response?.data?.message ?? err.message}`));
     // Retour immédiat — afficher un message informatif (pas d'activityId fictif)
     setRunAllResults([{ activityId: '', title: '⏳ Run All lancé en arrière-plan — consulte l\'historique de chaque activité pour voir les résultats au fur et à mesure.', elapsedMs: 0, rankings: 0 }]);

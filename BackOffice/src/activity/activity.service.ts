@@ -9,6 +9,7 @@ import { CreateActivityDto } from './dto-activity/create-activity.dto';
 import { UpdateActivityDto } from './dto-activity/update-activity.dto';
 import { User } from '../users/shemas/user.shema';
 import { Skill } from '../skill/skill.schema';
+import { Department } from '../department/department.schema';
 import {
   parseCvSkillLevels,
   calculateSkillMatchScore,
@@ -25,6 +26,7 @@ export class ActivityService {
     @InjectModel(Activity.name) private activityModel: Model<ActivityDocument>,
     @InjectModel(User.name) private userModel: Model<User>,
     @InjectModel(Skill.name) private skillModel: Model<Skill>,
+    @InjectModel(Department.name) private departmentModel: Model<Department>,
   ) {}
 
   async create(dto: CreateActivityDto): Promise<ActivityDocument> {
@@ -35,6 +37,37 @@ export class ActivityService {
     const filter: any = {};
     if (departmentId) filter.targetedDepartmentId = departmentId;
     return this.activityModel.find(filter).populate('requiredSkills.skillId').exec();
+  }
+
+  /** Retourne uniquement les activités des départements gérés par ce manager */
+  async findAllForManager(managerId: string, departmentId?: string): Promise<ActivityDocument[]> {
+    const departments = await this.departmentModel
+      .find({ managerIds: new Types.ObjectId(managerId) }, { _id: 1 })
+      .lean();
+    const deptIds = departments.map((d) => d._id);
+
+    const filter: any = { targetedDepartmentId: { $in: deptIds } };
+    if (departmentId) filter.targetedDepartmentId = departmentId;
+
+    return this.activityModel.find(filter).populate('requiredSkills.skillId').exec();
+  }
+
+  /** Retourne uniquement les activités du département de l'employee */
+  async findAllForEmployee(employeeId: string): Promise<ActivityDocument[]> {
+    const employee = await this.userModel.findById(employeeId, { departmentId: 1 }).lean();
+    if (!employee || !(employee as any).departmentId) return [];
+    return this.activityModel
+      .find({ targetedDepartmentId: (employee as any).departmentId })
+      .populate('requiredSkills.skillId')
+      .exec();
+  }
+  async isManagerOfDepartment(managerId: string, departmentId?: string): Promise<boolean> {
+    if (!departmentId) return false;
+    const dept = await this.departmentModel.findOne({
+      _id: new Types.ObjectId(departmentId),
+      managerIds: new Types.ObjectId(managerId),
+    });
+    return !!dept;
   }
 
   async findOne(id: string): Promise<ActivityDocument> {
@@ -64,7 +97,6 @@ export class ActivityService {
     if (!activity) throw new NotFoundException(`Activity ${activityId} not found`);
 
     // 2. Build requiredSkills input list
-    // Si contributionToScore absent → poids égal (1 par skill)
     const requiredSkills: RequiredSkillInput[] = activity.requiredSkills.map((rs) => {
       const skill = rs.skillId as any;
       return {
@@ -78,19 +110,24 @@ export class ActivityService {
     // 3. contextScore — identique pour tous les employés de cette activité
     const contextScore = calculateContextScore(activity.context ?? '');
 
-    // 3. Build skill name -> id map for CV parsing
+    // 4. Build skill name -> id map for CV parsing
     const allSkills = await this.skillModel.find({}, { _id: 1, name: 1 }).lean();
     const skillNameMap = new Map<string, string>(
       allSkills.map((s) => [s.name.toUpperCase(), String(s._id)]),
     );
 
-    // 4. Load all employees
+    // 5. Load only employees belonging to the activity's targeted department
+    const employeeFilter: any = { role: 'EMPLOYEE' };
+    if (activity.targetedDepartmentId) {
+      employeeFilter.departmentId = activity.targetedDepartmentId;
+    }
+
     const employees = await this.userModel
-      .find({ role: 'EMPLOYEE' })
+      .find(employeeFilter)
       .populate('skills', 'name')
       .lean();
 
-    // 5. Score each employee
+    // 6. Score each employee
     const results: {
       employee: any;
       skillMatchScore: number;
@@ -101,7 +138,6 @@ export class ActivityService {
     }[] = [];
 
     for (const emp of employees) {
-      // Parse CV file for skill levels
       let employeeSkills: EmployeeSkillLevel[] = [];
       if (emp.cv) {
         try {
@@ -113,7 +149,6 @@ export class ActivityService {
         } catch { /* skip if file unreadable */ }
       }
 
-      // Fallback: skills without level → treat as MEDIUM
       if (employeeSkills.length === 0 && emp.skills?.length) {
         employeeSkills = (emp.skills as any[]).map((s) => ({
           skillId: String(s._id ?? s),
@@ -132,6 +167,7 @@ export class ActivityService {
           name: (emp as any).name,
           email: (emp as any).email,
           skills: emp.skills,
+          departmentId: (emp as any).departmentId,
         },
         skillMatchScore: skillMatch,
         contextScore: contextScore,
@@ -141,7 +177,7 @@ export class ActivityService {
       });
     }
 
-    // 6. Sort by finalScore desc, return top N
+    // 7. Sort by finalScore desc, return top N
     results.sort((a, b) => b.finalScore - a.finalScore);
     return results.slice(0, limit);
   }

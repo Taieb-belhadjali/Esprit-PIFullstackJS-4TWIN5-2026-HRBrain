@@ -1,6 +1,6 @@
 // Vue principale Skills : liste, filtres, pagination, export CSV, graphique départements
 import React, { useState, useEffect, useMemo } from 'react';
-import axios from 'axios';
+import API from '../../../api/api';
 import { SkillCard } from '../skills/SkillCard';
 import { SkillForm } from '../skills/SkillForm';
 import { SkillGrandFormatCard } from '../skills/SkillGrandFormatCard';
@@ -13,7 +13,7 @@ import Pagination from '../ui/Pagination';
 import { SkillsDepartmentChart } from '../skills/SkillsDepartmentChart';
 
 
-type UserRole = 'HR' | 'Manager' | 'Employee';
+type UserRole = 'HR' | 'Manager' | 'Employee' | 'SUPERADMIN';
 
 interface SkillsProps {
   userRole: UserRole;
@@ -105,22 +105,21 @@ export const Skills: React.FC<SkillsProps> = ({ userRole }) => {
   // Chargement initial des départements
   const fetchDepartments = async () => {
     try {
-      const res = await axios.get('http://localhost:3000/departments');
+      const res = await API.get('/departments');
       setDepartments(res.data);
     } catch (err) {
       setDepartments([]);
     }
   };
 
-  // Chargement des skills (filtrés par département si sélectionné)
   const fetchSkills = async () => {
     setLoading(true);
     try {
-      let url = 'http://localhost:3000/skills';
+      let url = '/skills';
       if (selectedDepartment) {
         url += `?departmentId=${selectedDepartment}`;
       }
-      const res = await axios.get(url);
+      const res = await API.get(url);
       const validSkills = res.data.filter((skill: any) => skill.name);
       setSkills(validSkills);
     } catch (err) {
@@ -140,7 +139,7 @@ export const Skills: React.FC<SkillsProps> = ({ userRole }) => {
   const handleDelete = async (id: string) => {
     if (!window.confirm('Voulez-vous vraiment supprimer ce skill ?')) return;
     try {
-      await axios.delete(`http://localhost:3000/skills/${id}`);
+      await API.delete(`/skills/${id}`);
       fetchSkills();
     } catch (err) {
       alert('Erreur lors de la suppression');

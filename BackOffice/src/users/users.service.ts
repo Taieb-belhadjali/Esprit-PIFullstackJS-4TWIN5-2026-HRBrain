@@ -1,13 +1,16 @@
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
-import { Model } from 'mongoose';
+import { Model, Types } from 'mongoose';
 import * as bcrypt from 'bcrypt';
-import { readFile, writeFile } from 'fs/promises';
+import { readFile, writeFile, mkdir } from 'fs/promises';
+import { existsSync } from 'fs';
+import { resolve, join } from 'path';
 import { PDFParse } from 'pdf-parse';
 import { User } from './shemas/user.shema';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { Skill } from '../skill/skill.schema';
+import { Department } from '../department/department.schema';
 
 @Injectable()
 export class UsersService {
@@ -16,6 +19,8 @@ export class UsersService {
     private userModel: Model<User>,
     @InjectModel(Skill.name)
     private skillModel: Model<Skill>,
+    @InjectModel(Department.name)
+    private departmentModel: Model<Department>,
   ) {}
 
   private escapeRegex(value: string) {
@@ -106,124 +111,179 @@ export class UsersService {
     return buffer.toString('utf-8');
   }
 
+  /** Génère un fichier CV .txt avec des skills aléatoires depuis la DB */
+  private async generateCvFile(employeeId: string, employeeName: string): Promise<{ cvPath: string; skillIds: string[] }> {
+    const LEVELS = [
+      'LOW', 'LOW', 'LOW', 'LOW', 'LOW', 'LOW', 'LOW', 'LOW', 'LOW', 'LOW',  // 41%
+      'MEDIUM', 'MEDIUM', 'MEDIUM', 'MEDIUM', 'MEDIUM', 'MEDIUM', 'MEDIUM',   // 30%
+      'HIGH', 'HIGH', 'HIGH', 'HIGH', 'HIGH',                                  // 21%
+      'EXPERT', 'EXPERT',                                                       // 8%
+    ];
+    const CORE_SKILLS = [
+      'NODE.JS', 'TYPESCRIPT', 'PYTHON', 'REACT', 'POSTGRESQL', 'MONGODB',
+      'DOCKER', 'KUBERNETES', 'GIT', 'JAVASCRIPT', 'JAVA', 'SPRING BOOT',
+    ];
+
+    const randomLevel = () => LEVELS[Math.floor(Math.random() * LEVELS.length)];
+    const shuffle = <T>(arr: T[]) => arr.sort(() => Math.random() - 0.5);
+
+    // Charger tous les skills de la DB
+    const allSkills = await this.skillModel.find({}, { _id: 1, name: 1 }).lean();
+    const skillMap = new Map<string, { name: string; id: string }>();
+    for (const s of allSkills) {
+      const key = s.name.toUpperCase();
+      if (!skillMap.has(key)) skillMap.set(key, { name: s.name, id: String(s._id) });
+    }
+    const skillNames = Array.from(skillMap.values()).map(v => v.name);
+
+    // 5-12 skills aléatoires
+    const count = 5 + Math.floor(Math.random() * 8);
+
+    // 40% de chance d'inclure 1-2 core skills
+    const coreToAdd: string[] = [];
+    if (Math.random() < 0.4) {
+      const validCores = CORE_SKILLS.filter((c) => skillMap.has(c));
+      const numCore = 1 + Math.floor(Math.random() * 2);
+      coreToAdd.push(...shuffle([...validCores]).slice(0, numCore));
+    }
+
+    const remaining = count - coreToAdd.length;
+    const others = shuffle([...skillNames].filter((n) => !coreToAdd.includes(n.toUpperCase()))).slice(0, remaining);
+    const chosen = [...coreToAdd.map((c) => skillMap.get(c)?.name ?? c), ...others];
+
+    const lines = chosen.map((name) => `${name}:${randomLevel()}`);
+
+    // Chemin du fichier : DataSets/uploads/<id>_<name>.txt
+    const safeName = employeeName.replace(/[^a-zA-Z0-9]/g, '_');
+    const uploadsDir = join(process.cwd(), 'DataSets', 'uploads');
+    if (!existsSync(uploadsDir)) {
+      await mkdir(uploadsDir, { recursive: true });
+    }
+    const filename = `${employeeId}_${safeName}.txt`;
+    const absolutePath = join(uploadsDir, filename);
+    await writeFile(absolutePath, lines.join('\n') + '\n', 'utf-8');
+
+    // Récupérer les IDs des skills générés
+    const skillIds: string[] = chosen
+      .map(name => skillMap.get(name.toUpperCase())?.id)
+      .filter((id): id is string => !!id);
+
+    // Chemin relatif pour la DB (comme les autres employés du dataset)
+    const relativeCvPath = join('DataSets', 'uploads', filename);
+    return { cvPath: relativeCvPath, skillIds };
+  }
+
   async create(data: CreateUserDto, file?: Express.Multer.File) {
     try {
-      console.log('=== CREATE USER ===');
-      console.log('Role:', data.role);
-      console.log('File:', file ? { filename: file.filename, path: file.path, mimetype: file.mimetype } : 'NO FILE');
-      
       const hashedPassword = await bcrypt.hash(data.password, 10);
-      
-      // Extract skills from file only for EMPLOYEE role
+
       let cvDetectedSkillIds: string[] = [];
       let manualSkills: string[] = [];
-      
+      let finalCvPath: string | undefined;
+
       if (data.role === 'EMPLOYEE') {
-        // Extract skills from file if provided (PDF or TXT)
+        manualSkills = data.skills ? (Array.isArray(data.skills) ? data.skills : [data.skills]) : [];
+
         if (file?.path) {
-          console.log('Extracting skills from file:', file.path);
+          // CV fourni manuellement — extraire les skills
           let cvText = '';
-          
           if (file.mimetype === 'application/pdf') {
             cvText = await this.extractTextFromPdf(file.path);
           } else if (file.mimetype === 'text/plain') {
             cvText = await this.extractTextFromTxt(file.path);
           }
-          
-          // Detecter les skills - cela jettera une erreur si format invalide
           cvDetectedSkillIds = await this.detectSkillIdsFromText(cvText);
-          console.log('Detected skills:', cvDetectedSkillIds);
-        } else {
-          console.log('NO FILE PROVIDED for EMPLOYEE');
-        }
+          finalCvPath = `uploads/${file.filename}`;
 
-        // Récupérer les skills sélectionnés manuellement
-        manualSkills = data.skills ? (Array.isArray(data.skills) ? data.skills : [data.skills]) : [];
-        console.log('Manual skills:', manualSkills);
-        const cvDetectedSet = new Set(cvDetectedSkillIds);
-        
-        // Vérifier les doublons (skills déjà dans le CV)
-        const conflictSkills = manualSkills.filter(skillId => cvDetectedSet.has(skillId));
-
-        if (conflictSkills.length > 0) {
-          const conflictSkillDetails = await this.skillModel.find(
-            { _id: { $in: conflictSkills } },
-            { name: 1 }
-          );
-          throw new BadRequestException(
-            `Skill déjà dans le CV: ${conflictSkillDetails.map(s => s.name).join(', ')}`
-          );
-        }
-
-        // Ajouter les skills manuels qui ne sont pas dans le CV avec niveau LOW
-        const manualNotInCV = manualSkills.filter(skillId => !cvDetectedSet.has(skillId));
-        
-        // Si skills manuels ajoutés, les ajouter au fichier texte
-        if (manualNotInCV.length > 0 && file?.path) {
-          try {
-            // Récupérer les détails des skills manuels
-            const manualSkillDetails = await this.skillModel.find(
-              { _id: { $in: manualNotInCV } },
-              { name: 1 }
-            );
-            
-            // Lire le fichier existant
-            let fileContent = await readFile(file.path, 'utf-8');
-            
-            // Ajouter les nouveaux skills avec niveau LOW
-            const newSkillsText = manualSkillDetails
-              .map(skill => `${skill.name}:LOW`)
-              .join('\n');
-            
-            fileContent = fileContent + '\n' + newSkillsText;
-            
-            // Écrire le fichier modifié
-            await writeFile(file.path, fileContent, 'utf-8');
-            
-            console.log(`Skills manuels ajoutés au fichier: ${manualSkillDetails.map(s => s.name).join(', ')}`);
-          } catch (err) {
-            console.error('Erreur lors de la mise à jour du fichier:', err);
+          // Ajouter les skills manuels non présents dans le CV
+          const cvDetectedSet = new Set(cvDetectedSkillIds);
+          const conflictSkills = manualSkills.filter(id => cvDetectedSet.has(id));
+          if (conflictSkills.length > 0) {
+            const details = await this.skillModel.find({ _id: { $in: conflictSkills } }, { name: 1 });
+            throw new BadRequestException(`Skill déjà dans le CV: ${details.map(s => s.name).join(', ')}`);
           }
+          const manualNotInCV = manualSkills.filter(id => !cvDetectedSet.has(id));
+          if (manualNotInCV.length > 0) {
+            const details = await this.skillModel.find({ _id: { $in: manualNotInCV } }, { name: 1 });
+            let content = await readFile(file.path, 'utf-8');
+            content += '\n' + details.map(s => `${s.name}:LOW`).join('\n');
+            await writeFile(file.path, content, 'utf-8');
+          }
+          cvDetectedSkillIds = [...cvDetectedSkillIds, ...manualNotInCV];
         }
-        
-        cvDetectedSkillIds = [...cvDetectedSkillIds, ...manualNotInCV];
+        // Pas de fichier fourni → générer un CV automatiquement (ID temporaire, on met à jour après save)
+        // On génère d'abord l'utilisateur pour avoir son _id, puis on crée le fichier
       }
 
-      // Merge manual skills + CV-detected skills (only for EMPLOYEE)
-      const mergedSkillIds = data.role === 'EMPLOYEE' 
+      const mergedSkillIds = data.role === 'EMPLOYEE'
         ? [...new Set([...manualSkills, ...cvDetectedSkillIds])]
         : [];
-
-      const cvPath = file && data.role === 'EMPLOYEE' ? `uploads/${file.filename}` : undefined;
-      console.log('CV Path to save:', cvPath);
 
       const user = new this.userModel({
         ...data,
         password: hashedPassword,
         mustChangePassword: true,
-        cv: cvPath,
+        cv: finalCvPath,
         skills: mergedSkillIds,
         cvDetectedSkills: data.role === 'EMPLOYEE' ? cvDetectedSkillIds : [],
+        departmentId: data.departmentId ?? null,
       });
 
       const savedUser = await user.save();
-      console.log('User saved:', { id: savedUser._id, cv: savedUser.cv });
-      return savedUser.populate('skills', 'name');
-    } catch (error) {
-      if (error instanceof BadRequestException) {
-        throw error;
+
+      // Si MANAGER avec departmentId → l'ajouter dans managerIds du département
+      if (data.role === 'MANAGER' && data.departmentId) {
+        await this.departmentModel.findByIdAndUpdate(
+          data.departmentId,
+          { $addToSet: { managerIds: new Types.ObjectId(String(savedUser._id)) } },
+        );
       }
+
+      // Génération auto du CV si aucun fichier fourni pour un EMPLOYEE
+      if (data.role === 'EMPLOYEE' && !file?.path) {
+        const { cvPath, skillIds } = await this.generateCvFile(
+          String(savedUser._id),
+          (data as any).name ?? 'employee',
+        );
+        await this.userModel.findByIdAndUpdate(savedUser._id, {
+          cv: cvPath,
+          skills: skillIds,
+          cvDetectedSkills: skillIds,
+        });
+        console.log(`CV auto-généré: ${cvPath} avec ${skillIds.length} skills`);
+      }
+
+      // Ajouter l'employé au dataset CSV
+      if (data.role === 'EMPLOYEE') {
+        try {
+          const updatedUser = await this.userModel.findById(savedUser._id).lean();
+          const csvPath = join(process.cwd(), 'DataSets', 'employees_updated.csv');
+          console.log(`CSV path: ${csvPath}`);
+          const safeName = (updatedUser as any).name?.replace(/,/g, ' ') ?? '';
+          const safeEmail = (updatedUser as any).email?.replace(/,/g, ' ') ?? '';
+          const safeCv = ((updatedUser as any).cv ?? '').replace(/,/g, ' ');
+          const csvLine = `\n${safeName},${safeEmail},${data.password},EMPLOYEE,${safeCv},true`;
+          await writeFile(csvPath, csvLine, { flag: 'a', encoding: 'utf-8' });
+          console.log(`Employé ajouté au CSV: ${safeName}`);
+        } catch (err) {
+          console.error('Erreur ajout CSV:', err);
+        }
+      }
+
+      return (await this.userModel.findById(savedUser._id))!.populate('skills', 'name');
+    } catch (error) {
+      if (error instanceof BadRequestException) throw error;
       console.error('Create user error:', error);
       throw new BadRequestException(error.message || 'Error creating user');
     }
   }
 
   async findAll() {
-    return this.userModel.find().populate('skills', 'name');
+    return this.userModel.find().populate('skills', 'name').populate('departmentId', 'name');
   }
 
   async findOne(id: string) {
-    const user = await this.userModel.findById(id).populate('skills', 'name');
+    const user = await this.userModel.findById(id).populate('skills', 'name').populate('departmentId', 'name');
     if (!user) throw new NotFoundException('User not found');
     return user;
   }
@@ -231,7 +291,7 @@ export class UsersService {
   async update(id: string, data: UpdateUserDto) {
     const user = await this.userModel.findByIdAndUpdate(id, data, {
       new: true,
-    }).populate('skills', 'name');
+    }).populate('skills', 'name').populate('departmentId', 'name');
     if (!user) throw new NotFoundException('User not found');
     return user;
   }

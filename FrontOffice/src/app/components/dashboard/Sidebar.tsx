@@ -14,7 +14,7 @@ import {
 } from 'lucide-react';
 import { ViewType } from './Dashboard';
 
-type UserRole = 'HR' | 'Manager' | 'Employee';
+type UserRole = 'HR' | 'Manager' | 'Employee' | 'SUPERADMIN';
 
 interface SidebarProps {
   currentView: ViewType;
@@ -45,61 +45,61 @@ export function Sidebar({
       id: 'home',
       label: 'Dashboard',
       icon: <Home className="w-5 h-5" />,
-      roles: ['HR', 'Manager', 'Employee'],
+      roles: ['HR', 'Manager', 'Employee', 'SUPERADMIN'],
     },
     {
       id: 'employees',
       label: 'Employees',
       icon: <Users className="w-5 h-5" />,
-      roles: ['HR', 'Manager'],
+      roles: ['HR', 'Manager', 'SUPERADMIN'],
     },
     {
       id: 'departments',
       label: 'Departments',
       icon: <Building2 className="w-5 h-5" />,
-      roles: ['HR'],
+      roles: ['HR', 'SUPERADMIN'],
     },
     {
       id: 'skills',
       label: 'Skills',
       icon: <Brain className="w-5 h-5" />,
-      roles: ['HR', 'Manager', 'Employee'],
+      roles: ['HR', 'Manager', 'Employee', 'SUPERADMIN'],
     },
     {
       id: 'activities',
       label: 'Activities',
       icon: <Activity className="w-5 h-5" />,
-      roles: ['HR', 'Manager', 'Employee'],
+      roles: ['HR', 'Manager', 'Employee', 'SUPERADMIN'],
     },
     {
       id: 'recommendations',
       label: 'Recommendations',
       icon: <Target className="w-5 h-5" />,
-      roles: ['HR', 'Manager'],
+      roles: ['HR', 'Manager', 'SUPERADMIN'],
     },
     {
       id: 'analytics',
       label: 'Analytics',
       icon: <BarChart3 className="w-5 h-5" />,
-      roles: ['HR', 'Manager'],
+      roles: ['HR', 'Manager', 'SUPERADMIN'],
     },
     {
       id: 'notifications',
       label: 'Notifications',
       icon: <Bell className="w-5 h-5" />,
-      roles: ['HR', 'Manager', 'Employee'],
+      roles: ['HR', 'Manager', 'Employee', 'SUPERADMIN'],
     },
     {
       id: 'profile',
       label: 'Profile',
       icon: <User className="w-5 h-5" />,
-      roles: ['HR', 'Manager', 'Employee'],
+      roles: ['HR', 'Manager', 'Employee', 'SUPERADMIN'],
     },
     {
       id: 'settings',
       label: 'Settings',
       icon: <Settings className="w-5 h-5" />,
-      roles: ['HR', 'Manager', 'Employee'],
+      roles: ['HR', 'Manager', 'Employee', 'SUPERADMIN'],
     },
   ];
 
