@@ -9,18 +9,26 @@ export class NlpService {
     @InjectModel(Skill.name) private skillModel: Model<SkillDocument>,
   ) {}
 
-  async extractSkills(description: string): Promise<string[]> {
-    if (!description) return [];
+  async extractSkills(text: string): Promise<string[]> {
+    if (!text) return [];
 
-    const text = description.toLowerCase();
+    const normalized = text.toLowerCase();
+    const skills = await this.skillModel.find().lean().exec();
 
-    const skills = await this.skillModel.find().exec();
+    const matched = skills.filter((skill) => {
+      const name = skill.name.toLowerCase().trim();
 
-    const matchedSkills = skills.filter((skill) =>
-      text.includes(skill.name.toLowerCase())
-    );
+      // Skip very short names — too many false positives
+      if (name.length <= 2) return false;
 
-    // remove duplicates
-    return [...new Set(matchedSkills.map(s => s.name))];
+      // Escape special regex chars in skill name
+      const escaped = name.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+
+      // Word boundary: not preceded or followed by alphanumeric chars
+      const regex = new RegExp(`(?<![a-z0-9.])${escaped}(?![a-z0-9])`, 'i');
+      return regex.test(normalized);
+    });
+
+    return [...new Set(matched.map((s) => s.name))];
   }
 }

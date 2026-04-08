@@ -11,6 +11,7 @@ import {
   NotFoundException,
   Res,
   BadRequestException,
+  UseGuards,
 } from '@nestjs/common';
 import type { Response } from 'express';
 import { UsersService } from './users.service';
@@ -18,6 +19,8 @@ import { FileInterceptor } from '@nestjs/platform-express';
 import { diskStorage } from 'multer';
 import { extname, resolve } from 'path';
 import { createReadStream, existsSync } from 'fs';
+import { JwtAuthGuard } from '../auth/jwt-auth.guard';
+import { RolesGuard, Roles } from '../auth/roles.guard';
 
 @Controller('users')
 export class UsersController {
@@ -75,6 +78,8 @@ export class UsersController {
   }
 
   @Post()
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('SUPERADMIN', 'HR')
   @UseInterceptors(
     FileInterceptor('cv', {
       storage: diskStorage({
@@ -111,11 +116,15 @@ export class UsersController {
   }
 
   @Put(':id')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('SUPERADMIN', 'HR')
   update(@Param('id') id: string, @Body() body: any) {
     return this.usersService.update(id, body);
   }
 
   @Delete(':id')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('SUPERADMIN', 'HR')
   remove(@Param('id') id: string) {
     return this.usersService.remove(id);
   }

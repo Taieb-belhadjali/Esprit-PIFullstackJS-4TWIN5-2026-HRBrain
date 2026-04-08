@@ -82,10 +82,13 @@ export function Activities({ userRole }: ActivitiesProps) {
 
   // Extract skills from description using NLP with level detection
   const handleExtractSkills = async () => {
-    if (!form.description || form.description.trim() === '') return;
-    
+    if (!form.description && !form.title) return;
+
+    // Combine title + description for better skill detection
+    const combinedText = `${form.title} ${form.description}`.trim();
+
     try {
-      const res = await extractSkills(form.description);
+      const res = await extractSkills(combinedText);
       const extractedSkills = res.data.skills || [];
       
       // Map NLP levels to our levels
