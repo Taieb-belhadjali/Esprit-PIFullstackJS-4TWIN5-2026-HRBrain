@@ -119,7 +119,7 @@ export function Sidebar({
           <div className="flex items-center justify-between">
             {!isCollapsed && (
               <div className="flex items-center gap-2">
-                <div className="bg-white rounded-lg p-2">
+                <div className="bg-card rounded-lg p-2">
                   <Brain className="w-6 h-6 text-primary" />
                 </div>
                 <div>

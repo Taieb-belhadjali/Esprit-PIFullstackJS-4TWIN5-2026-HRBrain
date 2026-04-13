@@ -19,10 +19,12 @@ import { diskStorage } from 'multer';
 import { extname, resolve } from 'path';
 import { createReadStream, existsSync } from 'fs';
 
+// Users Controller to handle user-related requests
 @Controller('users')
 export class UsersController {
   constructor(private readonly usersService: UsersService) {}
 
+  // Get CV file path
   @Get(':id/cv')
   async getCvFile(@Param('id') id: string) {
     const user = await this.usersService.findOne(id);
@@ -34,7 +36,7 @@ export class UsersController {
     }
     return { cvPath: user.cv };
   }
-//Download CV
+  //Download CV
   @Get(':id/cv/download')
   async downloadCv(@Param('id') id: string, @Res() res: Response) {
     try {
@@ -74,6 +76,7 @@ export class UsersController {
     }
   }
 
+  // Create a new user with optional CV file upload
   @Post()
   @UseInterceptors(
     FileInterceptor('cv', {
@@ -84,6 +87,7 @@ export class UsersController {
           callback(null, uniqueName + extname(file.originalname));
         },
       }),
+      // Only allow PDF and TXT files
       fileFilter: (req, file, callback) => {
         const allowedMimes = ['application/pdf', 'text/plain'];
         if (!allowedMimes.includes(file.mimetype)) {
@@ -93,6 +97,7 @@ export class UsersController {
       },
     }),
   )
+  // Create a new user with optional CV file upload
   create(@Body() body: any, @UploadedFile() file: Express.Multer.File) {
     console.log('BODY:', body);
     console.log('FILE:', file);

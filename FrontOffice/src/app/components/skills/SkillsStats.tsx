@@ -16,7 +16,7 @@ const stats = (totalSkills: number, totalWithDescription: number) => [
     iconClass: 'text-blue-600',
     bgClass: 'bg-blue-50',
     borderClass: 'border-slate-200',
-    valueClass: 'text-slate-900',
+    valueClass: 'text-foreground',
   },
   {
     label: 'Avec description',
@@ -25,7 +25,7 @@ const stats = (totalSkills: number, totalWithDescription: number) => [
     iconClass: 'text-blue-600',
     bgClass: 'bg-blue-50',
     borderClass: 'border-slate-200',
-    valueClass: 'text-slate-900',
+    valueClass: 'text-foreground',
   },
 ];
 
@@ -39,7 +39,7 @@ export const SkillsStats: React.FC<SkillsStatsProps> = ({
         ({ label, value, icon: Icon, iconClass, bgClass, borderClass, valueClass }) => (
           <div
             key={label}
-            className={`flex items-center gap-4 rounded-xl border ${borderClass} bg-white p-4 shadow-sm transition hover:shadow-md`}
+            className={`flex items-center gap-4 rounded-xl border ${borderClass} bg-card p-4 shadow-sm transition hover:shadow-md`}
           >
             <div className={`flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-xl ${bgClass}`}>
               <Icon size={20} className={iconClass} />

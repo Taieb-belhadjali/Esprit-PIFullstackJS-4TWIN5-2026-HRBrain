@@ -11,16 +11,16 @@ export class NlpService {
 
   async extractSkills(description: string): Promise<string[]> {
     if (!description) return [];
-
+    // Convert the description to lowercase for case-insensitive matching
     const text = description.toLowerCase();
-
+    // Fetch all skills from the database
     const skills = await this.skillModel.find().exec();
-
+    // Match skills in the description
     const matchedSkills = skills.filter((skill) =>
-      text.includes(skill.name.toLowerCase())
+      text.includes(skill.name.toLowerCase()),
     );
 
     // remove duplicates
-    return [...new Set(matchedSkills.map(s => s.name))];
+    return [...new Set(matchedSkills.map((s) => s.name))];
   }
 }

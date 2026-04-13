@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Navigate, Route, Routes } from 'react-router-dom';
 import { Login } from './components/auth/Login';
 import { ChangePassword } from './components/auth/ChangePassword';
@@ -39,8 +39,29 @@ function clearAuth() {
   localStorage.removeItem(AUTH_KEY);
 }
 
-export default function App() {
+const THEME_KEY = 'hrbrain_theme';
+
+function saveTheme(theme: 'light' | 'dark') {
+  localStorage.setItem(THEME_KEY, theme);
+}
+
+interface AppProps {
+  initialTheme?: 'light' | 'dark';
+}
+
+export default function App({ initialTheme = 'light' }: AppProps) {
   const [auth, setAuth] = useState<AuthState | null>(loadAuth);
+  const [theme, setTheme] = useState<'light' | 'dark'>(initialTheme);
+
+  useEffect(() => {
+    const root = document.documentElement;
+    if (theme === 'dark') {
+      root.classList.add('dark');
+    } else {
+      root.classList.remove('dark');
+    }
+    saveTheme(theme);
+  }, [theme]);
 
   const handleLogin = (result: { token: string; mustChangePassword: boolean; user: User }) => {
     saveAuth(result);
@@ -109,6 +130,8 @@ export default function App() {
             <Dashboard
               user={{ email: auth.user.email, role: mapRole(auth.user.role), name: auth.user.name }}
               onLogout={handleLogout}
+              theme={theme}
+              setTheme={setTheme}
             />
           ) : auth && auth.mustChangePassword ? (
             <Navigate to="/change-password" replace />

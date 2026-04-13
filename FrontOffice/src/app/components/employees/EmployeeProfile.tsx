@@ -89,14 +89,14 @@ export function EmployeeProfile({ employeeId, onBack, userRole }: EmployeeProfil
       </button>
 
       {/* Profile Header */}
-      <div className="bg-white rounded-lg shadow-sm p-6 border border-border">
+      <div className="bg-card rounded-lg shadow-sm p-6 border border-border">
         <div className="flex items-start justify-between mb-6">
           <div className="flex items-start gap-6">
             <div className="w-24 h-24 rounded-full bg-primary/10 flex items-center justify-center text-primary text-3xl font-semibold">
               SJ
             </div>
             <div>
-              <h1 className="text-3xl mb-2 text-gray-900">Sarah Johnson</h1>
+              <h1 className="text-3xl mb-2 text-foreground">Sarah Johnson</h1>
               <p className="text-lg text-muted-foreground mb-4">Senior Developer</p>
               <div className="flex flex-wrap gap-4 text-sm text-muted-foreground">
                 <div className="flex items-center gap-2">
@@ -128,24 +128,24 @@ export function EmployeeProfile({ employeeId, onBack, userRole }: EmployeeProfil
 
         <div className="grid grid-cols-3 gap-4 pt-6 border-t border-border">
           <div className="text-center">
-            <p className="text-2xl font-semibold text-gray-900">24</p>
+            <p className="text-2xl font-semibold text-foreground">24</p>
             <p className="text-sm text-muted-foreground">Total Skills</p>
           </div>
           <div className="text-center">
-            <p className="text-2xl font-semibold text-gray-900">8</p>
+            <p className="text-2xl font-semibold text-foreground">8</p>
             <p className="text-sm text-muted-foreground">Activities</p>
           </div>
           <div className="text-center">
-            <p className="text-2xl font-semibold text-gray-900">4.5</p>
+            <p className="text-2xl font-semibold text-foreground">4.5</p>
             <p className="text-sm text-muted-foreground">Years Experience</p>
           </div>
         </div>
       </div>
 
       {/* Skills Section */}
-      <div className="bg-white rounded-lg shadow-sm p-6 border border-border">
+      <div className="bg-card rounded-lg shadow-sm p-6 border border-border">
         <div className="flex items-center justify-between mb-6">
-          <h2 className="text-2xl text-gray-900">Skills & Competencies</h2>
+          <h2 className="text-2xl text-foreground">Skills & Competencies</h2>
           {userRole === 'HR' && (
             <button className="flex items-center gap-2 text-primary hover:underline">
               <Plus className="w-4 h-4" />
@@ -159,7 +159,7 @@ export function EmployeeProfile({ employeeId, onBack, userRole }: EmployeeProfil
             <div key={index} className="border border-border rounded-lg p-4">
               <div className="flex items-center justify-between mb-3">
                 <div className="flex items-center gap-3">
-                  <h3 className="font-medium text-gray-900">{skill.name}</h3>
+                  <h3 className="font-medium text-foreground">{skill.name}</h3>
                   <span className={`text-xs px-2 py-1 rounded-full ${getTypeColor(skill.type)}`}>
                     {skill.type}
                   </span>
@@ -181,8 +181,8 @@ export function EmployeeProfile({ employeeId, onBack, userRole }: EmployeeProfil
       </div>
 
       {/* Activity History */}
-      <div className="bg-white rounded-lg shadow-sm p-6 border border-border">
-        <h2 className="text-2xl mb-6 text-gray-900">Activity History</h2>
+      <div className="bg-card rounded-lg shadow-sm p-6 border border-border">
+        <h2 className="text-2xl mb-6 text-foreground">Activity History</h2>
         <div className="space-y-4">
           {mockActivities.map((activity) => (
             <div
@@ -191,7 +191,7 @@ export function EmployeeProfile({ employeeId, onBack, userRole }: EmployeeProfil
             >
               <div className="flex items-center justify-between mb-3">
                 <div>
-                  <h3 className="font-medium text-gray-900 mb-1">{activity.title}</h3>
+                  <h3 className="font-medium text-foreground mb-1">{activity.title}</h3>
                   <p className="text-sm text-muted-foreground">
                     Started: {new Date(activity.startDate).toLocaleDateString()}
                   </p>

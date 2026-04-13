@@ -24,7 +24,7 @@ export const SkillGrandFormatCard: React.FC<SkillGrandFormatCardProps> = ({
       onClick={onClose}
     >
       <div
-        className="w-full max-w-lg overflow-hidden rounded-2xl bg-white shadow-2xl border border-slate-200"
+        className="w-full max-w-lg overflow-hidden rounded-2xl bg-card shadow-2xl border border-slate-200"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
@@ -36,9 +36,9 @@ export const SkillGrandFormatCard: React.FC<SkillGrandFormatCardProps> = ({
             </div>
             <div>
               <p className="text-xs font-semibold uppercase tracking-wide text-blue-600">Aperçu du skill</p>
-              <h2 className="mt-0.5 text-xl font-bold text-slate-900">{skill.name}</h2>
+              <h2 className="mt-0.5 text-xl font-bold text-foreground">{skill.name}</h2>
               {departmentName && (
-                <span className="mt-1.5 inline-flex items-center gap-1.5 rounded-full border border-slate-200 bg-slate-50 px-2.5 py-0.5 text-[11px] font-medium text-slate-500">
+                <span className="mt-1.5 inline-flex items-center gap-1.5 rounded-full border border-slate-200 bg-slate-50 px-2.5 py-0.5 text-[11px] font-medium text-muted-foreground">
                   <Building2 size={10} />
                   {departmentName}
                 </span>
@@ -47,7 +47,7 @@ export const SkillGrandFormatCard: React.FC<SkillGrandFormatCardProps> = ({
           </div>
           <button
             onClick={onClose}
-            className="rounded-lg p-2 text-slate-400 transition hover:bg-slate-100 hover:text-slate-700"
+            className="rounded-lg p-2 text-muted-foreground transition hover:bg-slate-100 hover:text-foreground"
             aria-label="Fermer l'aperçu"
           >
             <X size={18} />
@@ -59,14 +59,14 @@ export const SkillGrandFormatCard: React.FC<SkillGrandFormatCardProps> = ({
           <div className="rounded-xl border border-slate-200 bg-slate-50 p-4">
             <div className="flex items-center gap-2 mb-2">
               <FileText size={13} className="text-blue-600" />
-              <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">Description</p>
+              <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Description</p>
             </div>
             {skill.description?.trim() ? (
-              <p className="text-sm text-slate-700 leading-relaxed whitespace-pre-wrap">
+              <p className="text-sm text-foreground leading-relaxed whitespace-pre-wrap">
                 {skill.description}
               </p>
             ) : (
-              <p className="text-sm italic text-slate-400">
+              <p className="text-sm italic text-muted-foreground">
                 Aucune description renseignée pour ce skill.
               </p>
             )}
@@ -75,7 +75,7 @@ export const SkillGrandFormatCard: React.FC<SkillGrandFormatCardProps> = ({
           <div className="flex gap-3">
             <button
               onClick={onClose}
-              className="flex-1 rounded-lg border border-slate-200 py-2.5 text-sm font-medium text-slate-700 transition hover:bg-slate-50 active:scale-95"
+              className="flex-1 rounded-lg border border-slate-200 py-2.5 text-sm font-medium text-foreground transition hover:bg-slate-50 active:scale-95"
             >
               Fermer
             </button>

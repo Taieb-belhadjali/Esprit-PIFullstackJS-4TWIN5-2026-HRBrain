@@ -4,9 +4,12 @@ import { MongooseModule } from '@nestjs/mongoose';
 import { NlpController } from './nlp.controller';
 import { Skill, SkillSchema } from 'src/skill/skill.schema';
 
+// NLP Module to handle natural language processing related functionalities
 @Module({
   providers: [NlpService],
   controllers: [NlpController],
-  imports: [MongooseModule.forFeature([{ name: Skill.name, schema: SkillSchema }])],
+  imports: [
+    MongooseModule.forFeature([{ name: Skill.name, schema: SkillSchema }]),
+  ],
 })
 export class NlpModule {}

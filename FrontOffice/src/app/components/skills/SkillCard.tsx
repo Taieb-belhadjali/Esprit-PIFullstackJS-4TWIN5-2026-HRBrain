@@ -36,7 +36,7 @@ const SkillCard: React.FC<SkillCardProps> = ({
 
   return (
     <div
-      className="group relative flex flex-col bg-white rounded-xl shadow-md hover:shadow-xl transition-all duration-300 border border-gray-100 overflow-hidden cursor-pointer hover:border-blue-200"
+      className="group relative flex flex-col bg-card rounded-xl shadow-md hover:shadow-xl transition-all duration-300 border border-gray-100 overflow-hidden cursor-pointer hover:border-blue-200"
       onClick={() => onPreview?.(skillObj)}
       role="button"
       tabIndex={0}
@@ -61,11 +61,11 @@ const SkillCard: React.FC<SkillCardProps> = ({
 
           {/* Name + department */}
           <div className="flex-1 min-w-0">
-            <h3 className="text-sm font-semibold text-slate-900 group-hover:text-blue-600 transition-colors leading-snug truncate">
+            <h3 className="text-sm font-semibold text-foreground group-hover:text-blue-600 transition-colors leading-snug truncate">
               {name}
             </h3>
             {departmentName && (
-              <span className="mt-1.5 inline-flex items-center gap-1.5 rounded-full border border-slate-200 bg-slate-50 px-2 py-0.5 text-[11px] font-medium text-slate-500">
+              <span className="mt-1.5 inline-flex items-center gap-1.5 rounded-full border border-slate-200 bg-slate-50 px-2 py-0.5 text-[11px] font-medium text-muted-foreground">
                 <Building2 size={10} />
                 {departmentName}
               </span>
@@ -108,7 +108,7 @@ const SkillCard: React.FC<SkillCardProps> = ({
 
         {/* Footer */}
         <div className="flex items-center justify-end pt-3 border-t border-slate-100">
-          <span className="flex items-center gap-1 text-xs font-medium text-slate-400 group-hover:text-blue-600 transition-colors">
+          <span className="flex items-center gap-1 text-xs font-medium text-muted-foreground group-hover:text-blue-600 transition-colors">
             Voir les détails
             <ArrowRight size={11} className="group-hover:translate-x-0.5 transition-transform duration-200" />
           </span>

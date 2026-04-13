@@ -32,7 +32,7 @@ export const SkillsFilters: React.FC<SkillsFiltersProps> = ({
   const hasActiveFilters = searchTerm || sortBy !== 'name-asc' || selectedDepartment;
 
   return (
-    <div className="rounded-xl border border-border bg-white shadow-sm">
+    <div className="rounded-xl border border-border bg-card shadow-sm">
       {/* Main filter bar */}
       <div className="flex flex-col gap-3 p-4 lg:flex-row lg:items-center lg:gap-4">
         {/* Department filter */}
@@ -41,7 +41,7 @@ export const SkillsFilters: React.FC<SkillsFiltersProps> = ({
           <select
             value={selectedDepartment}
             onChange={(e) => onDepartmentChange(e.target.value)}
-            className="w-full rounded-lg border border-input bg-white px-3 py-2 text-sm outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/10"
+            className="w-full rounded-lg border border-input bg-card px-3 py-2 text-sm outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/10"
           >
             <option value="">Tous les départements</option>
             {departments.map((dep) => (
@@ -73,7 +73,7 @@ export const SkillsFilters: React.FC<SkillsFiltersProps> = ({
           <select
             value={sortBy}
             onChange={(e) => onSortChange(e.target.value as SkillSortBy)}
-            className="w-full rounded-lg border border-input bg-white px-3 py-2 text-sm outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/10"
+            className="w-full rounded-lg border border-input bg-card px-3 py-2 text-sm outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/10"
           >
             <option value="name-asc">Nom (A → Z)</option>
             <option value="name-desc">Nom (Z → A)</option>
@@ -86,7 +86,7 @@ export const SkillsFilters: React.FC<SkillsFiltersProps> = ({
         {hasActiveFilters && (
           <button
             onClick={onReset}
-            className="flex items-center gap-1.5 rounded-lg px-3 py-2 text-sm font-medium text-muted-foreground transition hover:bg-secondary hover:text-gray-900"
+            className="flex items-center gap-1.5 rounded-lg px-3 py-2 text-sm font-medium text-muted-foreground transition hover:bg-secondary hover:text-foreground"
           >
             <RotateCcw size={14} />
             Réinitialiser

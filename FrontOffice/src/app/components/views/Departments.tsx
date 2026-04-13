@@ -112,7 +112,7 @@ export function Departments({ userRole }: DepartmentsProps) {
 
   if (userRole !== 'HR') {
     return (
-      <div className="p-6 text-center text-slate-600">
+      <div className="p-6 text-center text-muted-foreground">
         Accès réservé aux comptes RH.
       </div>
     );
@@ -221,12 +221,12 @@ export function Departments({ userRole }: DepartmentsProps) {
       <div className="rounded-2xl border border-slate-200 bg-gradient-to-r from-blue-50 via-white to-indigo-50 p-6 shadow-sm">
         <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
           <div>
-            <div className="inline-flex items-center gap-2 rounded-full bg-white px-3 py-1 text-xs font-medium text-blue-600 shadow-sm">
+            <div className="inline-flex items-center gap-2 rounded-full bg-card px-3 py-1 text-xs font-medium text-blue-600 shadow-sm">
               <Sparkles size={14} />
               Structure organisationnelle
             </div>
-            <h1 className="mt-3 text-2xl font-bold text-slate-900">Départements</h1>
-            <p className="mt-1 text-sm text-slate-600">
+            <h1 className="mt-3 text-2xl font-bold text-foreground">Départements</h1>
+            <p className="mt-1 text-sm text-muted-foreground">
               CRUD des départements (MongoDB, collection <code className="text-xs">departments</code>).
             </p>
           </div>
@@ -259,28 +259,28 @@ export function Departments({ userRole }: DepartmentsProps) {
       />
 
       {showAddForm && (
-        <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
-          <h2 className="text-lg font-semibold text-slate-900">Nouveau département</h2>
+        <div className="rounded-2xl border border-slate-200 bg-card p-6 shadow-sm">
+          <h2 className="text-lg font-semibold text-foreground">Nouveau département</h2>
           <div className="mt-4 grid grid-cols-1 gap-4 md:grid-cols-2">
             <div>
-              <label className="block text-sm font-medium text-slate-700">Nom du département</label>
+              <label className="block text-sm font-medium text-foreground">Nom du département</label>
               <input
                 type="text"
                 value={newName}
                 onChange={(e) => setNewName(e.target.value)}
-                className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-slate-900 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-foreground focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
                 placeholder="ex. IT, RH, Marketing"
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-slate-700">
+              <label className="block text-sm font-medium text-foreground">
                 Manager (user_id)
               </label>
               <input
                 type="text"
                 value={newManager}
                 onChange={(e) => setNewManager(e.target.value)}
-                className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-slate-900 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-foreground focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
                 placeholder="identifiant ou référence manager"
               />
             </div>
@@ -300,7 +300,7 @@ export function Departments({ userRole }: DepartmentsProps) {
                 setNewName('');
                 setNewManager('');
               }}
-              className="rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50"
+              className="rounded-lg border border-slate-300 bg-card px-4 py-2 text-sm font-medium text-foreground hover:bg-slate-50"
             >
               Annuler
             </button>
@@ -309,13 +309,13 @@ export function Departments({ userRole }: DepartmentsProps) {
       )}
 
       {loading && (
-        <p className="text-center text-slate-600">Chargement des départements…</p>
+        <p className="text-center text-muted-foreground">Chargement des départements…</p>
       )}
 
       {!loading && departments.length > 0 && filteredDepartments.length === 0 && (
-        <div className="rounded-xl border border-dashed border-slate-300 bg-white p-10 text-center">
-          <p className="text-lg font-semibold text-slate-900">Aucun résultat trouvé</p>
-          <p className="mt-2 text-sm text-slate-600">
+        <div className="rounded-xl border border-dashed border-slate-300 bg-card p-10 text-center">
+          <p className="text-lg font-semibold text-foreground">Aucun résultat trouvé</p>
+          <p className="mt-2 text-sm text-muted-foreground">
             Essaie un autre mot-clé (nom, ID ou manager) ou réinitialise les filtres.
           </p>
         </div>
@@ -327,14 +327,14 @@ export function Departments({ userRole }: DepartmentsProps) {
             {paginatedDepartments.map((dept) => (
             <div
               key={dept._id}
-              className="group cursor-pointer bg-white rounded-xl shadow-md hover:shadow-xl transition-all duration-300 border border-gray-100 overflow-hidden hover:border-blue-200"
+              className="group cursor-pointer bg-card rounded-xl shadow-md hover:shadow-xl transition-all duration-300 border border-gray-100 overflow-hidden hover:border-blue-200"
             >
               <div className="h-1 bg-gradient-to-r from-blue-500 to-indigo-600" />
 
               {editId === dept._id ? (
                 <div className="p-5 space-y-3">
                   <div>
-                    <label className="block text-xs font-medium text-slate-600 mb-1">Nom</label>
+                    <label className="block text-xs font-medium text-muted-foreground mb-1">Nom</label>
                     <input
                       value={editName}
                       onChange={(e) => setEditName(e.target.value)}
@@ -342,7 +342,7 @@ export function Departments({ userRole }: DepartmentsProps) {
                     />
                   </div>
                   <div>
-                    <label className="block text-xs font-medium text-slate-600 mb-1">Manager (user_id)</label>
+                    <label className="block text-xs font-medium text-muted-foreground mb-1">Manager (user_id)</label>
                     <input
                       value={editManager}
                       onChange={(e) => setEditManager(e.target.value)}
@@ -360,7 +360,7 @@ export function Departments({ userRole }: DepartmentsProps) {
                     <button
                       type="button"
                       onClick={() => setEditId(null)}
-                      className="flex-1 rounded-lg border border-slate-300 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 transition-colors"
+                      className="flex-1 rounded-lg border border-slate-300 py-2 text-sm font-medium text-foreground hover:bg-slate-50 transition-colors"
                     >
                       Annuler
                     </button>
@@ -369,13 +369,13 @@ export function Departments({ userRole }: DepartmentsProps) {
               ) : (
                 <div className="p-5 flex justify-between items-start">
                   <div className="flex-1 min-w-0">
-                    <h3 className="text-lg font-bold text-gray-900 group-hover:text-blue-600 transition-colors truncate">
+                    <h3 className="text-lg font-bold text-foreground group-hover:text-blue-600 transition-colors truncate">
                       {dept.name}
                     </h3>
                     <p className="text-xs text-blue-700 font-semibold mt-1">
                       Manager : {dept.user_id || '—'}
                     </p>
-                    <p className="text-gray-400 font-mono text-xs mt-2 truncate">{dept._id}</p>
+                    <p className="text-muted-foreground font-mono text-xs mt-2 truncate">{dept._id}</p>
                   </div>
 
                   <div className="flex gap-2 ml-4 opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity duration-300">
@@ -414,7 +414,7 @@ export function Departments({ userRole }: DepartmentsProps) {
       {!loading && departments.length === 0 && !showAddForm && (
         <div className="rounded-2xl border border-dashed border-slate-300 bg-slate-50 p-12">
           <div className="text-center">
-            <p className="text-slate-600">Aucun département pour l'instant.</p>
+            <p className="text-muted-foreground">Aucun département pour l'instant.</p>
             <button
               type="button"
               onClick={() => setShowAddForm(true)}
@@ -434,7 +434,7 @@ export function Departments({ userRole }: DepartmentsProps) {
           onClick={() => setViewDept(null)}
         >
           <div
-            className="w-full max-w-md overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-2xl"
+            className="w-full max-w-md overflow-hidden rounded-2xl border border-slate-200 bg-card shadow-2xl"
             onClick={(e) => e.stopPropagation()}
           >
             <div className="h-1.5 bg-gradient-to-r from-blue-500 to-indigo-600" />
@@ -445,12 +445,12 @@ export function Departments({ userRole }: DepartmentsProps) {
                 </div>
                 <div>
                   <p className="text-xs font-semibold uppercase tracking-wide text-blue-600">Département</p>
-                  <h2 className="mt-0.5 text-2xl font-bold text-slate-900">{viewDept.name}</h2>
+                  <h2 className="mt-0.5 text-2xl font-bold text-foreground">{viewDept.name}</h2>
                 </div>
               </div>
               <button
                 onClick={() => setViewDept(null)}
-                className="rounded-lg p-2 text-slate-500 transition hover:bg-slate-100"
+                className="rounded-lg p-2 text-muted-foreground transition hover:bg-slate-100"
                 aria-label="Fermer"
               >
                 ✕
@@ -458,12 +458,12 @@ export function Departments({ userRole }: DepartmentsProps) {
             </div>
             <div className="px-6 pb-6 space-y-3">
               <div className="rounded-xl border border-slate-200 bg-slate-50 p-4">
-                <p className="text-sm font-medium text-slate-700">Identifiant</p>
-                <p className="mt-1 font-mono text-xs text-slate-500">{viewDept._id}</p>
+                <p className="text-sm font-medium text-foreground">Identifiant</p>
+                <p className="mt-1 font-mono text-xs text-muted-foreground">{viewDept._id}</p>
               </div>
               <div className="rounded-xl border border-slate-200 bg-slate-50 p-4">
-                <p className="text-sm font-medium text-slate-700">Manager (user_id)</p>
-                <p className="mt-1 text-slate-800">{viewDept.user_id || 'Non défini'}</p>
+                <p className="text-sm font-medium text-foreground">Manager (user_id)</p>
+                <p className="mt-1 text-foreground">{viewDept.user_id || 'Non défini'}</p>
               </div>
               <div className="flex justify-end gap-2 pt-2">
                 <button
@@ -473,7 +473,7 @@ export function Departments({ userRole }: DepartmentsProps) {
                     setEditName(viewDept.name);
                     setEditManager(viewDept.user_id);
                   }}
-                  className="rounded-lg border border-slate-300 px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-100"
+                  className="rounded-lg border border-slate-300 px-4 py-2 text-sm font-medium text-foreground hover:bg-slate-100"
                 >
                   Modifier
                 </button>

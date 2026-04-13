@@ -106,7 +106,7 @@ export function Notifications() {
       case 'info':
         return <Info className="w-5 h-5 text-blue-600" />;
       default:
-        return <Bell className="w-5 h-5 text-gray-600" />;
+        return <Bell className="w-5 h-5 text-muted-foreground" />;
     }
   };
 
@@ -142,7 +142,7 @@ export function Notifications() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl mb-2 text-gray-900">Notifications</h1>
+          <h1 className="text-3xl mb-2 text-foreground">Notifications</h1>
           <p className="text-muted-foreground">
             {unreadCount} unread notification{unreadCount !== 1 ? 's' : ''}
           </p>
@@ -159,7 +159,7 @@ export function Notifications() {
       </div>
 
       {/* Filters */}
-      <div className="bg-white rounded-lg shadow-sm p-6 border border-border">
+      <div className="bg-card rounded-lg shadow-sm p-6 border border-border">
         <div className="flex flex-col md:flex-row gap-4">
           <div className="flex gap-2">
             <button
@@ -167,7 +167,7 @@ export function Notifications() {
               className={`px-4 py-2 rounded-lg transition-colors ${
                 filter === 'all'
                   ? 'bg-primary text-white'
-                  : 'bg-secondary text-gray-700 hover:bg-secondary/80'
+                  : 'bg-secondary text-foreground hover:bg-secondary/80'
               }`}
             >
               All
@@ -177,7 +177,7 @@ export function Notifications() {
               className={`px-4 py-2 rounded-lg transition-colors ${
                 filter === 'unread'
                   ? 'bg-primary text-white'
-                  : 'bg-secondary text-gray-700 hover:bg-secondary/80'
+                  : 'bg-secondary text-foreground hover:bg-secondary/80'
               }`}
             >
               Unread ({unreadCount})
@@ -204,7 +204,7 @@ export function Notifications() {
       {/* Notifications List */}
       <div className="space-y-3">
         {filteredNotifications.length === 0 ? (
-          <div className="bg-white rounded-lg shadow-sm p-12 border border-border text-center">
+          <div className="bg-card rounded-lg shadow-sm p-12 border border-border text-center">
             <Bell className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
             <p className="text-muted-foreground">No notifications to display</p>
           </div>
@@ -212,7 +212,7 @@ export function Notifications() {
           filteredNotifications.map((notification) => (
             <div
               key={notification.id}
-              className={`bg-white rounded-lg shadow-sm p-6 border transition-all ${
+              className={`bg-card rounded-lg shadow-sm p-6 border transition-all ${
                 notification.read ? 'border-border' : 'border-primary/30 shadow-md'
               }`}
             >
@@ -225,7 +225,7 @@ export function Notifications() {
                   <div className="flex items-start justify-between mb-2">
                     <div className="flex-1">
                       <div className="flex items-center gap-2 mb-1">
-                        <h3 className="font-semibold text-gray-900">{notification.title}</h3>
+                        <h3 className="font-semibold text-foreground">{notification.title}</h3>
                         {!notification.read && (
                           <span className="w-2 h-2 bg-primary rounded-full"></span>
                         )}
@@ -245,7 +245,7 @@ export function Notifications() {
                     <span className="text-xs text-muted-foreground">
                       {formatTimestamp(notification.timestamp)}
                     </span>
-                    <span className="text-xs px-2 py-1 bg-secondary rounded-full text-gray-700">
+                    <span className="text-xs px-2 py-1 bg-secondary rounded-full text-foreground">
                       {notification.category}
                     </span>
                     {!notification.read && (

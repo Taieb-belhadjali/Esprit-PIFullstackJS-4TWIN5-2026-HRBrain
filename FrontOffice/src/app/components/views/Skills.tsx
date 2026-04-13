@@ -253,10 +253,10 @@ export const Skills: React.FC<SkillsProps> = ({ userRole }) => {
         </div>
       ) : filteredSkills.length === 0 ? (
         <div className="rounded-xl border border-dashed border-slate-200 bg-slate-50 p-10 text-center">
-          <p className="text-lg font-semibold text-slate-800">
+          <p className="text-lg font-semibold text-foreground">
             {skills.length === 0 ? 'Aucun skill pour le moment' : 'Aucun résultat trouvé'}
           </p>
-          <p className="mt-2 text-sm text-slate-600">
+          <p className="mt-2 text-sm text-muted-foreground">
             {skills.length === 0
               ? 'Commence par ajouter ton premier skill.'
               : 'Essaie une autre recherche ou modifie les filtres.'}

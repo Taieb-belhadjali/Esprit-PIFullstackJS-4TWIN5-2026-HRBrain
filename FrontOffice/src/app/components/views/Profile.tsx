@@ -69,19 +69,19 @@ export function Profile({ user }: ProfileProps) {
     <div className="p-6 space-y-6">
       {/* Header */}
       <div>
-        <h1 className="text-3xl mb-2 text-gray-900">My Profile</h1>
+        <h1 className="text-3xl mb-2 text-foreground">My Profile</h1>
         <p className="text-muted-foreground">View and manage your personal information</p>
       </div>
 
       {/* Profile Card */}
-      <div className="bg-white rounded-lg shadow-sm p-6 border border-border">
+      <div className="bg-card rounded-lg shadow-sm p-6 border border-border">
         <div className="flex items-start justify-between mb-6">
           <div className="flex items-start gap-6">
             <div className="w-24 h-24 rounded-full bg-primary/10 flex items-center justify-center text-primary text-3xl font-semibold">
               {user.name.substring(0, 2).toUpperCase()}
             </div>
             <div>
-              <h2 className="text-2xl mb-2 text-gray-900">{user.name}</h2>
+              <h2 className="text-2xl mb-2 text-foreground">{user.name}</h2>
               <div className="space-y-2 text-muted-foreground">
                 <div className="flex items-center gap-2">
                   <Mail className="w-4 h-4" aria-hidden="true" />
@@ -106,24 +106,24 @@ export function Profile({ user }: ProfileProps) {
 
         <div className="grid grid-cols-3 gap-4 pt-6 border-t border-border">
           <div className="text-center">
-            <p className="text-2xl font-semibold text-gray-900">{mockSkills.length}</p>
+            <p className="text-2xl font-semibold text-foreground">{mockSkills.length}</p>
             <p className="text-sm text-muted-foreground">Skills</p>
           </div>
           <div className="text-center">
-            <p className="text-2xl font-semibold text-gray-900">{mockActivities.length}</p>
+            <p className="text-2xl font-semibold text-foreground">{mockActivities.length}</p>
             <p className="text-sm text-muted-foreground">Activities</p>
           </div>
           <div className="text-center">
-            <p className="text-2xl font-semibold text-gray-900">3.2</p>
+            <p className="text-2xl font-semibold text-foreground">3.2</p>
             <p className="text-sm text-muted-foreground">Avg Skill Level</p>
           </div>
         </div>
       </div>
 
       {/* My Skills */}
-      <div className="bg-white rounded-lg shadow-sm p-6 border border-border">
+      <div className="bg-card rounded-lg shadow-sm p-6 border border-border">
         <div className="flex items-center justify-between mb-6">
-          <h2 className="text-2xl text-gray-900">My Skills</h2>
+          <h2 className="text-2xl text-foreground">My Skills</h2>
           <button className="flex items-center gap-2 text-primary hover:underline">
             <Plus className="w-4 h-4" />
             Add Skill
@@ -135,7 +135,7 @@ export function Profile({ user }: ProfileProps) {
             <div key={index} className="border border-border rounded-lg p-4">
               <div className="flex items-center justify-between mb-3">
                 <div className="flex items-center gap-3">
-                  <h3 className="font-medium text-gray-900">{skill.name}</h3>
+                  <h3 className="font-medium text-foreground">{skill.name}</h3>
                   <span className={`text-xs px-2 py-1 rounded-full ${getTypeColor(skill.type)}`}>
                     {skill.type}
                   </span>
@@ -157,8 +157,8 @@ export function Profile({ user }: ProfileProps) {
       </div>
 
       {/* My Activities */}
-      <div className="bg-white rounded-lg shadow-sm p-6 border border-border">
-        <h2 className="text-2xl mb-6 text-gray-900">My Activities</h2>
+      <div className="bg-card rounded-lg shadow-sm p-6 border border-border">
+        <h2 className="text-2xl mb-6 text-foreground">My Activities</h2>
         <div className="space-y-4">
           {mockActivities.map((activity) => (
             <div
@@ -167,7 +167,7 @@ export function Profile({ user }: ProfileProps) {
             >
               <div className="flex items-center justify-between mb-3">
                 <div>
-                  <h3 className="font-medium text-gray-900 mb-1">{activity.title}</h3>
+                  <h3 className="font-medium text-foreground mb-1">{activity.title}</h3>
                   <p className="text-sm text-muted-foreground">
                     Started: {new Date(activity.startDate).toLocaleDateString()}
                   </p>

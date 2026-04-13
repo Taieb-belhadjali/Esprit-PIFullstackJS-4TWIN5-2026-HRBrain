@@ -18,12 +18,12 @@ export const DepartmentsFilters: React.FC<DepartmentsFiltersProps> = ({
   onReset,
 }) => {
   return (
-    <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
+    <div className="rounded-xl border border-slate-200 bg-card p-4 shadow-sm">
       <div className="grid grid-cols-1 gap-3 md:grid-cols-3">
         <div className="relative md:col-span-2">
           <Search
             size={16}
-            className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"
+            className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground"
           />
           <input
             type="text"
@@ -35,7 +35,7 @@ export const DepartmentsFilters: React.FC<DepartmentsFiltersProps> = ({
         </div>
 
         <div className="flex items-center gap-2">
-          <SlidersHorizontal size={16} className="text-slate-500" />
+          <SlidersHorizontal size={16} className="text-muted-foreground" />
           <select
             value={sortBy}
             onChange={(event) => onSortChange(event.target.value as DepartmentSortBy)}

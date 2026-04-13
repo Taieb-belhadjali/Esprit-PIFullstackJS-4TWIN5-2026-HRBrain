@@ -65,7 +65,7 @@ function RecommendationCard({ rec, index, activityId, expandedId, setExpandedId,
   };
 
   return (
-    <div className={`bg-white rounded-lg shadow-sm border overflow-hidden hover:shadow-md transition-shadow ${
+    <div className={`bg-card rounded-lg shadow-sm border overflow-hidden hover:shadow-md transition-shadow ${
       decision === 'approved' ? 'border-green-300' : decision === 'rejected' ? 'border-red-300' : 'border-border'
     }`}>
       <div className="p-6">
@@ -77,12 +77,12 @@ function RecommendationCard({ rec, index, activityId, expandedId, setExpandedId,
               index === 2 ? 'bg-orange-100 text-orange-600' : 'bg-primary/10 text-primary'
             }`}>#{index + 1}</div>
             <div className="flex-1">
-              <h3 className="text-xl font-semibold text-gray-900 mb-1">{rec.employee.name}</h3>
+              <h3 className="text-xl font-semibold text-foreground mb-1">{rec.employee.name}</h3>
               <p className="text-muted-foreground text-sm mb-3">{rec.employee.email}</p>
               <div className="flex items-center gap-1.5">
                 <span className="text-sm text-muted-foreground">Score final :</span>
                 <span className={`text-2xl font-semibold ${getScoreColor(rec.finalScore)}`}>{rec.finalScore}</span>
-                <span className="text-sm text-gray-400">/100</span>
+                <span className="text-sm text-muted-foreground">/100</span>
               </div>
             </div>
           </div>
@@ -122,12 +122,12 @@ function RecommendationCard({ rec, index, activityId, expandedId, setExpandedId,
             { label: 'Context', value: rec.contextScore, color: 'bg-green-400' },
           ].map((s) => (
             <div key={s.label} className="bg-gray-50 rounded-lg p-3">
-              <p className="text-xs text-gray-500 mb-1">{s.label}</p>
+              <p className="text-xs text-muted-foreground mb-1">{s.label}</p>
               <div className="flex items-center gap-2">
                 <div className="flex-1 h-1.5 bg-gray-200 rounded-full overflow-hidden">
                   <div className={`h-full rounded-full ${s.color}`} style={{ width: `${s.value}%` }} />
                 </div>
-                <span className="text-xs font-semibold text-gray-700 w-6 text-right">{s.value}</span>
+                <span className="text-xs font-semibold text-foreground w-6 text-right">{s.value}</span>
               </div>
             </div>
           ))}
@@ -143,7 +143,7 @@ function RecommendationCard({ rec, index, activityId, expandedId, setExpandedId,
             {expandedId === rec.employee._id && (
               <div className="flex flex-wrap gap-2 pl-6 border-l-2 border-primary/20">
                 {rec.employeeSkills.map((s, i) => (
-                  <span key={i} className="text-xs px-2 py-1 bg-secondary rounded-full text-gray-700">
+                  <span key={i} className="text-xs px-2 py-1 bg-secondary rounded-full text-foreground">
                     {s.skillName} · {s.level}
                   </span>
                 ))}
@@ -154,19 +154,19 @@ function RecommendationCard({ rec, index, activityId, expandedId, setExpandedId,
 
         <div className="bg-gradient-to-r from-blue-50 to-purple-50 border border-blue-200 rounded-lg p-4">
           <div className="flex items-start gap-3">
-            <div className="p-2 bg-white rounded-lg shrink-0"><Brain className="w-5 h-5 text-primary" /></div>
+            <div className="p-2 bg-card rounded-lg shrink-0"><Brain className="w-5 h-5 text-primary" /></div>
             <div className="flex-1">
-              <p className="font-medium text-gray-900 mb-2">AI Insights</p>
+              <p className="font-medium text-foreground mb-2">AI Insights</p>
               {rec.aiReasons && rec.aiReasons.length > 0 ? (
                 <ul className="space-y-1">
                   {rec.aiReasons.map((reason, i) => (
-                    <li key={i} className="text-sm text-gray-700 flex items-start gap-2">
+                    <li key={i} className="text-sm text-foreground flex items-start gap-2">
                       <span className="text-primary mt-0.5 shrink-0">•</span>{reason}
                     </li>
                   ))}
                 </ul>
               ) : (
-                <p className="text-sm text-gray-500 italic">Score calculé par le moteur mathématique.</p>
+                <p className="text-sm text-muted-foreground italic">Score calculé par le moteur mathématique.</p>
               )}
             </div>
           </div>
@@ -370,16 +370,16 @@ export function Recommendations({ userRole }: RecommendationsProps) {
   return (
     <div className="p-6 space-y-6">
       <div>
-        <h1 className="text-3xl mb-2 text-gray-900">AI Recommendation Engine</h1>
+        <h1 className="text-3xl mb-2 text-foreground">AI Recommendation Engine</h1>
         <p className="text-muted-foreground">Get intelligent employee recommendations based on skills and activity requirements</p>
       </div>
 
       {/* Activity Selection */}
-      <div className="bg-white rounded-lg shadow-sm p-6 border border-border">
+      <div className="bg-card rounded-lg shadow-sm p-6 border border-border">
         <div className="flex items-center gap-3 mb-4">
           <div className="p-2 bg-primary/10 rounded-lg"><Brain className="w-6 h-6 text-primary" /></div>
           <div>
-            <h2 className="text-xl text-gray-900">Select Activity</h2>
+            <h2 className="text-xl text-foreground">Select Activity</h2>
             <p className="text-sm text-muted-foreground">Choose an activity to see AI-powered recommendations</p>
           </div>
         </div>
@@ -391,19 +391,19 @@ export function Recommendations({ userRole }: RecommendationsProps) {
               value={selectedActivityId}
               onChange={(e) => { setSelectedActivityId(e.target.value); setApiResults([]); setElapsedMs(null); loadLastRecommendation(e.target.value); }}
               disabled={loadingActivities}
-              className="w-full appearance-none px-4 py-3 pr-10 border border-input rounded-lg focus:outline-none focus:ring-2 focus:ring-primary text-base bg-white disabled:opacity-50"
+              className="w-full appearance-none px-4 py-3 pr-10 border border-input rounded-lg focus:outline-none focus:ring-2 focus:ring-primary text-base bg-card disabled:opacity-50"
             >
               {loadingActivities ? <option>Chargement...</option> :
                 activities.length === 0 ? <option>Aucune activité disponible</option> :
                 activities.map((a) => <option key={a._id} value={a._id}>{a.title}</option>)}
             </select>
-            <ChevronDown size={16} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
+            <ChevronDown size={16} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground pointer-events-none" />
           </div>
 
           {/* Last N seats */}
-          <div className="flex items-center gap-2 px-3 py-2 border border-input rounded-lg bg-white shrink-0">
-            <Users size={15} className="text-gray-400" />
-            <span className="text-sm text-gray-500">
+          <div className="flex items-center gap-2 px-3 py-2 border border-input rounded-lg bg-card shrink-0">
+            <Users size={15} className="text-muted-foreground" />
+            <span className="text-sm text-muted-foreground">
               {selectedActivity?.nombreDePlaces
                 ? `${selectedActivity.nombreDePlaces} places`
                 : 'Top'}
@@ -447,17 +447,17 @@ export function Recommendations({ userRole }: RecommendationsProps) {
 
         {/* Elapsed time */}
         {elapsedMs !== null && (
-          <div className="flex items-center gap-2 text-sm text-gray-500 mt-2">
+          <div className="flex items-center gap-2 text-sm text-muted-foreground mt-2">
             <Clock size={14} className="text-green-500" />
-            <span>Généré en <span className="font-medium text-gray-700">{formatElapsed(elapsedMs)}</span></span>
+            <span>Généré en <span className="font-medium text-foreground">{formatElapsed(elapsedMs)}</span></span>
           </div>
         )}
       </div>
 
       {/* Run All Results */}
       {runAllResults.length > 0 && (
-        <div className="bg-white rounded-lg shadow-sm p-5 border border-border">
-          <h3 className="font-semibold text-gray-900 mb-3 flex items-center gap-2">
+        <div className="bg-card rounded-lg shadow-sm p-5 border border-border">
+          <h3 className="font-semibold text-foreground mb-3 flex items-center gap-2">
             <PlayCircle size={16} className="text-indigo-600" />
             Résultats Run All ({runAllResults.length} activités)
           </h3>
@@ -472,19 +472,19 @@ export function Recommendations({ userRole }: RecommendationsProps) {
                     'bg-gray-50 hover:bg-gray-100 cursor-pointer'
                   }`}
                 >
-                  <span className="font-medium text-gray-800 truncate flex-1">{r.title}</span>
+                  <span className="font-medium text-foreground truncate flex-1">{r.title}</span>
                   <div className="flex items-center gap-4 shrink-0 ml-3">
                     {r.error ? (
                       <span className="text-red-500 text-xs">{r.error}</span>
                     ) : (
                       <>
-                        <span className="text-gray-500">{r.rankings} rankings</span>
+                        <span className="text-muted-foreground">{r.rankings} rankings</span>
                         <span className="flex items-center gap-1 text-green-600">
                           <Clock size={12} />{formatElapsed(r.elapsedMs)}
                         </span>
                         {loadingDetail === r.activityId
                           ? <span className="w-3 h-3 border-2 border-indigo-400 border-t-transparent rounded-full animate-spin" />
-                          : <ChevronDown size={14} className={`text-gray-400 transition-transform ${selectedRunAllActivity === r.activityId ? 'rotate-180' : ''}`} />
+                          : <ChevronDown size={14} className={`text-muted-foreground transition-transform ${selectedRunAllActivity === r.activityId ? 'rotate-180' : ''}`} />
                         }
                       </>
                     )}
@@ -495,7 +495,7 @@ export function Recommendations({ userRole }: RecommendationsProps) {
                 {selectedRunAllActivity === r.activityId && detailResults[r.activityId] && (
                   <div className="mt-2 ml-3 space-y-3 border-l-2 border-indigo-200 pl-4">
                     {detailResults[r.activityId].length === 0 ? (
-                      <p className="text-sm text-gray-400 py-2">Aucune recommandation disponible.</p>
+                      <p className="text-sm text-muted-foreground py-2">Aucune recommandation disponible.</p>
                     ) : (
                       detailResults[r.activityId].map((rec, index) => (
                         <RecommendationCard
@@ -520,7 +520,7 @@ export function Recommendations({ userRole }: RecommendationsProps) {
 
       {/* Loading last recommendation */}
       {loadingLast && (
-        <div className="flex items-center justify-center py-12 gap-3 text-gray-400">
+        <div className="flex items-center justify-center py-12 gap-3 text-muted-foreground">
           <span className="w-5 h-5 border-2 border-primary/30 border-t-primary rounded-full animate-spin" />
           <span className="text-sm">Chargement de la dernière recommandation…</span>
         </div>
@@ -529,7 +529,7 @@ export function Recommendations({ userRole }: RecommendationsProps) {
       {/* Mock card */}
       {apiResults.length === 0 && !loadingReco && !loadingLast && runAllResults.length === 0 && (
         <div className="space-y-4">
-          <div className="flex items-center gap-2 text-sm text-gray-400">
+          <div className="flex items-center gap-2 text-sm text-muted-foreground">
             <Brain className="w-4 h-4" />
             <span>Exemple de card — les vraies données apparaîtront après le calcul</span>
           </div>
@@ -541,9 +541,9 @@ export function Recommendations({ userRole }: RecommendationsProps) {
       {apiResults.length > 0 && (
         <div className="space-y-4">
           <div className="flex items-center justify-between">
-            <h2 className="text-xl text-gray-900">
+            <h2 className="text-xl text-foreground">
               Top {apiResults.length} employés recommandés
-              {selectedActivity && <span className="text-base font-normal text-gray-500 ml-2">— {selectedActivity.title}</span>}
+              {selectedActivity && <span className="text-base font-normal text-muted-foreground ml-2">— {selectedActivity.title}</span>}
             </h2>
             <div className="flex items-center gap-3 text-sm text-muted-foreground">
               {elapsedMs !== null && (
@@ -565,8 +565,8 @@ export function Recommendations({ userRole }: RecommendationsProps) {
       )}
 
       {/* How it works */}
-      <div className="bg-white rounded-lg shadow-sm p-6 border border-border">
-        <h3 className="font-semibold text-gray-900 mb-3">How Our AI Works</h3>
+      <div className="bg-card rounded-lg shadow-sm p-6 border border-border">
+        <h3 className="font-semibold text-foreground mb-3">How Our AI Works</h3>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
           {[
             { icon: <Target className="w-5 h-5 text-blue-600" />, bg: 'bg-blue-100', title: 'Skill Matching (40%)', desc: 'Ratio pondéré entre le niveau employé et le niveau requis' },
@@ -576,7 +576,7 @@ export function Recommendations({ userRole }: RecommendationsProps) {
             <div key={item.title} className="flex items-start gap-3">
               <div className={`p-2 ${item.bg} rounded-lg flex-shrink-0`}>{item.icon}</div>
               <div>
-                <p className="font-medium text-gray-900 mb-1">{item.title}</p>
+                <p className="font-medium text-foreground mb-1">{item.title}</p>
                 <p className="text-muted-foreground">{item.desc}</p>
               </div>
             </div>

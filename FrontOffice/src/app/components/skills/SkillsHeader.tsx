@@ -21,11 +21,11 @@ export const SkillsHeader: React.FC<SkillsHeaderProps> = ({ onAddSkill, onExport
             <Brain size={20} className="text-white" />
           </div>
           <div>
-            <div className="inline-flex items-center gap-2 rounded-full bg-white px-3 py-1 text-xs font-medium text-blue-600 shadow-sm">
+            <div className="inline-flex items-center gap-2 rounded-full bg-card px-3 py-1 text-xs font-medium text-blue-600 shadow-sm">
               Référentiel des compétences
             </div>
-            <h1 className="mt-2 text-2xl font-bold text-slate-900">Skills</h1>
-            <p className="mt-0.5 text-sm text-slate-600">
+            <h1 className="mt-2 text-2xl font-bold text-foreground">Skills</h1>
+            <p className="mt-0.5 text-sm text-muted-foreground">
               Gérez les compétences de l&apos;organisation par département
             </p>
           </div>
@@ -36,7 +36,7 @@ export const SkillsHeader: React.FC<SkillsHeaderProps> = ({ onAddSkill, onExport
           {onExportCsv && (
             <button
               onClick={onExportCsv}
-              className="inline-flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-4 py-2.5 text-sm font-medium text-slate-700 shadow-sm transition hover:bg-slate-50 active:scale-95"
+              className="inline-flex items-center gap-2 rounded-lg border border-slate-200 bg-card px-4 py-2.5 text-sm font-medium text-foreground shadow-sm transition hover:bg-slate-50 active:scale-95"
             >
               <Download size={15} />
               Export CSV

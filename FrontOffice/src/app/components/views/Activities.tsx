@@ -226,7 +226,7 @@ export function Activities({ userRole }: ActivitiesProps) {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl mb-1 text-gray-900">Activities</h1>
+          <h1 className="text-3xl mb-1 text-foreground">Activities</h1>
           <p className="text-muted-foreground">Manage training programs and development activities</p>
         </div>
         {canManage && (
@@ -237,7 +237,7 @@ export function Activities({ userRole }: ActivitiesProps) {
       </div>
 
       {/* Search */}
-      <div className="bg-white rounded-lg shadow-sm p-4 border border-border">
+      <div className="bg-card rounded-lg shadow-sm p-4 border border-border">
         <div className="relative">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
           <input
@@ -259,10 +259,10 @@ export function Activities({ userRole }: ActivitiesProps) {
         </div>
       ) : filtered.length === 0 ? (
         <div className="rounded-xl border border-dashed border-slate-200 bg-slate-50 p-10 text-center">
-          <p className="text-lg font-semibold text-slate-800">
+          <p className="text-lg font-semibold text-foreground">
             {activities.length === 0 ? 'Aucune activité pour le moment' : 'Aucun résultat trouvé'}
           </p>
-          <p className="mt-2 text-sm text-slate-500">
+          <p className="mt-2 text-sm text-muted-foreground">
             {activities.length === 0 ? 'Commence par créer ta première activité.' : 'Essaie une autre recherche.'}
           </p>
         </div>
@@ -298,21 +298,21 @@ export function Activities({ userRole }: ActivitiesProps) {
       {/* Modal */}
       {showModal && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-xl shadow-lg w-full max-w-lg p-6 max-h-[90vh] overflow-y-auto">
-            <h2 className="text-xl font-semibold text-gray-900 mb-5">
+          <div className="bg-card rounded-xl shadow-lg w-full max-w-lg p-6 max-h-[90vh] overflow-y-auto">
+            <h2 className="text-xl font-semibold text-foreground mb-5">
               {editingActivity ? "Modifier l'activité" : 'Nouvelle activité'}
             </h2>
 
             <div className="space-y-4">
               <div>
-                <label className="block text-sm text-gray-700 mb-1">Titre *</label>
+                <label className="block text-sm text-foreground mb-1">Titre *</label>
                 <input type="text" value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })}
                   className="w-full px-3 py-2 border border-input rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
                   placeholder="Titre de l'activité" />
               </div>
 
               <div>
-                <label className="block text-sm text-gray-700 mb-1">
+                <label className="block text-sm text-foreground mb-1">
                   Description
                   <button type="button" onClick={handleExtractSkills}
                     className="ml-2 inline-flex items-center px-2 py-1 text-xs font-medium text-blue-600 hover:text-blue-800 hover:bg-blue-50 rounded transition"
@@ -328,13 +328,13 @@ export function Activities({ userRole }: ActivitiesProps) {
 
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-sm text-gray-700 mb-1">Type</label>
+                  <label className="block text-sm text-foreground mb-1">Type</label>
                   <input type="text" value={form.type} onChange={(e) => setForm({ ...form, type: e.target.value })}
                     className="w-full px-3 py-2 border border-input rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
                     placeholder="ex: Workshop" />
                 </div>
                 <div>
-                  <label className="block text-sm text-gray-700 mb-1">Contexte</label>
+                  <label className="block text-sm text-foreground mb-1">Contexte</label>
                   <select value={form.context} onChange={(e) => setForm({ ...form, context: e.target.value })}
                     className="w-full px-3 py-2 border border-input rounded-lg focus:outline-none focus:ring-2 focus:ring-primary">
                     <option value="">-- Choisir --</option>
@@ -347,7 +347,7 @@ export function Activities({ userRole }: ActivitiesProps) {
 
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-sm text-gray-700 mb-1">Statut</label>
+                  <label className="block text-sm text-foreground mb-1">Statut</label>
                   <select value={form.status} onChange={(e) => setForm({ ...form, status: e.target.value })}
                     className="w-full px-3 py-2 border border-input rounded-lg focus:outline-none focus:ring-2 focus:ring-primary">
                     <option value="Draft">Draft</option>
@@ -357,7 +357,7 @@ export function Activities({ userRole }: ActivitiesProps) {
                   </select>
                 </div>
                 <div>
-                  <label className="block text-sm text-gray-700 mb-1">Nombre de places</label>
+                  <label className="block text-sm text-foreground mb-1">Nombre de places</label>
                   <input type="number" min={0} value={form.nombreDePlaces}
                     onChange={(e) => setForm({ ...form, nombreDePlaces: parseInt(e.target.value) || 0 })}
                     className="w-full px-3 py-2 border border-input rounded-lg focus:outline-none focus:ring-2 focus:ring-primary" />
@@ -366,19 +366,19 @@ export function Activities({ userRole }: ActivitiesProps) {
 
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-sm text-gray-700 mb-1">Date début</label>
+                  <label className="block text-sm text-foreground mb-1">Date début</label>
                   <input type="date" value={form.startDate} onChange={(e) => setForm({ ...form, startDate: e.target.value })}
                     className="w-full px-3 py-2 border border-input rounded-lg focus:outline-none focus:ring-2 focus:ring-primary" />
                 </div>
                 <div>
-                  <label className="block text-sm text-gray-700 mb-1">Date fin</label>
+                  <label className="block text-sm text-foreground mb-1">Date fin</label>
                   <input type="date" value={form.endDate} onChange={(e) => setForm({ ...form, endDate: e.target.value })}
                     className="w-full px-3 py-2 border border-input rounded-lg focus:outline-none focus:ring-2 focus:ring-primary" />
                 </div>
               </div>
 
               <div>
-                <label className="block text-sm text-gray-700 mb-1">Département cible</label>
+                <label className="block text-sm text-foreground mb-1">Département cible</label>
                 <select value={form.targetedDepartmentId} onChange={(e) => setForm({ ...form, targetedDepartmentId: e.target.value })}
                   className="w-full px-3 py-2 border border-input rounded-lg focus:outline-none focus:ring-2 focus:ring-primary">
                   <option value="">-- Aucun --</option>
@@ -388,7 +388,7 @@ export function Activities({ userRole }: ActivitiesProps) {
 
               {/* Required Skills */}
               <div>
-                <label className="block text-sm text-gray-700 mb-2">Required Skills</label>
+                <label className="block text-sm text-foreground mb-2">Required Skills</label>
 
                 {/* Picker */}
                 <div className="flex gap-2 mb-3">
@@ -404,7 +404,7 @@ export function Activities({ userRole }: ActivitiesProps) {
                       className="w-full px-3 py-2 border border-input rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary"
                     />
                     {showSkillDropdown && skillSearch.trim().length > 0 && (
-                      <div className="absolute z-10 top-full left-0 right-0 mt-1 bg-white border border-gray-200 rounded-lg shadow-lg max-h-48 overflow-y-auto">
+                      <div className="absolute z-10 top-full left-0 right-0 mt-1 bg-card border border-gray-200 rounded-lg shadow-lg max-h-48 overflow-y-auto">
                         {skills
                           .filter((s) =>
                             s.name.toLowerCase().includes(skillSearch.toLowerCase()) &&
@@ -429,7 +429,7 @@ export function Activities({ userRole }: ActivitiesProps) {
                           s.name.toLowerCase().includes(skillSearch.toLowerCase()) &&
                           !requiredSkills.some((rs) => rs.skillId === s._id)
                         ).length === 0 && (
-                          <p className="px-3 py-2 text-sm text-gray-400">Aucun skill trouvé</p>
+                          <p className="px-3 py-2 text-sm text-muted-foreground">Aucun skill trouvé</p>
                         )}
                       </div>
                     )}
@@ -450,7 +450,7 @@ export function Activities({ userRole }: ActivitiesProps) {
                     <Plus size={16} aria-hidden="true" />
                   </button>
                 </div>
-                <p className="text-xs text-gray-400 mb-3">Le poids détermine l'importance relative de chaque skill dans le score.</p>
+                <p className="text-xs text-muted-foreground mb-3">Le poids détermine l'importance relative de chaque skill dans le score.</p>
 
                 {/* List */}
                 {requiredSkills.length > 0 && (
@@ -461,8 +461,8 @@ export function Activities({ userRole }: ActivitiesProps) {
                       const pct = totalContrib > 0 ? Math.round((rs.contributionToScore / totalContrib) * 100) : 0;
                       return (
                         <div key={rs.skillId} className="flex items-center gap-2 bg-gray-50 rounded-lg px-3 py-2">
-                          <span className="flex-1 text-sm text-gray-800 min-w-0 truncate">{skill?.name ?? rs.skillId}</span>
-                          <span className="text-xs text-gray-400 w-8 text-right">{pct}%</span>
+                          <span className="flex-1 text-sm text-foreground min-w-0 truncate">{skill?.name ?? rs.skillId}</span>
+                          <span className="text-xs text-muted-foreground w-8 text-right">{pct}%</span>
                           <select value={rs.level} onChange={(e) => updateSkillLevel(rs.skillId, e.target.value)}
                             className="text-xs px-2 py-1 border border-input rounded-lg focus:outline-none focus:ring-1 focus:ring-primary">
                             {LEVELS.map((l) => <option key={l} value={l}>{l}</option>)}

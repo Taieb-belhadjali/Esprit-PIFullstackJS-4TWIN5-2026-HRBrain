@@ -26,6 +26,8 @@ interface User {
 interface DashboardProps {
   user: User;
   onLogout: () => void;
+  theme: 'light' | 'dark';
+  setTheme: (theme: 'light' | 'dark') => void;
 }
 
 export type ViewType =
@@ -40,7 +42,7 @@ export type ViewType =
   | 'profile'
   | 'settings';
 
-export function Dashboard({ user, onLogout }: DashboardProps) {
+export function Dashboard({ user, onLogout, theme, setTheme }: DashboardProps) {
   const navigate = useNavigate();
   const location = useLocation();
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
@@ -177,7 +179,7 @@ export function Dashboard({ user, onLogout }: DashboardProps) {
       case 'profile':
         return <Profile user={user} />;
       case 'settings':
-        return <Settings onLogout={onLogout} />;
+        return <Settings onLogout={onLogout} theme={theme} setTheme={setTheme} />;
       default:
         return <Home userRole={user.role} />;
     }
@@ -185,7 +187,7 @@ export function Dashboard({ user, onLogout }: DashboardProps) {
 
   return (
     <VoiceCommandProvider>
-      <div className="flex h-screen bg-secondary overflow-hidden">
+      <div className="flex h-screen bg-background overflow-hidden">
         <Sidebar
           currentView={currentView}
           onViewChange={(view) => navigate(`/dashboard/${view}`)}
@@ -194,7 +196,7 @@ export function Dashboard({ user, onLogout }: DashboardProps) {
           isCollapsed={isSidebarCollapsed}
           onToggleCollapse={() => setIsSidebarCollapsed(!isSidebarCollapsed)}
         />
-        <main className={`flex-1 overflow-auto transition-all duration-300 ${isSidebarCollapsed ? 'ml-16' : 'ml-64'}`}>
+        <main className={`flex-1 overflow-auto transition-all duration-300 bg-background ${isSidebarCollapsed ? 'ml-16' : 'ml-64'}`}>
           {renderView()}
         </main>
         <VoiceAssistant />

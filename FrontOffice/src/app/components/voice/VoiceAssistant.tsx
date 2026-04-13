@@ -870,7 +870,7 @@ export const VoiceAssistant: React.FC<{}> = () => {
       {/* Panel */}
       {isOpen && (
         <div
-          className="absolute bottom-20 right-0 w-80 bg-white rounded-xl shadow-2xl border border-gray-200 overflow-hidden"
+          className="absolute bottom-20 right-0 w-80 bg-card rounded-xl shadow-2xl border border-gray-200 overflow-hidden"
           role="dialog"
           aria-modal="true"
           aria-labelledby="va-title"
@@ -901,8 +901,8 @@ export const VoiceAssistant: React.FC<{}> = () => {
                   <div className="flex items-center gap-2">
                     <span className={`w-2 h-2 rounded-full ${statusConfig[status].dot}`} />
                     <div>
-                      <span className="text-xs font-medium text-gray-600">{statusConfig[status].label}</span>
-                      <span className="ml-1.5 text-xs text-gray-400">{statusConfig[status].hint}</span>
+                      <span className="text-xs font-medium text-muted-foreground">{statusConfig[status].label}</span>
+                      <span className="ml-1.5 text-xs text-muted-foreground">{statusConfig[status].hint}</span>
                     </div>
                   </div>
                   <div className="flex gap-1.5">
@@ -922,7 +922,7 @@ export const VoiceAssistant: React.FC<{}> = () => {
                         }
                       }}
                       className={`flex items-center gap-1 rounded-full px-2 py-1 text-xs font-medium transition-colors ${
-                        alwaysOn ? 'bg-red-100 text-red-700' : 'bg-gray-200 text-gray-500'
+                        alwaysOn ? 'bg-red-100 text-red-700' : 'bg-gray-200 text-muted-foreground'
                       }`}
                       title="Mode toujours à l'écoute (sans bouton)"
                       aria-pressed={alwaysOn}
@@ -934,7 +934,7 @@ export const VoiceAssistant: React.FC<{}> = () => {
                     <button
                       onClick={() => setContinuous(c => !c)}
                       className={`flex items-center gap-1 rounded-full px-2 py-1 text-xs font-medium transition-colors ${
-                        continuous ? 'bg-blue-100 text-blue-700' : 'bg-gray-200 text-gray-500'
+                        continuous ? 'bg-blue-100 text-blue-700' : 'bg-gray-200 text-muted-foreground'
                       }`}
                       title="Réécoute après chaque réponse"
                       aria-pressed={continuous}
@@ -949,7 +949,7 @@ export const VoiceAssistant: React.FC<{}> = () => {
                 {(listening || speaking) && (
                   <div className="flex flex-col items-center py-1">
                     <WaveBars color={listening ? 'bg-red-400' : 'bg-green-400'} />
-                    <p className="mt-1 text-xs text-gray-500">
+                    <p className="mt-1 text-xs text-muted-foreground">
                       {listening ? 'Parlez maintenant...' : 'Réponse en cours...'}
                     </p>
                   </div>
@@ -971,15 +971,15 @@ export const VoiceAssistant: React.FC<{}> = () => {
                 {/* Interim (live) transcript */}
                 {interimTranscript && listening && (
                   <div className="rounded-lg bg-gray-50 border border-dashed border-gray-300 px-3 py-2" aria-live="off">
-                    <p className="text-xs text-gray-400 italic">{interimTranscript}...</p>
+                    <p className="text-xs text-muted-foreground italic">{interimTranscript}...</p>
                   </div>
                 )}
 
                 {/* Final transcript */}
                 {transcript && (
                   <div className="rounded-lg bg-gray-100 px-3 py-2" role="status" aria-live="polite">
-                    <p className="text-xs text-gray-500 mb-0.5">Vous avez dit :</p>
-                    <p className="text-sm text-gray-800">{transcript}</p>
+                    <p className="text-xs text-muted-foreground mb-0.5">Vous avez dit :</p>
+                    <p className="text-sm text-foreground">{transcript}</p>
                   </div>
                 )}
 
@@ -1008,14 +1008,14 @@ export const VoiceAssistant: React.FC<{}> = () => {
                 {/* History */}
                 {history.length > 1 && (
                   <details className="rounded-lg border border-gray-100">
-                    <summary className="cursor-pointer px-3 py-2 text-xs text-gray-400 hover:text-gray-600 select-none">
+                    <summary className="cursor-pointer px-3 py-2 text-xs text-muted-foreground hover:text-muted-foreground select-none">
                       Historique ({history.length - 1} précédentes)
                     </summary>
                     <div className="divide-y divide-gray-50 px-3 pb-2">
                       {history.slice(1).map((h, i) => (
                         <div key={i} className="py-1.5">
-                          {h.cmd && <p className="text-xs text-gray-400">➤ {h.cmd}</p>}
-                          <p className="text-xs text-gray-600">{h.res}</p>
+                          {h.cmd && <p className="text-xs text-muted-foreground">➤ {h.cmd}</p>}
+                          <p className="text-xs text-muted-foreground">{h.res}</p>
                         </div>
                       ))}
                     </div>
@@ -1031,7 +1031,7 @@ export const VoiceAssistant: React.FC<{}> = () => {
 
                 {/* Quick command chips */}
                 <div className="border-t border-gray-100 pt-2">
-                  <p className="text-xs text-gray-400 mb-2">Exemples rapides :</p>
+                  <p className="text-xs text-muted-foreground mb-2">Exemples rapides :</p>
                   <div className="flex flex-wrap gap-1.5">
                     {[
                       'Combien de skills',
@@ -1044,7 +1044,7 @@ export const VoiceAssistant: React.FC<{}> = () => {
                       <button
                         key={cmd}
                         onClick={() => { setTranscript(cmd); processCommandRef.current(cmd); }}
-                        className="rounded-full border border-gray-200 bg-white px-2.5 py-1 text-xs text-gray-600 hover:border-blue-300 hover:text-blue-600 transition-colors"
+                        className="rounded-full border border-gray-200 bg-card px-2.5 py-1 text-xs text-muted-foreground hover:border-blue-300 hover:text-blue-600 transition-colors"
                       >
                         {cmd}
                       </button>
@@ -1054,11 +1054,11 @@ export const VoiceAssistant: React.FC<{}> = () => {
               </>
             ) : (
               <div className="text-center py-6">
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-12 w-12 mx-auto text-gray-400 mb-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-12 w-12 mx-auto text-muted-foreground mb-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636" />
                 </svg>
-                <p className="text-sm text-gray-600">La reconnaissance vocale n'est pas disponible sur ce navigateur.</p>
-                <p className="text-xs text-gray-500 mt-2">Utilisez Chrome, Edge ou Safari.</p>
+                <p className="text-sm text-muted-foreground">La reconnaissance vocale n'est pas disponible sur ce navigateur.</p>
+                <p className="text-xs text-muted-foreground mt-2">Utilisez Chrome, Edge ou Safari.</p>
               </div>
             )}
           </div>

@@ -173,7 +173,7 @@ export function Employees({ userRole }: EmployeesProps) {
       {/* HEADER */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl mb-2 text-gray-900">Employees</h1>
+          <h1 className="text-3xl mb-2 text-foreground">Employees</h1>
           <p className="text-muted-foreground">
             Manage employee profiles, skills, and activities
           </p>
@@ -194,7 +194,7 @@ export function Employees({ userRole }: EmployeesProps) {
       </div>
 
       {/* FILTERS */}
-      <div className="bg-white rounded-lg shadow-sm p-4 border border-border">
+      <div className="bg-card rounded-lg shadow-sm p-4 border border-border">
         <div className="flex flex-col md:flex-row gap-3">
           <div className="relative flex-1">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
@@ -225,14 +225,14 @@ export function Employees({ userRole }: EmployeesProps) {
       </div>
 
       {/* TABLE */}
-      <div className="bg-white rounded-lg shadow-sm border border-border overflow-hidden">
+      <div className="bg-card rounded-lg shadow-sm border border-border overflow-hidden">
         <table className="w-full">
           <thead className="bg-secondary border-b border-border">
             <tr>
-              <th className="text-left px-6 py-4 text-sm font-medium text-gray-900">Employee</th>
-              <th className="text-left px-6 py-4 text-sm font-medium text-gray-900">Role</th>
-              <th className="text-center px-6 py-4 text-sm font-medium text-gray-900">Skills</th>
-              <th className="text-right px-6 py-4 text-sm font-medium text-gray-900">Actions</th>
+              <th className="text-left px-6 py-4 text-sm font-medium text-foreground">Employee</th>
+              <th className="text-left px-6 py-4 text-sm font-medium text-foreground">Role</th>
+              <th className="text-center px-6 py-4 text-sm font-medium text-foreground">Skills</th>
+              <th className="text-right px-6 py-4 text-sm font-medium text-foreground">Actions</th>
             </tr>
           </thead>
 
@@ -246,7 +246,7 @@ export function Employees({ userRole }: EmployeesProps) {
                       {employee.avatar || employee.name?.charAt(0)}
                     </div>
                     <div>
-                      <p className="font-medium text-gray-900">{employee.name}</p>
+                      <p className="font-medium text-foreground">{employee.name}</p>
                       <p className="text-sm text-muted-foreground">{employee.email}</p>
                     </div>
                   </div>
