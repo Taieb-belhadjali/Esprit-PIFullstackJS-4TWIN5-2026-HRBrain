@@ -40,9 +40,18 @@ function clearAuth() {
 }
 
 const THEME_KEY = 'hrbrain_theme';
+const LANGUAGE_KEY = 'hrbrain_language';
 
 function saveTheme(theme: 'light' | 'dark') {
   localStorage.setItem(THEME_KEY, theme);
+}
+
+function loadLanguage(): string {
+  return localStorage.getItem(LANGUAGE_KEY) || 'en';
+}
+
+function saveLanguage(language: string) {
+  localStorage.setItem(LANGUAGE_KEY, language);
 }
 
 interface AppProps {
@@ -52,6 +61,7 @@ interface AppProps {
 export default function App({ initialTheme = 'light' }: AppProps) {
   const [auth, setAuth] = useState<AuthState | null>(loadAuth);
   const [theme, setTheme] = useState<'light' | 'dark'>(initialTheme);
+  const [language, setLanguage] = useState<string>(loadLanguage);
 
   useEffect(() => {
     const root = document.documentElement;
@@ -79,6 +89,11 @@ export default function App({ initialTheme = 'light' }: AppProps) {
   const handleLogout = () => {
     clearAuth();
     setAuth(null);
+  };
+
+  const handleLanguageChange = (lang: string) => {
+    setLanguage(lang);
+    saveLanguage(lang);
   };
 
   // Map backend roles to frontend roles
@@ -132,6 +147,8 @@ export default function App({ initialTheme = 'light' }: AppProps) {
               onLogout={handleLogout}
               theme={theme}
               setTheme={setTheme}
+              language={language}
+              setLanguage={handleLanguageChange}
             />
           ) : auth && auth.mustChangePassword ? (
             <Navigate to="/change-password" replace />

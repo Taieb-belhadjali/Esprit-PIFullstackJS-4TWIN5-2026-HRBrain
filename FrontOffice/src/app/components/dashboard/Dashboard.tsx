@@ -28,21 +28,11 @@ interface DashboardProps {
   onLogout: () => void;
   theme: 'light' | 'dark';
   setTheme: (theme: 'light' | 'dark') => void;
+  language: string;
+  setLanguage: (lang: string) => void;
 }
 
-export type ViewType =
-  | 'home'
-  | 'employees'
-  | 'departments'
-  | 'skills'
-  | 'activities'
-  | 'recommendations'
-  | 'analytics'
-  | 'notifications'
-  | 'profile'
-  | 'settings';
-
-export function Dashboard({ user, onLogout, theme, setTheme }: DashboardProps) {
+export function Dashboard({ user, onLogout, theme, setTheme, language, setLanguage }: DashboardProps) {
   const navigate = useNavigate();
   const location = useLocation();
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
@@ -179,7 +169,7 @@ export function Dashboard({ user, onLogout, theme, setTheme }: DashboardProps) {
       case 'profile':
         return <Profile user={user} />;
       case 'settings':
-        return <Settings onLogout={onLogout} theme={theme} setTheme={setTheme} />;
+        return <Settings onLogout={onLogout} theme={theme} setTheme={setTheme} language={language} setLanguage={setLanguage} />;
       default:
         return <Home userRole={user.role} />;
     }
@@ -195,6 +185,7 @@ export function Dashboard({ user, onLogout, theme, setTheme }: DashboardProps) {
           userName={user.name}
           isCollapsed={isSidebarCollapsed}
           onToggleCollapse={() => setIsSidebarCollapsed(!isSidebarCollapsed)}
+          language={language}
         />
         <main className={`flex-1 overflow-auto transition-all duration-300 bg-background ${isSidebarCollapsed ? 'ml-16' : 'ml-64'}`}>
           {renderView()}

@@ -1,4 +1,7 @@
-import { IsArray, IsEmail, IsNotEmpty, IsOptional, IsString } from 'class-validator';
+import { IsArray, IsEmail, IsNotEmpty, IsOptional, IsString, IsIn } from 'class-validator';
+
+export const SUPPORTED_LANGUAGES = ['en', 'fr', 'es', 'de', 'it', 'pt', 'zh', 'ja', 'ko', 'ar', 'ru', 'hi'] as const;
+export type Language = typeof SUPPORTED_LANGUAGES[number];
 
 export class CreateUserDto {
   @IsNotEmpty()
@@ -18,4 +21,8 @@ export class CreateUserDto {
   @IsArray()
   @IsString({ each: true })
   skills?: string[];
+
+  @IsOptional()
+  @IsIn(SUPPORTED_LANGUAGES)
+  language?: Language;
 }

@@ -4,7 +4,14 @@ const API = axios.create({
   baseURL: "http://localhost:3000",
 });
 
-// Si le token est expiré → vider le localStorage et recharger vers /login
+API.interceptors.request.use((config) => {
+  const auth = JSON.parse(localStorage.getItem('hrbrain_auth') || '{}');
+  if (auth?.token) {
+    config.headers.Authorization = `Bearer ${auth.token}`;
+  }
+  return config;
+});
+
 API.interceptors.response.use(
   (response) => response,
   (error) => {

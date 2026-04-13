@@ -52,7 +52,7 @@ export class DepartmentService {
       payload.user_id = updateDepartmentDto.user_id.trim();
     }
     const updated = await this.departmentModel
-      .findByIdAndUpdate(id, payload, { new: true })
+      .findByIdAndUpdate(id, payload, { returnDocument: 'after' })
       .exec();
     if (!updated) {
       throw new NotFoundException(`Département avec id ${id} non trouvé`);

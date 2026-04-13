@@ -13,6 +13,7 @@ import {
   ChevronRight,
 } from 'lucide-react';
 import { ViewType } from './Dashboard';
+import { useTranslation } from '../../../api/translations';
 
 type UserRole = 'HR' | 'Manager' | 'Employee';
 
@@ -23,11 +24,12 @@ interface SidebarProps {
   userName: string;
   isCollapsed: boolean;
   onToggleCollapse: () => void;
+  language: string;
 }
 
 interface MenuItem {
   id: ViewType;
-  label: string;
+  labelKey: string;
   icon: React.ReactNode;
   roles: UserRole[];
 }
@@ -39,65 +41,68 @@ export function Sidebar({
   userName,
   isCollapsed,
   onToggleCollapse,
+  language,
 }: SidebarProps) {
+  const t = useTranslation(language);
+  
   const menuItems: MenuItem[] = [
     {
       id: 'home',
-      label: 'Dashboard',
+      labelKey: 'home',
       icon: <Home className="w-5 h-5" />,
       roles: ['HR', 'Manager', 'Employee'],
     },
     {
       id: 'employees',
-      label: 'Employees',
+      labelKey: 'employees',
       icon: <Users className="w-5 h-5" />,
       roles: ['HR', 'Manager'],
     },
     {
       id: 'departments',
-      label: 'Departments',
+      labelKey: 'departments',
       icon: <Building2 className="w-5 h-5" />,
       roles: ['HR'],
     },
     {
       id: 'skills',
-      label: 'Skills',
+      labelKey: 'skills',
       icon: <Brain className="w-5 h-5" />,
       roles: ['HR', 'Manager', 'Employee'],
     },
     {
       id: 'activities',
-      label: 'Activities',
+      labelKey: 'activities',
       icon: <Activity className="w-5 h-5" />,
       roles: ['HR', 'Manager', 'Employee'],
     },
     {
       id: 'recommendations',
-      label: 'Recommendations',
+      labelKey: 'recommendations',
       icon: <Target className="w-5 h-5" />,
       roles: ['HR', 'Manager'],
     },
     {
       id: 'analytics',
-      label: 'Analytics',
+      labelKey: 'analytics',
       icon: <BarChart3 className="w-5 h-5" />,
       roles: ['HR', 'Manager'],
     },
     {
       id: 'notifications',
-      label: 'Notifications',
+      labelKey: 'notifications',
       icon: <Bell className="w-5 h-5" />,
       roles: ['HR', 'Manager', 'Employee'],
     },
     {
       id: 'profile',
-      label: 'Profile',
+      labelKey: 'profile',
       icon: <User className="w-5 h-5" />,
       roles: ['HR', 'Manager', 'Employee'],
     },
     {
       id: 'settings',
-      label: 'Settings',
+      labelKey: 'settings',
       icon: <Settings className="w-5 h-5" />,
       roles: ['HR', 'Manager', 'Employee'],
     },
@@ -173,10 +178,10 @@ export function Sidebar({
                       ? 'bg-sidebar-primary text-sidebar-primary-foreground'
                       : 'hover:bg-sidebar-accent text-sidebar-foreground'
                   }`}
-                  title={isCollapsed ? item.label : undefined}
+                  title={isCollapsed ? t(item.labelKey) : undefined}
                 >
                   {item.icon}
-                  {!isCollapsed && <span className="flex-1 text-left">{item.label}</span>}
+                  {!isCollapsed && <span className="flex-1 text-left">{t(item.labelKey)}</span>}
                 </button>
               </li>
             ))}

@@ -5,7 +5,7 @@ import * as bcrypt from 'bcrypt';
 import { readFile, writeFile } from 'fs/promises';
 import { PDFParse } from 'pdf-parse';
 import { User } from './shemas/user.shema';
-import { CreateUserDto } from './dto/create-user.dto';
+import { CreateUserDto, SUPPORTED_LANGUAGES } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { Skill } from '../skill/skill.schema';
 
@@ -229,8 +229,9 @@ export class UsersService {
   }
 
   async update(id: string, data: UpdateUserDto) {
+    console.log('UsersService.update called with:', id, data);
     const user = await this.userModel.findByIdAndUpdate(id, data, {
-      new: true,
+      returnDocument: 'after',
     }).populate('skills', 'name');
     if (!user) throw new NotFoundException('User not found');
     return user;
@@ -240,5 +241,9 @@ export class UsersService {
     const user = await this.userModel.findByIdAndDelete(id);
     if (!user) throw new NotFoundException('User not found');
     return { message: 'User deleted' };
+  }
+
+  getSupportedLanguages() {
+    return SUPPORTED_LANGUAGES.map(lang => ({ code: lang }));
   }
 }

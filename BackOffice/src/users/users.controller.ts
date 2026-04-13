@@ -110,6 +110,11 @@ export class UsersController {
     return this.usersService.findAll();
   }
 
+  @Get('settings/languages')
+  getSupportedLanguages() {
+    return this.usersService.getSupportedLanguages();
+  }
+
   @Get(':id')
   findOne(@Param('id') id: string) {
     return this.usersService.findOne(id);
@@ -117,6 +122,7 @@ export class UsersController {
 
   @Put(':id')
   update(@Param('id') id: string, @Body() body: any) {
+    console.log('Update user called:', id, body);
     return this.usersService.update(id, body);
   }
 
