@@ -140,6 +140,7 @@ export class RecommendationService {
 
       const skillMatch  = calculateSkillMatchScore(employeeSkills, requiredSkills);
       const progression = calculateProgressionScore(employeeSkills, requiredSkills);
+      const contextScore = calculateContextScore((activity as any).context ?? '', employeeSkills, requiredSkills);
       const total       = calculateFinalScore(skillMatch, progression, contextScore);
 
       results.push({
