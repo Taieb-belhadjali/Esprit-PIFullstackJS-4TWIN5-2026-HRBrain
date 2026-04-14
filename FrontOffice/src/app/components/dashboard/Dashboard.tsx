@@ -14,8 +14,11 @@ import { Departments } from '../views/Departments';
 import { VoiceAssistant } from '../voice/VoiceAssistant';
 import { VoiceCommandProvider } from '../voice/VoiceCommandContext';
 import { KeyboardShortcutsPanel } from '../ui/KeyboardShortcutsPanel';
+import { TTSProvider } from '../tts/TTSContext';
+import { TTSWidget } from '../tts/TTSWidget';
+import { FontSizeProvider } from '../a11y/FontSizeContext';
 
-type UserRole = 'HR' | 'Manager' | 'Employee' | 'SUPERADMIN';
+type UserRole = 'HR' | 'Manager' | 'Employee';
 
 interface User {
   email: string;
@@ -47,16 +50,16 @@ export function Dashboard({ user, onLogout }: DashboardProps) {
   const [showShortcuts, setShowShortcuts] = useState(false);
 
   const viewRoles: Record<ViewType, UserRole[]> = {
-    home: ['HR', 'Manager', 'Employee', 'SUPERADMIN'],
-    employees: ['HR', 'Manager', 'SUPERADMIN'],
-    departments: ['HR', 'SUPERADMIN'],
-    skills: ['HR', 'Manager', 'Employee', 'SUPERADMIN'],
-    activities: ['HR', 'Manager', 'Employee', 'SUPERADMIN'],
-    recommendations: ['HR', 'Manager', 'SUPERADMIN'],
-    analytics: ['HR', 'Manager', 'SUPERADMIN'],
-    notifications: ['HR', 'Manager', 'Employee', 'SUPERADMIN'],
-    profile: ['HR', 'Manager', 'Employee', 'SUPERADMIN'],
-    settings: ['HR', 'Manager', 'Employee', 'SUPERADMIN'],
+    home: ['HR', 'Manager', 'Employee'],
+    employees: ['HR', 'Manager'],
+    departments: ['HR'],
+    skills: ['HR', 'Manager', 'Employee'],
+    activities: ['HR', 'Manager', 'Employee'],
+    recommendations: ['HR', 'Manager'],
+    analytics: ['HR', 'Manager'],
+    notifications: ['HR', 'Manager', 'Employee'],
+    profile: ['HR', 'Manager', 'Employee'],
+    settings: ['HR', 'Manager', 'Employee'],
   };
 
   const currentView = useMemo<ViewType>(() => {
@@ -184,26 +187,31 @@ export function Dashboard({ user, onLogout }: DashboardProps) {
   };
 
   return (
-    <VoiceCommandProvider>
-      <div className="flex h-screen bg-secondary overflow-hidden">
-        <Sidebar
-          currentView={currentView}
-          onViewChange={(view) => navigate(`/dashboard/${view}`)}
-          userRole={user.role}
-          userName={user.name}
-          isCollapsed={isSidebarCollapsed}
-          onToggleCollapse={() => setIsSidebarCollapsed(!isSidebarCollapsed)}
-        />
-        <main className={`flex-1 overflow-auto transition-all duration-300 ${isSidebarCollapsed ? 'ml-16' : 'ml-64'}`}>
-          {renderView()}
-        </main>
-        <VoiceAssistant />
-      </div>
+    <FontSizeProvider>
+      <TTSProvider>
+        <VoiceCommandProvider>
+          <div className="flex h-screen bg-secondary overflow-hidden">
+            <Sidebar
+              currentView={currentView}
+              onViewChange={(view) => navigate(`/dashboard/${view}`)}
+              userRole={user.role}
+              userName={user.name}
+              isCollapsed={isSidebarCollapsed}
+              onToggleCollapse={() => setIsSidebarCollapsed(!isSidebarCollapsed)}
+            />
+            <main className={`flex-1 overflow-auto transition-all duration-300 ${isSidebarCollapsed ? 'ml-16' : 'ml-64'}`}>
+              {renderView()}
+            </main>
+            <TTSWidget />
+            <VoiceAssistant />
+          </div>
 
-      {/* Panneau raccourcis clavier (touche ?) */}
-      {showShortcuts && (
-        <KeyboardShortcutsPanel onClose={() => setShowShortcuts(false)} />
-      )}
-    </VoiceCommandProvider>
+          {/* Panneau raccourcis clavier (touche ?) */}
+          {showShortcuts && (
+            <KeyboardShortcutsPanel onClose={() => setShowShortcuts(false)} />
+          )}
+        </VoiceCommandProvider>
+      </TTSProvider>
+    </FontSizeProvider>
   );
 }
