@@ -42,7 +42,7 @@ export class SkillService {
     updateSkillDto: UpdateSkillDto,
   ): Promise<SkillDocument> {
     const updatedSkill = await this.skillModel
-      .findByIdAndUpdate(id, updateSkillDto, { new: true })
+      .findByIdAndUpdate(id, updateSkillDto, { returnDocument: 'after' })
       .exec();
 
     if (!updatedSkill) {

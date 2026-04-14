@@ -7,11 +7,13 @@ import ViewEmployeeModal from "../employees/ViewEmployeeModel";
 import { deleteEmployee, getEmployees } from '../../../api/employeeApi';
 import { useVoiceCommand } from '../voice/VoiceCommandContext';
 import Pagination from '../ui/Pagination';
+import { useTranslation } from '../../../api/translations';
 
 type UserRole = 'HR' | 'Manager' | 'Employee' | 'SUPERADMIN';
 
 interface EmployeesProps {
   userRole: UserRole;
+  language?: string;
 }
 
 interface Employee {
@@ -27,7 +29,8 @@ interface Employee {
   role: string;
 }
 
-export function Employees({ userRole }: EmployeesProps) {
+export function Employees({ userRole, language = 'en' }: EmployeesProps) {
+  const t = useTranslation(language);
   const [employees, setEmployees] = useState<Employee[]>([]);
   const [openModal, setOpenModal] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
@@ -173,9 +176,9 @@ export function Employees({ userRole }: EmployeesProps) {
       {/* HEADER */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl mb-2 text-gray-900">Employees</h1>
+          <h1 className="text-3xl mb-2 text-foreground">{t('employees')}</h1>
           <p className="text-muted-foreground">
-            Manage employee profiles, skills, and activities
+            {t('employeesDesc')}
           </p>
         </div>
 
@@ -188,19 +191,19 @@ export function Employees({ userRole }: EmployeesProps) {
             className="flex items-center gap-2 bg-primary text-white px-4 py-2 rounded-lg hover:bg-primary/90 transition-colors"
           >
             <Plus className="w-5 h-5" />
-            Add Employee
+            {t('addEmployee')}
           </button>
         )}
       </div>
 
       {/* FILTERS */}
-      <div className="bg-white rounded-lg shadow-sm p-4 border border-border">
+      <div className="bg-card rounded-lg shadow-sm p-4 border border-border">
         <div className="flex flex-col md:flex-row gap-3">
           <div className="relative flex-1">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
             <input
               type="text"
-              placeholder="Search by name or email..."
+              placeholder={t('searchEmployees')}
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               className="w-full pl-9 pr-4 py-2 border border-input rounded-lg focus:outline-none focus:ring-2 focus:ring-primary text-sm"
@@ -220,19 +223,19 @@ export function Employees({ userRole }: EmployeesProps) {
           </div>
         </div>
         <p className="mt-3 text-sm text-muted-foreground">
-          Showing {filteredEmployees.length} of {employees.length} employees
+          {t('showingEmployees').replace('{filteredEmployees.length}', String(filteredEmployees.length)).replace('{employees.length}', String(employees.length))}
         </p>
       </div>
 
       {/* TABLE */}
-      <div className="bg-white rounded-lg shadow-sm border border-border overflow-hidden">
+      <div className="bg-card rounded-lg shadow-sm border border-border overflow-hidden">
         <table className="w-full">
           <thead className="bg-secondary border-b border-border">
             <tr>
-              <th className="text-left px-6 py-4 text-sm font-medium text-gray-900">Employee</th>
-              <th className="text-left px-6 py-4 text-sm font-medium text-gray-900">Role</th>
-              <th className="text-center px-6 py-4 text-sm font-medium text-gray-900">Skills</th>
-              <th className="text-right px-6 py-4 text-sm font-medium text-gray-900">Actions</th>
+              <th className="text-left px-6 py-4 text-sm font-medium text-foreground">{t('employeeName')}</th>
+              <th className="text-left px-6 py-4 text-sm font-medium text-foreground">{t('employeeRole')}</th>
+              <th className="text-center px-6 py-4 text-sm font-medium text-foreground">{t('employeeSkills')}</th>
+              <th className="text-right px-6 py-4 text-sm font-medium text-foreground">{t('actions')}</th>
             </tr>
           </thead>
 
@@ -246,7 +249,7 @@ export function Employees({ userRole }: EmployeesProps) {
                       {employee.avatar || employee.name?.charAt(0)}
                     </div>
                     <div>
-                      <p className="font-medium text-gray-900">{employee.name}</p>
+                      <p className="font-medium text-foreground">{employee.name}</p>
                       <p className="text-sm text-muted-foreground">{employee.email}</p>
                     </div>
                   </div>

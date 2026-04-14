@@ -1,4 +1,8 @@
-import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
+import {
+  BadRequestException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model, Types } from 'mongoose';
 import * as bcrypt from 'bcrypt';
@@ -32,9 +36,11 @@ export class UsersService {
     // Alias acceptés à la saisie → normalisés
     const levelAliases: Record<string, string> = { GOOD: 'HIGH' };
 
-    const allSkills = await this.skillModel.find({}, { _id: 1, name: 1 }).lean();
+    const allSkills = await this.skillModel
+      .find({}, { _id: 1, name: 1 })
+      .lean();
     const skillMap = new Map(
-      allSkills.map(s => [s.name.toUpperCase(), String(s._id)])
+      allSkills.map((s) => [s.name.toUpperCase(), String(s._id)]),
     );
 
     const lines = (text || '')
@@ -43,7 +49,9 @@ export class UsersService {
       .filter(line => line.length > 0);
 
     if (lines.length === 0) {
-      throw new BadRequestException('Fichier vide. Format: SKILL:LEVEL (ex: JAVA:HIGH)');
+      throw new BadRequestException(
+        'Fichier vide. Format: SKILL:LEVEL (ex: JAVA:HIGH)',
+      );
     }
 
     const foundSkillIds = new Set<string>();
@@ -57,7 +65,9 @@ export class UsersService {
       const match = line.match(/^([A-Za-z0-9\s#\+\.\-\_@]+):([A-Za-z]+)$/i);
 
       if (!match) {
-        errors.push(`Ligne ${lineNumber}: Format invalide "${line}". Requis: SKILL:HIGH|MEDIUM|LOW|EXPERT`);
+        errors.push(
+          `Ligne ${lineNumber}: Format invalide "${line}". Requis: SKILL:HIGH|MEDIUM|LOW|EXPERT`,
+        );
         continue;
       }
 
@@ -68,7 +78,9 @@ export class UsersService {
       if (levelAliases[level]) level = levelAliases[level];
 
       if (!validLevels.includes(level)) {
-        errors.push(`Ligne ${lineNumber}: Niveau invalide "${match[2]}". Accepté: HIGH, MEDIUM, LOW, EXPERT`);
+        errors.push(
+          `Ligne ${lineNumber}: Niveau invalide "${match[2]}". Accepté: HIGH, MEDIUM, LOW, EXPERT`,
+        );
         continue;
       }
 
@@ -79,7 +91,9 @@ export class UsersService {
           skillId = String(newSkill._id);
           skillMap.set(skillName, skillId);
         } catch (err) {
-          errors.push(`Ligne ${lineNumber}: Erreur création skill "${skillName}"`);
+          errors.push(
+            `Ligne ${lineNumber}: Erreur création skill "${skillName}"`,
+          );
           continue;
         }
       }
@@ -92,7 +106,9 @@ export class UsersService {
     }
 
     if (foundSkillIds.size === 0) {
-      throw new BadRequestException('Aucun skill valide. Format: SKILL:HIGH|MEDIUM|LOW|EXPERT');
+      throw new BadRequestException(
+        'Aucun skill valide. Format: SKILL:HIGH|MEDIUM|LOW|EXPERT',
+      );
     }
 
     return Array.from(foundSkillIds);
@@ -175,6 +191,9 @@ export class UsersService {
 
   async create(data: CreateUserDto, file?: Express.Multer.File) {
     try {
+      console.log('=== CREATE USER ===');
+      console.log('Role:', data.role);
+      console.log('File:', file ? { filename: file.filename, path: file.path, mimetype: file.mimetype } : 'NO FILE'); 
       const hashedPassword = await bcrypt.hash(data.password, 10);
 
       let cvDetectedSkillIds: string[] = [];
@@ -217,7 +236,7 @@ export class UsersService {
 
       const mergedSkillIds = data.role === 'EMPLOYEE'
         ? [...new Set([...manualSkills, ...cvDetectedSkillIds])]
-        : [];
+          : [];
 
       const user = new this.userModel({
         ...data,

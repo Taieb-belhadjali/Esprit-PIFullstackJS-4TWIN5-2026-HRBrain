@@ -81,7 +81,7 @@ export const SkillForm: React.FC<SkillFormProps> = ({
   };
 
   return (
-    <div className="relative w-full max-w-lg overflow-hidden rounded-2xl bg-white shadow-2xl">
+    <div className="relative w-full max-w-lg overflow-hidden rounded-2xl bg-card shadow-2xl">
       {/* Toast notification */}
       {toast && (
         <div
@@ -109,10 +109,10 @@ export const SkillForm: React.FC<SkillFormProps> = ({
             }
           </div>
           <div>
-            <h2 className="text-base font-semibold text-slate-900">
+            <h2 className="text-base font-semibold text-foreground">
               {skillToEdit ? 'Modifier le skill' : 'Nouveau skill'}
             </h2>
-            <p className="text-xs text-slate-500">
+            <p className="text-xs text-muted-foreground">
               {skillToEdit ? 'Mettre à jour les informations' : 'Remplissez les champs ci-dessous'}
             </p>
           </div>
@@ -120,7 +120,7 @@ export const SkillForm: React.FC<SkillFormProps> = ({
         <button
           type="button"
           onClick={onCancel}
-          className="rounded-lg p-1.5 text-slate-400 transition hover:bg-slate-100 hover:text-slate-700"
+          className="rounded-lg p-1.5 text-foreground transition hover:bg-slate-100 hover:text-foreground"
           aria-label="Fermer"
         >
           <X size={18} />
@@ -131,7 +131,7 @@ export const SkillForm: React.FC<SkillFormProps> = ({
       <form onSubmit={handleSubmit} className="flex flex-col gap-5 p-6">
         {/* Nom */}
         <div>
-          <label htmlFor="skill-name" className="mb-1.5 flex items-center gap-1.5 text-sm font-medium text-slate-700">
+          <label htmlFor="skill-name" className="mb-1.5 flex items-center gap-1.5 text-sm font-medium text-foreground">
             <Tag size={13} className="text-blue-600" />
             Nom du skill
             <span className="text-red-500">*</span>
@@ -142,14 +142,14 @@ export const SkillForm: React.FC<SkillFormProps> = ({
             value={name}
             onChange={(e) => setName(e.target.value)}
             placeholder="Ex : React, Communication, SQL…"
-            className="w-full rounded-xl border border-input bg-secondary/40 px-4 py-2.5 text-sm outline-none placeholder:text-muted-foreground/40 transition focus:border-primary focus:bg-white focus:ring-2 focus:ring-primary/10"
+            className="w-full rounded-xl border border-input bg-secondary/40 px-4 py-2.5 text-sm outline-none placeholder:text-muted-foreground/40 transition focus:border-primary focus:bg-card focus:ring-2 focus:ring-primary/10"
             required
           />
         </div>
 
         {/* Description */}
         <div>
-          <label htmlFor="skill-description" className="mb-1.5 flex items-center gap-1.5 text-sm font-medium text-slate-700">
+          <label htmlFor="skill-description" className="mb-1.5 flex items-center gap-1.5 text-sm font-medium text-foreground">
             <FileText size={13} className="text-blue-600" />
             Description
             <span className="ml-1 text-xs font-normal text-muted-foreground">(optionnelle)</span>
@@ -160,13 +160,13 @@ export const SkillForm: React.FC<SkillFormProps> = ({
             onChange={(e) => setDescription(e.target.value)}
             placeholder="Décrivez ce skill et son utilité dans l'organisation…"
             rows={3}
-            className="w-full resize-none rounded-xl border border-input bg-secondary/40 px-4 py-2.5 text-sm outline-none placeholder:text-muted-foreground/40 transition focus:border-primary focus:bg-white focus:ring-2 focus:ring-primary/10"
+            className="w-full resize-none rounded-xl border border-input bg-secondary/40 px-4 py-2.5 text-sm outline-none placeholder:text-muted-foreground/40 transition focus:border-primary focus:bg-card focus:ring-2 focus:ring-primary/10"
           />
         </div>
 
         {/* Département */}
         <div>
-          <label htmlFor="skill-department" className="mb-1.5 flex items-center gap-1.5 text-sm font-medium text-slate-700">
+          <label htmlFor="skill-department" className="mb-1.5 flex items-center gap-1.5 text-sm font-medium text-foreground">
             <Building2 size={13} className="text-blue-600" />
             Département
             <span className="text-red-500">*</span>
@@ -175,7 +175,7 @@ export const SkillForm: React.FC<SkillFormProps> = ({
             id="skill-department"
             value={departmentId}
             onChange={(e) => setDepartmentId(e.target.value)}
-            className="w-full rounded-xl border border-input bg-secondary/40 px-4 py-2.5 text-sm outline-none transition focus:border-primary focus:bg-white focus:ring-2 focus:ring-primary/10"
+            className="w-full rounded-xl border border-input bg-secondary/40 px-4 py-2.5 text-sm outline-none transition focus:border-primary focus:bg-card focus:ring-2 focus:ring-primary/10"
             required
           >
             <option value="">— Sélectionner un département</option>
@@ -190,7 +190,7 @@ export const SkillForm: React.FC<SkillFormProps> = ({
           <button
             type="button"
             onClick={onCancel}
-            className="flex-1 rounded-xl border border-input py-2.5 text-sm font-medium text-gray-700 transition hover:bg-secondary active:scale-95"
+            className="flex-1 rounded-xl border border-input py-2.5 text-sm font-medium text-foreground transition hover:bg-secondary active:scale-95"
           >
             Annuler
           </button>

@@ -29,21 +29,13 @@ interface User {
 interface DashboardProps {
   user: User;
   onLogout: () => void;
+  theme: 'light' | 'dark';
+  setTheme: (theme: 'light' | 'dark') => void;
+  language: string;
+  setLanguage: (lang: string) => void;
 }
 
-export type ViewType =
-  | 'home'
-  | 'employees'
-  | 'departments'
-  | 'skills'
-  | 'activities'
-  | 'recommendations'
-  | 'analytics'
-  | 'notifications'
-  | 'profile'
-  | 'settings';
-
-export function Dashboard({ user, onLogout }: DashboardProps) {
+export function Dashboard({ user, onLogout, theme, setTheme, language, setLanguage }: DashboardProps) {
   const navigate = useNavigate();
   const location = useLocation();
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
@@ -162,27 +154,27 @@ export function Dashboard({ user, onLogout }: DashboardProps) {
   const renderView = () => {
     switch (currentView) {
       case 'home':
-        return <Home userRole={user.role} />;
+        return <Home userRole={user.role} language={language} />;
       case 'employees':
-        return <Employees userRole={user.role} />;
+        return <Employees userRole={user.role} language={language} />;
       case 'departments':
-        return <Departments userRole={user.role} />;
+        return <Departments userRole={user.role} language={language} />;
       case 'skills':
-        return <Skills userRole={user.role} />;
+        return <Skills userRole={user.role} language={language} />;
       case 'activities':
-        return <Activities userRole={user.role} />;
+        return <Activities userRole={user.role} language={language} />;
       case 'recommendations':
-        return <Recommendations userRole={user.role} />;
+        return <Recommendations userRole={user.role} language={language} />;
       case 'analytics':
-        return <Analytics userRole={user.role} />;
+        return <Analytics userRole={user.role} language={language} />;
       case 'notifications':
-        return <Notifications />;
+        return <Notifications language={language} />;
       case 'profile':
-        return <Profile user={user} />;
+        return <Profile user={user} language={language} />;
       case 'settings':
-        return <Settings onLogout={onLogout} />;
+        return <Settings onLogout={onLogout} theme={theme} setTheme={setTheme} language={language} setLanguage={setLanguage} />;
       default:
-        return <Home userRole={user.role} />;
+        return <Home userRole={user.role} language={language} />;
     }
   };
 

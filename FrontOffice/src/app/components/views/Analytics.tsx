@@ -17,11 +17,13 @@ import {
   Legend,
   ResponsiveContainer,
 } from 'recharts';
+import { useTranslation } from '../../../api/translations';
 
 type UserRole = 'HR' | 'Manager' | 'Employee' | 'SUPERADMIN';
 
 interface AnalyticsProps {
   userRole: UserRole;
+  language?: string;
 }
 
 const skillGapData = [
@@ -58,7 +60,8 @@ const departmentSkillsData = [
   { subject: 'Creativity', Engineering: 60, Marketing: 95, Sales: 50 },
 ];
 
-export function Analytics({ userRole }: AnalyticsProps) {
+export function Analytics({ userRole, language = 'en' }: AnalyticsProps) {
+  const t = useTranslation(language);
   const [timeRange, setTimeRange] = useState('6months');
 
   const metrics = [
@@ -97,7 +100,7 @@ export function Analytics({ userRole }: AnalyticsProps) {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl mb-2 text-gray-900">Analytics & Reports</h1>
+          <h1 className="text-3xl mb-2 text-foreground">Analytics & Reports</h1>
           <p className="text-muted-foreground">
             Comprehensive insights into skills, activities, and recommendations
           </p>
@@ -119,7 +122,7 @@ export function Analytics({ userRole }: AnalyticsProps) {
         {metrics.map((metric, index) => (
           <div
             key={index}
-            className="bg-white rounded-lg shadow-sm p-6 border border-border"
+            className="bg-card rounded-lg shadow-sm p-6 border border-border"
           >
             <div className="flex items-start justify-between mb-4">
               <div className={`${metric.color} text-white p-3 rounded-lg`}>
@@ -127,7 +130,7 @@ export function Analytics({ userRole }: AnalyticsProps) {
               </div>
               <span className="text-sm text-green-600 font-medium">{metric.change}</span>
             </div>
-            <h3 className="text-2xl font-semibold mb-1 text-gray-900">{metric.value}</h3>
+            <h3 className="text-2xl font-semibold mb-1 text-foreground">{metric.value}</h3>
             <p className="text-sm text-muted-foreground">{metric.title}</p>
           </div>
         ))}
@@ -136,8 +139,8 @@ export function Analytics({ userRole }: AnalyticsProps) {
       {/* Charts Row 1 */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Skill Gaps by Department */}
-        <div className="bg-white rounded-lg shadow-sm p-6 border border-border">
-          <h2 className="text-xl mb-4 text-gray-900">Skill Gaps by Department</h2>
+        <div className="bg-card rounded-lg shadow-sm p-6 border border-border">
+          <h2 className="text-xl mb-4 text-foreground">Skill Gaps by Department</h2>
           <ResponsiveContainer width="100%" height={300}>
             <BarChart data={skillGapData}>
               <CartesianGrid strokeDasharray="3 3" stroke="#E5E7EB" />
@@ -160,8 +163,8 @@ export function Analytics({ userRole }: AnalyticsProps) {
         </div>
 
         {/* Employee Progression */}
-        <div className="bg-white rounded-lg shadow-sm p-6 border border-border">
-          <h2 className="text-xl mb-4 text-gray-900">Employee Progression Trends</h2>
+        <div className="bg-card rounded-lg shadow-sm p-6 border border-border">
+          <h2 className="text-xl mb-4 text-foreground">Employee Progression Trends</h2>
           <ResponsiveContainer width="100%" height={300}>
             <LineChart data={progressionData}>
               <CartesianGrid strokeDasharray="3 3" stroke="#E5E7EB" />
@@ -202,8 +205,8 @@ export function Analytics({ userRole }: AnalyticsProps) {
       {/* Charts Row 2 */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Recommendation Efficiency */}
-        <div className="bg-white rounded-lg shadow-sm p-6 border border-border">
-          <h2 className="text-xl mb-4 text-gray-900">Recommendation Efficiency</h2>
+        <div className="bg-card rounded-lg shadow-sm p-6 border border-border">
+          <h2 className="text-xl mb-4 text-foreground">Recommendation Efficiency</h2>
           <ResponsiveContainer width="100%" height={350}>
             <RadarChart data={recommendationEfficiencyData}>
               <PolarGrid stroke="#E5E7EB" />
@@ -223,15 +226,15 @@ export function Analytics({ userRole }: AnalyticsProps) {
             {recommendationEfficiencyData.map((item, index) => (
               <div key={index} className="flex items-center justify-between">
                 <span className="text-sm text-muted-foreground">{item.metric}</span>
-                <span className="text-sm font-semibold text-gray-900">{item.value}%</span>
+                <span className="text-sm font-semibold text-foreground">{item.value}%</span>
               </div>
             ))}
           </div>
         </div>
 
         {/* Department Skills Comparison */}
-        <div className="bg-white rounded-lg shadow-sm p-6 border border-border">
-          <h2 className="text-xl mb-4 text-gray-900">Department Skills Comparison</h2>
+        <div className="bg-card rounded-lg shadow-sm p-6 border border-border">
+          <h2 className="text-xl mb-4 text-foreground">Department Skills Comparison</h2>
           <ResponsiveContainer width="100%" height={350}>
             <RadarChart data={departmentSkillsData}>
               <PolarGrid stroke="#E5E7EB" />
@@ -266,22 +269,22 @@ export function Analytics({ userRole }: AnalyticsProps) {
       </div>
 
       {/* Summary Stats */}
-      <div className="bg-white rounded-lg shadow-sm p-6 border border-border">
-        <h2 className="text-xl mb-4 text-gray-900">Summary Statistics</h2>
+      <div className="bg-card rounded-lg shadow-sm p-6 border border-border">
+        <h2 className="text-xl mb-4 text-foreground">Summary Statistics</h2>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           <div className="border-l-4 border-blue-500 pl-4">
             <p className="text-sm text-muted-foreground mb-1">Total Recommendations Made</p>
-            <p className="text-3xl font-semibold text-gray-900">1,847</p>
+            <p className="text-3xl font-semibold text-foreground">1,847</p>
             <p className="text-sm text-green-600 mt-1">+23% from last period</p>
           </div>
           <div className="border-l-4 border-green-500 pl-4">
             <p className="text-sm text-muted-foreground mb-1">Successful Placements</p>
-            <p className="text-3xl font-semibold text-gray-900">1,572</p>
+            <p className="text-3xl font-semibold text-foreground">1,572</p>
             <p className="text-sm text-green-600 mt-1">85% success rate</p>
           </div>
           <div className="border-l-4 border-purple-500 pl-4">
             <p className="text-sm text-muted-foreground mb-1">Avg. Time to Match</p>
-            <p className="text-3xl font-semibold text-gray-900">2.3 days</p>
+            <p className="text-3xl font-semibold text-foreground">2.3 days</p>
             <p className="text-sm text-green-600 mt-1">-15% faster than before</p>
           </div>
         </div>

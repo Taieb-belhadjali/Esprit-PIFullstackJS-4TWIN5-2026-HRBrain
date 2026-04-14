@@ -1,6 +1,7 @@
-import {IsString } from 'class-validator';
+import { IsString } from 'class-validator';
 
 export class ExtractSkillsDto {
-    @IsString()
-    description: string;
+  // Description from which skills need to be extracted
+  @IsString()
+  description: string;
 }

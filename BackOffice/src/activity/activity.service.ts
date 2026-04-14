@@ -77,7 +77,7 @@ export class ActivityService {
   }
 
   async update(id: string, dto: UpdateActivityDto): Promise<ActivityDocument> {
-    const updated = await this.activityModel.findByIdAndUpdate(id, dto, { new: true }).exec();
+    const updated = await this.activityModel.findByIdAndUpdate(id, dto, { returnDocument: 'after' }).exec();
     if (!updated) throw new NotFoundException(`Activity ${id} not found`);
     return updated;
   }

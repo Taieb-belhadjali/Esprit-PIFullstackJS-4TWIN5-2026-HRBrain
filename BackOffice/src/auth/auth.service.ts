@@ -34,6 +34,7 @@ export class AuthService {
         name: user.name,
         email: user.email,
         role: user.role,
+        language: user.language || 'en',
       },
     };
   }
@@ -49,6 +50,7 @@ export class AuthService {
         name: user.name,
         email: user.email,
         role: user.role,
+        language: user.language || 'en',
       },
     };
   }

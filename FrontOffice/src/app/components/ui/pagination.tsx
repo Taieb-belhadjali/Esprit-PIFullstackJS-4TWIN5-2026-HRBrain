@@ -36,14 +36,14 @@ const Pagination: React.FC<PaginationProps> = ({
 
   const btnBase = 'inline-flex items-center justify-center h-9 min-w-[2.25rem] px-2 rounded-lg text-sm font-medium transition-all duration-150 select-none';
   const btnActive = 'bg-primary text-white shadow-sm';
-  const btnInactive = 'text-gray-600 hover:bg-gray-100 border border-gray-200';
-  const btnDisabled = 'text-gray-300 border border-gray-100 cursor-not-allowed';
+  const btnInactive = 'text-foreground hover:bg-secondary border border-border';
+  const btnDisabled = 'text-muted-foreground border border-border cursor-not-allowed';
 
   return (
     <div className="flex flex-col sm:flex-row items-center justify-between gap-3 px-1 py-3">
-      <p className="text-sm text-gray-500 shrink-0">
-        Showing <span className="font-medium text-gray-700">{from}–{to}</span> of{' '}
-        <span className="font-medium text-gray-700">{totalItems}</span>
+      <p className="text-sm text-muted-foreground shrink-0">
+        Showing <span className="font-medium text-foreground">{from}–{to}</span> of{' '}
+        <span className="font-medium text-foreground">{totalItems}</span>
       </p>
 
       <div className="flex items-center gap-1">
@@ -70,7 +70,7 @@ const Pagination: React.FC<PaginationProps> = ({
         {/* Page numbers */}
         {getPages().map((page, i) =>
           page === '...' ? (
-            <span key={`ellipsis-${i}`} className="px-1 text-gray-400 text-sm">…</span>
+            <span key={`ellipsis-${i}`} className="px-1 text-muted-foreground text-sm">…</span>
           ) : (
             <button
               key={page}

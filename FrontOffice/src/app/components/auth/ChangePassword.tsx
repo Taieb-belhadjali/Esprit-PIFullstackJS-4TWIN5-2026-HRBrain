@@ -40,21 +40,21 @@ export function ChangePassword({token, onPasswordChanged}: ChangePasswordProps) 
     return (
         <div className="min-h-screen bg-secondary flex items-center justify-center p-4">
             <div className="w-full max-w-md">
-                <div className="bg-white rounded-lg shadow-lg p-8">
+                <div className="bg-card rounded-lg shadow-lg p-8">
                     <div className="flex items-center justify-center mb-6">
                         <div className="bg-primary rounded-lg p-3">
                             <Brain className="w-8 h-8 text-white"/>
                         </div>
                     </div>
 
-                    <h1 className="text-2xl text-center mb-2 text-gray-900">Changer le mot de passe</h1>
+                    <h1 className="text-2xl text-center mb-2 text-foreground">Changer le mot de passe</h1>
                     <p className="text-sm text-muted-foreground text-center mb-6">
                         Pour votre sécurité, veuillez définir un nouveau mot de passe
                     </p>
 
                     <form onSubmit={handleSubmit}>
                         <div className="mb-4">
-                            <label htmlFor="new-password" className="block text-sm mb-2 text-gray-700">
+                            <label htmlFor="new-password" className="block text-sm mb-2 text-foreground">
                                 Nouveau mot de passe
                             </label>
                             <div className="relative">
@@ -72,7 +72,7 @@ export function ChangePassword({token, onPasswordChanged}: ChangePasswordProps) 
                         </div>
 
                         <div className="mb-6">
-                            <label htmlFor="confirm-password" className="block text-sm mb-2 text-gray-700">
+                            <label htmlFor="confirm-password" className="block text-sm mb-2 text-foreground">
                                 Confirmer le mot de passe
                             </label>
                             <div className="relative">

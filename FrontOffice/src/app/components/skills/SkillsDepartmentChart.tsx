@@ -53,7 +53,7 @@ export const SkillsDepartmentChart: React.FC<SkillsDepartmentChartProps> = ({
   if (data.rows.length === 0) return null;
 
   return (
-    <div className="rounded-xl border border-slate-200 bg-white shadow-sm overflow-hidden">
+    <div className="rounded-xl border border-slate-200 bg-card shadow-sm overflow-hidden">
       {/* Header */}
       <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100">
         <div className="flex items-center gap-2.5">
@@ -61,13 +61,13 @@ export const SkillsDepartmentChart: React.FC<SkillsDepartmentChartProps> = ({
             <BarChart2 size={16} className="text-blue-600" />
           </div>
           <div>
-            <h2 className="text-sm font-semibold text-slate-900">Répartition par département</h2>
-            <p className="text-xs text-slate-500">{data.rows.length} département{data.rows.length > 1 ? 's' : ''} · {skills.length} skills au total</p>
+            <h2 className="text-sm font-semibold text-foreground">Répartition par département</h2>
+            <p className="text-xs text-muted-foreground">{data.rows.length} département{data.rows.length > 1 ? 's' : ''} · {skills.length} skills au total</p>
           </div>
         </div>
         <button
           onClick={() => setCollapsed((c) => !c)}
-          className="flex items-center gap-1 rounded-lg px-2 py-1.5 text-xs text-muted-foreground transition hover:bg-secondary hover:text-gray-900"
+          className="flex items-center gap-1 rounded-lg px-2 py-1.5 text-xs text-muted-foreground transition hover:bg-secondary hover:text-foreground"
           aria-label={collapsed ? 'Afficher le graphique' : 'Masquer le graphique'}
         >
           {collapsed ? <ChevronDown size={14} /> : <ChevronUp size={14} />}
@@ -86,13 +86,13 @@ export const SkillsDepartmentChart: React.FC<SkillsDepartmentChartProps> = ({
             return (
               <div key={dep._id} className="group flex items-center gap-4">
                 {/* Rank */}
-                <span className="w-5 text-right text-xs font-medium text-slate-400">
+                <span className="w-5 text-right text-xs font-medium text-muted-foreground">
                   {index + 1}
                 </span>
 
                 {/* Department name */}
                 <div className="w-36 flex-shrink-0">
-                  <span className="block truncate text-sm font-medium text-slate-800 group-hover:text-blue-600 transition-colors">
+                  <span className="block truncate text-sm font-medium text-foreground group-hover:text-blue-600 transition-colors">
                     {dep.name}
                   </span>
                 </div>
@@ -111,7 +111,7 @@ export const SkillsDepartmentChart: React.FC<SkillsDepartmentChartProps> = ({
                 </span>
 
                 {/* Percentage */}
-                <span className="w-10 flex-shrink-0 text-right text-xs text-slate-400">
+                <span className="w-10 flex-shrink-0 text-right text-xs text-muted-foreground">
                   {totalPct}%
                 </span>
               </div>

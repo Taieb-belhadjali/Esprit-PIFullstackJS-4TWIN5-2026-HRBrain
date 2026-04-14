@@ -4,14 +4,15 @@ import { Plus, Download, Brain } from 'lucide-react';
 
 type UserRole = 'HR' | 'Manager' | 'Employee' | 'SUPERADMIN';
 
-// onAddSkill : ouvre le formulaire | onExportCsv : optionnel | userRole : seul HR voit "Ajouter"
 interface SkillsHeaderProps {
   onAddSkill: () => void;
   onExportCsv?: () => void;
   userRole?: UserRole;
+  t?: (key: string) => string | undefined;
 }
 
-export const SkillsHeader: React.FC<SkillsHeaderProps> = ({ onAddSkill, onExportCsv, userRole }) => {
+export const SkillsHeader: React.FC<SkillsHeaderProps> = ({ onAddSkill, onExportCsv, userRole, t }) => {
+  const translate = t || ((key: string) => key);
   return (
     <div className="rounded-2xl border border-slate-200 bg-gradient-to-r from-blue-50 via-white to-indigo-50 p-6 shadow-sm">
       <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
@@ -21,25 +22,25 @@ export const SkillsHeader: React.FC<SkillsHeaderProps> = ({ onAddSkill, onExport
             <Brain size={20} className="text-white" />
           </div>
           <div>
-            <div className="inline-flex items-center gap-2 rounded-full bg-white px-3 py-1 text-xs font-medium text-blue-600 shadow-sm">
-              Référentiel des compétences
+            <div className="inline-flex items-center gap-2 rounded-full bg-card px-3 py-1 text-xs font-medium text-blue-600 shadow-sm">
+              {translate('skills_competency_repository')}
             </div>
-            <h1 className="mt-2 text-2xl font-bold text-slate-900">Skills</h1>
-            <p className="mt-0.5 text-sm text-slate-600">
-              Gérez les compétences de l&apos;organisation par département
+            <h1 className="mt-2 text-2xl font-bold text-foreground">{translate('skills_title')}</h1>
+            <p className="mt-0.5 text-sm text-muted-foreground">
+              {translate('skills_manage_by_department')}
             </p>
           </div>
         </div>
-        {/* Boutons d’action */}
+        {/* Boutons d'action */}
         <div className="flex items-center gap-2">
           {/* Export CSV — si prop fournie */}
           {onExportCsv && (
             <button
               onClick={onExportCsv}
-              className="inline-flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-4 py-2.5 text-sm font-medium text-slate-700 shadow-sm transition hover:bg-slate-50 active:scale-95"
+              className="inline-flex items-center gap-2 rounded-lg border border-slate-200 bg-card px-4 py-2.5 text-sm font-medium text-foreground shadow-sm transition hover:bg-slate-50 active:scale-95"
             >
               <Download size={15} />
-              Export CSV
+              {translate('skills_export_csv')}
             </button>
           )}
           {/* Ajouter — HR uniquement */}
@@ -49,7 +50,7 @@ export const SkillsHeader: React.FC<SkillsHeaderProps> = ({ onAddSkill, onExport
               className="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2.5 text-sm font-medium text-white shadow-sm transition hover:bg-blue-700 active:scale-95"
             >
               <Plus size={15} />
-              Ajouter Skill
+              {translate('skills_add_skill')}
             </button>
           )}
         </div>

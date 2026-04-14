@@ -11,16 +11,19 @@ import { Skill, SkillSortBy } from '../skills/types';
 import { useVoiceCommand } from '../voice/VoiceCommandContext';
 import Pagination from '../ui/Pagination';
 import { SkillsDepartmentChart } from '../skills/SkillsDepartmentChart';
+import { useTranslation } from '../../../api/translations';
 
 
 type UserRole = 'HR' | 'Manager' | 'Employee' | 'SUPERADMIN';
 
 interface SkillsProps {
   userRole: UserRole;
+  language?: string;
 }
 
 
-export const Skills: React.FC<SkillsProps> = ({ userRole }) => {
+export const Skills: React.FC<SkillsProps> = ({ userRole, language = 'en' }) => {
+  const t = useTranslation(language);
   const [skills, setSkills] = useState<Skill[]>([]);
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
@@ -217,7 +220,12 @@ export const Skills: React.FC<SkillsProps> = ({ userRole }) => {
 
   return (
     <div className="p-6 space-y-6">
-      <SkillsHeader onAddSkill={() => setShowForm(true)} onExportCsv={handleExportCsv} userRole={userRole} />
+      <SkillsHeader 
+        onAddSkill={() => setShowForm(true)} 
+        onExportCsv={handleExportCsv} 
+        userRole={userRole}
+        t={t}
+      />
 
       <SkillsStats
         totalSkills={skills.length}
@@ -239,6 +247,7 @@ export const Skills: React.FC<SkillsProps> = ({ userRole }) => {
           setSortBy('name-asc');
           setSelectedDepartment('');
         }}
+        t={t}
       />
 
       {loading ? (
@@ -252,13 +261,13 @@ export const Skills: React.FC<SkillsProps> = ({ userRole }) => {
         </div>
       ) : filteredSkills.length === 0 ? (
         <div className="rounded-xl border border-dashed border-slate-200 bg-slate-50 p-10 text-center">
-          <p className="text-lg font-semibold text-slate-800">
-            {skills.length === 0 ? 'Aucun skill pour le moment' : 'Aucun résultat trouvé'}
+          <p className="text-lg font-semibold text-foreground">
+            {skills.length === 0 ? t('skills_no_skills_yet') : t('skills_no_results')}
           </p>
-          <p className="mt-2 text-sm text-slate-600">
+          <p className="mt-2 text-sm text-muted-foreground">
             {skills.length === 0
-              ? 'Commence par ajouter ton premier skill.'
-              : 'Essaie une autre recherche ou modifie les filtres.'}
+              ? t('skills_start_adding')
+              : t('skills_try_different_search')}
           </p>
         </div>
       ) : (

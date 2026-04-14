@@ -49,21 +49,21 @@ export function Login({onLogin}: LoginProps) {
     return (
         <div className="min-h-screen bg-secondary flex items-center justify-center p-4">
             <div className="w-full max-w-md">
-                <div className="bg-white rounded-lg shadow-lg p-8">
+                <div className="bg-card rounded-lg shadow-lg p-8">
                     <div className="flex items-center justify-center mb-6">
                         <div className="bg-primary rounded-lg p-3">
                             <Brain className="w-8 h-8 text-white"/>
                         </div>
                     </div>
 
-                    <h1 className="text-2xl text-center mb-2 text-gray-900">Welcome to HRBrain</h1>
+                    <h1 className="text-2xl text-center mb-2 text-foreground">Welcome to HRBrain</h1>
                     <p className="text-sm text-muted-foreground text-center mb-6">
                         AI-Powered Employee Recommendation System
                     </p>
 
                     <form onSubmit={handleSubmit}>
                         <div className="mb-4">
-                            <label htmlFor="email" className="block text-sm mb-2 text-gray-700">
+                            <label htmlFor="email" className="block text-sm mb-2 text-foreground">
                                 Email Address
                             </label>
                             <div className="relative">
@@ -81,7 +81,7 @@ export function Login({onLogin}: LoginProps) {
                         </div>
 
                         <div className="mb-6">
-                            <label htmlFor="password" className="block text-sm mb-2 text-gray-700">
+                            <label htmlFor="password" className="block text-sm mb-2 text-foreground">
                                 Password
                             </label>
                             <div className="relative">
@@ -125,7 +125,7 @@ export function Login({onLogin}: LoginProps) {
                     <button
                         type="button"
                         onClick={handleGoogleLogin}
-                        className="w-full flex items-center justify-center gap-3 border border-input py-2.5 rounded-lg hover:bg-gray-50 transition-colors text-sm text-gray-700"
+                        className="w-full flex items-center justify-center gap-3 border border-input py-2.5 rounded-lg hover:bg-gray-50 transition-colors text-sm text-foreground"
                     >
                         <svg className="w-5 h-5" viewBox="0 0 24 24">
                             <path fill="#4285F4"

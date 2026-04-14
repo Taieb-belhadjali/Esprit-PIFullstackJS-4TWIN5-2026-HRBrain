@@ -81,7 +81,7 @@ export function KeyboardShortcutsPanel({ onClose }: KeyboardShortcutsPanelProps)
         role="dialog"
         aria-modal="true"
         aria-labelledby="shortcuts-title"
-        className="fixed z-50 top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-md bg-white rounded-2xl shadow-2xl border border-gray-200 overflow-hidden"
+        className="fixed z-50 top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-md bg-card rounded-2xl shadow-2xl border border-gray-200 overflow-hidden"
       >
         {/* Header */}
         <div className="flex items-center justify-between bg-primary px-5 py-4">
@@ -108,15 +108,15 @@ export function KeyboardShortcutsPanel({ onClose }: KeyboardShortcutsPanelProps)
               key={description}
               className="flex items-center justify-between py-3"
             >
-              <span className="text-sm text-gray-700">{description}</span>
+              <span className="text-sm text-foreground">{description}</span>
               <span className="flex items-center gap-1">
                 {keys.map((key, i) => (
                   <span key={i} className="flex items-center gap-1">
-                    <kbd className="inline-flex items-center justify-center rounded-md border border-gray-300 bg-gray-50 px-2 py-0.5 text-xs font-mono font-semibold text-gray-700 shadow-sm">
+                    <kbd className="inline-flex items-center justify-center rounded-md border border-gray-300 bg-gray-50 px-2 py-0.5 text-xs font-mono font-semibold text-foreground shadow-sm">
                       {key}
                     </kbd>
                     {i < keys.length - 1 && (
-                      <span className="text-xs text-gray-400">+</span>
+                      <span className="text-xs text-muted-foreground">+</span>
                     )}
                   </span>
                 ))}
@@ -125,7 +125,7 @@ export function KeyboardShortcutsPanel({ onClose }: KeyboardShortcutsPanelProps)
           ))}
         </ul>
 
-        <p className="px-5 pb-4 text-xs text-gray-400">
+        <p className="px-5 pb-4 text-xs text-muted-foreground">
           Appuyez sur <kbd className="font-mono font-semibold">Échap</kbd> ou cliquez à l'extérieur pour fermer.
         </p>
       </div>

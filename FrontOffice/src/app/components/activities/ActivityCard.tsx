@@ -15,7 +15,7 @@ interface ActivityCardProps {
 }
 
 const statusColors: Record<string, string> = {
-  Draft: 'bg-gray-100 text-gray-700',
+  Draft: 'bg-gray-100 text-foreground',
   Validated: 'bg-blue-100 text-blue-700',
   'In Progress': 'bg-green-100 text-green-700',
   Completed: 'bg-purple-100 text-purple-700',
@@ -51,22 +51,22 @@ const ActivityCard: React.FC<ActivityCardProps> = ({
   const canManage = userRole === 'Manager' || userRole === 'SUPERADMIN';
 
   return (
-    <div className="group bg-white rounded-xl shadow-md hover:shadow-xl transition-all duration-300 border border-gray-100 overflow-hidden hover:border-blue-200">
+    <div className="group bg-card rounded-xl shadow-md hover:shadow-xl transition-all duration-300 border border-gray-100 overflow-hidden hover:border-blue-200">
       <div className="h-1 bg-gradient-to-r from-indigo-500 to-purple-600" />
 
       <div className="p-5">
         {/* Header */}
         <div className="flex items-start justify-between mb-3">
           <div className="flex-1">
-            <h3 className="text-lg font-bold text-gray-900 group-hover:text-indigo-600 transition-colors">
+            <h3 className="text-lg font-bold text-foreground group-hover:text-indigo-600 transition-colors">
               {activity.title}
             </h3>
             <div className="flex flex-wrap gap-2 mt-2">
-              <span className={`text-xs px-2 py-1 rounded-full font-medium ${statusColors[activity.status] ?? 'bg-gray-100 text-gray-700'}`}>
+              <span className={`text-xs px-2 py-1 rounded-full font-medium ${statusColors[activity.status] ?? 'bg-gray-100 text-foreground'}`}>
                 {activity.status}
               </span>
               {activity.context && (
-                <span className={`text-xs px-2 py-1 rounded-full font-medium ${contextColors[activity.context] ?? 'bg-gray-100 text-gray-600'}`}>
+                <span className={`text-xs px-2 py-1 rounded-full font-medium ${contextColors[activity.context] ?? 'bg-gray-100 text-muted-foreground'}`}>
                   {activity.context}
                 </span>
               )}
@@ -119,13 +119,13 @@ const ActivityCard: React.FC<ActivityCardProps> = ({
 
         {/* Description */}
         {activity.description && (
-          <p className="text-sm text-gray-600 mb-4 leading-relaxed line-clamp-2">
+          <p className="text-sm text-muted-foreground mb-4 leading-relaxed line-clamp-2">
             {activity.description}
           </p>
         )}
 
         {/* Info row */}
-        <div className="flex flex-wrap gap-4 text-sm text-gray-500">
+        <div className="flex flex-wrap gap-4 text-sm text-muted-foreground">
           {(activity.startDate || activity.endDate) && (
             <div className="flex items-center gap-1.5">
               <Calendar size={14} className="text-green-500" />
@@ -153,7 +153,7 @@ const ActivityCard: React.FC<ActivityCardProps> = ({
         {/* Required Skills */}
         {activity.requiredSkills?.length > 0 && (
           <div className="mt-4 pt-3 border-t border-gray-100">
-            <div className="flex items-center gap-1.5 mb-2 text-xs text-gray-500">
+            <div className="flex items-center gap-1.5 mb-2 text-xs text-muted-foreground">
               <BookOpen size={13} />
               <span>Required Skills</span>
             </div>
@@ -161,7 +161,7 @@ const ActivityCard: React.FC<ActivityCardProps> = ({
               {activity.requiredSkills.map((rs, i) => (
                 <span
                   key={i}
-                  className={`text-xs px-2 py-0.5 rounded-full font-medium ${levelColors[rs.level] ?? 'bg-gray-100 text-gray-600'}`}
+                  className={`text-xs px-2 py-0.5 rounded-full font-medium ${levelColors[rs.level] ?? 'bg-gray-100 text-muted-foreground'}`}
                 >
                   {getSkillName(rs)} · {rs.level}
                 </span>

@@ -29,6 +29,25 @@ export class User {
   @Prop({ default: true })
   mustChangePassword: boolean;
 
+  @Prop({
+    enum: [
+      'en',
+      'fr',
+      'es',
+      'de',
+      'it',
+      'pt',
+      'zh',
+      'ja',
+      'ko',
+      'ar',
+      'ru',
+      'hi',
+    ],
+    default: 'en',
+  })
+  language: string;
+
   @Prop({ type: Types.ObjectId, ref: 'Department', required: false, default: null })
   departmentId?: Types.ObjectId;
 }
