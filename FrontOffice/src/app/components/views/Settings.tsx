@@ -1,7 +1,9 @@
 import { useState, useEffect } from 'react';
-import { Globe, Moon, Bell, Shield, LogOut, Save } from 'lucide-react';
+import { Globe, Moon, Bell, Shield, LogOut, Save, MousePointer, BookOpen } from 'lucide-react';
 import { userApi } from '../../../api/userApi';
 import { useTranslation } from '../../../api/translations';
+import { useCursor, type CursorSize } from '../../context/CursorContext';
+import { useReadingMask } from '../../context/ReadingMaskContext';
 
 interface SettingsProps {
   onLogout: () => void;
@@ -36,6 +38,14 @@ export function Settings({ onLogout, theme, setTheme, language: currentLanguage,
   const [pushNotifications, setPushNotifications] = useState(true);
   const [activityNotifications, setActivityNotifications] = useState(true);
   const [recommendationNotifications, setRecommendationNotifications] = useState(true);
+  const { cursorSize, setCursorSize } = useCursor();
+  const { enabled: maskEnabled, setEnabled: setMaskEnabled, maskHeight, setMaskHeight, opacity, setOpacity } = useReadingMask();
+
+  const cursorOptions: { value: CursorSize; label: string; desc: string; preview: string }[] = [
+    { value: 'normal', label: 'Normal',     desc: 'Curseur standard',          preview: 'text-base' },
+    { value: 'large',  label: 'Grand',      desc: 'Curseur agrandi (×1.5)',     preview: 'text-lg'   },
+    { value: 'xlarge', label: 'Très grand', desc: 'Curseur très agrandi (×2)',  preview: 'text-2xl'  },
+  ];
 
   useEffect(() => {
     const fetchLanguages = async () => {
@@ -227,6 +237,81 @@ export function Settings({ onLogout, theme, setTheme, language: currentLanguage,
             </label>
           </div>
         </div>
+      </div>
+
+      {/* Accessibility — Cursor Size */}
+      <div className="bg-card rounded-lg shadow-sm p-6 border border-border">
+        <div className="flex items-center gap-3 mb-6">
+          <div className="p-2 bg-orange-100 rounded-lg">
+            <MousePointer className="w-6 h-6 text-orange-600" />
+          </div>
+          <div>
+            <h2 className="text-xl text-foreground">Accessibilité — Taille du curseur</h2>
+            <p className="text-sm text-muted-foreground">Agrandissez le curseur et les zones cliquables pour une meilleure précision</p>
+          </div>
+        </div>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+          {cursorOptions.map(opt => (
+            <button key={opt.value} onClick={() => setCursorSize(opt.value)}
+              aria-pressed={cursorSize === opt.value}
+              className={`flex flex-col items-center gap-3 p-4 border-2 rounded-xl transition-all ${cursorSize === opt.value ? 'border-primary bg-primary/5' : 'border-border hover:border-primary/50'}`}>
+              <MousePointer className={`${opt.preview} ${cursorSize === opt.value ? 'text-primary' : 'text-gray-400'}`} />
+              <div className="text-center">
+                <p className={`font-semibold ${cursorSize === opt.value ? 'text-primary' : 'text-foreground'}`}>{opt.label}</p>
+                <p className="text-xs text-muted-foreground mt-0.5">{opt.desc}</p>
+              </div>
+              {cursorSize === opt.value && <span className="text-xs bg-primary text-white px-2 py-0.5 rounded-full">Actif</span>}
+            </button>
+          ))}
+        </div>
+        <p className="text-xs text-muted-foreground mt-4">Ce paramètre agrandit également les boutons et zones cliquables pour faciliter la navigation.</p>
+      </div>
+
+      {/* Accessibility — Reading Mask */}
+      <div className="bg-card rounded-lg shadow-sm p-6 border border-border">
+        <div className="flex items-center gap-3 mb-6">
+          <div className="p-2 bg-indigo-100 rounded-lg">
+            <BookOpen className="w-6 h-6 text-indigo-600" />
+          </div>
+          <div className="flex-1">
+            <h2 className="text-xl text-foreground">Accessibilité — Masque de lecture</h2>
+            <p className="text-sm text-muted-foreground">Bande horizontale qui suit votre curseur pour faciliter la lecture des listes</p>
+          </div>
+          <label className="relative inline-flex items-center cursor-pointer">
+            <input type="checkbox" checked={maskEnabled} onChange={e => setMaskEnabled(e.target.checked)}
+              className="sr-only peer" aria-label="Activer le masque de lecture" />
+            <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-primary rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary" />
+          </label>
+        </div>
+        {maskEnabled && (
+          <div className="space-y-5 pt-2 border-t border-border">
+            <div>
+              <div className="flex justify-between mb-2">
+                <label className="text-sm font-medium text-foreground">Hauteur de la bande</label>
+                <span className="text-sm text-primary font-semibold">{maskHeight}px</span>
+              </div>
+              <input type="range" min={40} max={120} step={10} value={maskHeight}
+                onChange={e => setMaskHeight(parseInt(e.target.value))} className="w-full accent-primary" />
+              <div className="flex justify-between text-xs text-muted-foreground mt-1">
+                <span>Étroite (40px)</span><span>Large (120px)</span>
+              </div>
+            </div>
+            <div>
+              <div className="flex justify-between mb-2">
+                <label className="text-sm font-medium text-foreground">Intensité du masque</label>
+                <span className="text-sm text-primary font-semibold">{Math.round(opacity * 100)}%</span>
+              </div>
+              <input type="range" min={0.2} max={0.85} step={0.05} value={opacity}
+                onChange={e => setOpacity(parseFloat(e.target.value))} className="w-full accent-primary" />
+              <div className="flex justify-between text-xs text-muted-foreground mt-1">
+                <span>Léger (20%)</span><span>Intense (85%)</span>
+              </div>
+            </div>
+            <p className="text-xs text-muted-foreground bg-indigo-50 rounded-lg p-3">
+              💡 Déplacez votre souris sur les listes d'employés, de skills ou de recommandations pour voir l'effet.
+            </p>
+          </div>
+        )}
       </div>
 
       {/* Security & Privacy */}
