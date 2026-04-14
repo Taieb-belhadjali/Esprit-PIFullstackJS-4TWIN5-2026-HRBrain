@@ -1,9 +1,10 @@
 import { useState, useEffect } from 'react';
 import { Globe, Moon, Bell, Shield, LogOut, Save, MousePointer, BookOpen } from 'lucide-react';
-import { userApi } from '../../../api/userApi';
 import { useTranslation } from '../../../api/translations';
 import { useCursor, type CursorSize } from '../../context/CursorContext';
 import { useReadingMask } from '../../context/ReadingMaskContext';
+import { useLanguage } from '../../context/LanguageContext';
+import { useAppTranslation } from '../../hooks/useAppTranslation';
 
 interface SettingsProps {
   onLogout: () => void;
@@ -28,8 +29,9 @@ const LANGUAGE_NAMES: Record<string, string> = {
   hi: 'हिन्दी',
 };
 
-export function Settings({ onLogout, theme, setTheme, language: currentLanguage, setLanguage: setCurrentLanguage }: SettingsProps) {
-  const t = useTranslation(currentLanguage);
+export function Settings({ onLogout, theme, setTheme, language: _langProp, setLanguage: _setLangProp }: SettingsProps) {
+  const { language: currentLanguage, setLanguage: setCurrentLanguage } = useLanguage();
+  const t = useAppTranslation();
   const [language, setLanguage] = useState(currentLanguage);
   const [languages, setLanguages] = useState<{ code: string }[]>([]);
   const [loading, setLoading] = useState(true);
@@ -48,33 +50,14 @@ export function Settings({ onLogout, theme, setTheme, language: currentLanguage,
   ];
 
   useEffect(() => {
-    const fetchLanguages = async () => {
-      try {
-        const langs = await userApi.getLanguages();
-        setLanguages(langs);
-      } catch (err) {
-        console.error('Failed to load languages:', err);
-        setLanguages([{ code: 'en' }, { code: 'fr' }]);
-      } finally {
-        setLoading(false);
-      }
-    };
-    fetchLanguages();
+    // Utiliser directement les langues définies localement — pas besoin d'API
+    setLanguages(Object.keys(LANGUAGE_NAMES).map(code => ({ code })));
+    setLoading(false);
   }, []);
 
   const handleLanguageChange = async (newLang: string) => {
     setLanguage(newLang);
-    setSaving(true);
-    try {
-      await userApi.updateLanguage(newLang);
-      setCurrentLanguage(newLang);
-    } catch (err: any) {
-      console.error('Failed to update language:', err);
-      setLanguage(currentLanguage);
-      alert('Failed to update language: ' + (err.response?.data?.message || err.message));
-    } finally {
-      setSaving(false);
-    }
+    setCurrentLanguage(newLang);
   };
 
   return (

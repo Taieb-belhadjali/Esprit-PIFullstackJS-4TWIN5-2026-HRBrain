@@ -803,6 +803,8 @@ export function t(key: TranslationKey, language: string = 'en', params?: Record<
   return text;
 }
 
-export function useTranslation(language: string) {
-  return (key: TranslationKey, params?: Record<string, string | number>) => t(key, language, params);
+export function useTranslation(language?: string) {
+  // Lire depuis le contexte React si disponible (via localStorage comme fallback)
+  const lang = language || localStorage.getItem('hrbrain_language') || 'en';
+  return (key: TranslationKey, params?: Record<string, string | number>) => t(key, lang, params);
 }

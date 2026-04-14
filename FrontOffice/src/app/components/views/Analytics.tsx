@@ -1,4 +1,4 @@
-import { useState } from 'react';
+﻿import { useState } from 'react';
 import { TrendingUp, Users, Target, Calendar } from 'lucide-react';
 import {
   BarChart,
@@ -17,7 +17,7 @@ import {
   Legend,
   ResponsiveContainer,
 } from 'recharts';
-import { useTranslation } from '../../../api/translations';
+import { useAppTranslation } from '../../hooks/useAppTranslation';
 
 type UserRole = 'HR' | 'Manager' | 'Employee' | 'SUPERADMIN';
 
@@ -60,8 +60,8 @@ const departmentSkillsData = [
   { subject: 'Creativity', Engineering: 60, Marketing: 95, Sales: 50 },
 ];
 
-export function Analytics({ userRole, language = 'en' }: AnalyticsProps) {
-  const t = useTranslation(language);
+export function Analytics({ userRole }: AnalyticsProps) {
+  const t = useAppTranslation();
   const [timeRange, setTimeRange] = useState('6months');
 
   const metrics = [
@@ -292,3 +292,5 @@ export function Analytics({ userRole, language = 'en' }: AnalyticsProps) {
     </div>
   );
 }
+
+

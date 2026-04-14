@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+﻿import { useState, useEffect } from 'react';
 import { Search, Plus, X, Sparkles } from 'lucide-react';
 import API from '../../../api/api';
 import { ActivityCard } from '../activities/ActivityCard';
@@ -8,7 +8,7 @@ import { ActivityRecommendations } from '../activities/ActivityRecommendations';
 import { ActivityRecommendationHistory } from '../activities/ActivityRecommendationHistory';
 import { useVoiceCommand } from '../voice/VoiceCommandContext';
 import Pagination from '../ui/Pagination';
-import { useTranslation } from '../../../api/translations';
+import { useAppTranslation } from '../../hooks/useAppTranslation';
 
 type UserRole = 'HR' | 'Manager' | 'Employee' | 'SUPERADMIN';
 
@@ -33,8 +33,8 @@ const EMPTY_FORM = {
 
 const LEVELS = ['Low', 'Medium', 'High', 'Expert'];
 
-export function Activities({ userRole, language = 'en' }: ActivitiesProps) {
-  const t = useTranslation(language);
+export function Activities({ userRole }: ActivitiesProps) {
+  const t = useAppTranslation();
   const [activities, setActivities] = useState<Activity[]>([]);
   const [departments, setDepartments] = useState<any[]>([]);
   const [skills, setSkills] = useState<any[]>([]);
@@ -531,3 +531,5 @@ export function Activities({ userRole, language = 'en' }: ActivitiesProps) {
     </div>
   );
 }
+
+

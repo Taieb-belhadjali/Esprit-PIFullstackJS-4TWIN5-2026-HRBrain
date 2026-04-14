@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+﻿import { useEffect, useState } from 'react';
 import { Search, Filter, Plus, Edit, Trash2, Eye } from 'lucide-react';
 import { EmployeeProfile } from '../employees/EmployeeProfile';
 import AddEmployeeModal from "../employees/AddEmployeeModel";
@@ -7,7 +7,7 @@ import ViewEmployeeModal from "../employees/ViewEmployeeModel";
 import { deleteEmployee, getEmployees } from '../../../api/employeeApi';
 import { useVoiceCommand } from '../voice/VoiceCommandContext';
 import Pagination from '../ui/Pagination';
-import { useTranslation } from '../../../api/translations';
+import { useAppTranslation } from '../../hooks/useAppTranslation';
 
 type UserRole = 'HR' | 'Manager' | 'Employee' | 'SUPERADMIN';
 
@@ -29,8 +29,8 @@ interface Employee {
   role: string;
 }
 
-export function Employees({ userRole, language = 'en' }: EmployeesProps) {
-  const t = useTranslation(language);
+export function Employees({ userRole }: EmployeesProps) {
+  const t = useAppTranslation();
   const [employees, setEmployees] = useState<Employee[]>([]);
   const [openModal, setOpenModal] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
@@ -356,3 +356,5 @@ export function Employees({ userRole, language = 'en' }: EmployeesProps) {
     </div>
   );
 }
+
+
