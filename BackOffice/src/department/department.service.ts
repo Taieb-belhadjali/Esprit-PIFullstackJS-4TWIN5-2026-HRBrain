@@ -41,7 +41,12 @@ export class DepartmentService {
   /** Retourne tous les départements dont le manager fait partie */
   async findByManager(managerId: string): Promise<DepartmentDocument[]> {
     return this.departmentModel
-      .find({ managerIds: new Types.ObjectId(managerId) })
+      .find({
+        $or: [
+          { managerIds: new Types.ObjectId(managerId) },
+          { managerIds: managerId },
+        ],
+      })
       .populate('managerIds', 'name email')
       .exec();
   }

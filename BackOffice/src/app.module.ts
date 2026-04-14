@@ -9,6 +9,7 @@ import { DepartmentModule } from './department/department.module';
 import { ActivityModule } from './activity/activity.module';
 import { NlpModule } from './nlp/nlp.module';
 import { RecommendationModule } from './recommendation/recommendation.module';
+import { NotificationModule } from './notification/notification.module';
 
 @Module({
   imports: [
@@ -23,6 +24,7 @@ import { RecommendationModule } from './recommendation/recommendation.module';
     ActivityModule,
     NlpModule,
     RecommendationModule,
+    NotificationModule,
   ],
   controllers: [AppController],
 })
