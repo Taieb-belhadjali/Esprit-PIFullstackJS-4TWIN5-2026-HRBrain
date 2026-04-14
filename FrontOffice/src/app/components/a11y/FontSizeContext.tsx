@@ -55,6 +55,18 @@ export function FontSizeProvider({ children }: { children: React.ReactNode }) {
     setSizeIndex(DEFAULT_INDEX);
   }, []);
 
+  // Keyboard shortcuts: Ctrl+↑ increase, Ctrl+↓ decrease, Ctrl+← reset
+  useEffect(() => {
+    const handleKey = (e: KeyboardEvent) => {
+      if (!e.ctrlKey) return;
+      if (e.code === 'ArrowUp')    { e.preventDefault(); increase(); }
+      else if (e.code === 'ArrowDown')  { e.preventDefault(); decrease(); }
+      else if (e.code === 'ArrowLeft')  { e.preventDefault(); reset(); }
+    };
+    window.addEventListener('keydown', handleKey);
+    return () => window.removeEventListener('keydown', handleKey);
+  }, [increase, decrease, reset]);
+
   return (
     <FontSizeContext.Provider
       value={{
