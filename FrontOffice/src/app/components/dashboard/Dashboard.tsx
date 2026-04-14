@@ -14,9 +14,6 @@ import { Departments } from '../views/Departments';
 import { VoiceAssistant } from '../voice/VoiceAssistant';
 import { VoiceCommandProvider } from '../voice/VoiceCommandContext';
 import { KeyboardShortcutsPanel } from '../ui/KeyboardShortcutsPanel';
-import { TTSProvider } from '../tts/TTSContext';
-import { TTSWidget } from '../tts/TTSWidget';
-import { FontSizeProvider } from '../a11y/FontSizeContext';
 
 type UserRole = 'HR' | 'Manager' | 'Employee' | 'SUPERADMIN';
 
@@ -187,31 +184,26 @@ export function Dashboard({ user, onLogout }: DashboardProps) {
   };
 
   return (
-    <FontSizeProvider>
-      <TTSProvider>
-        <VoiceCommandProvider>
-          <div className="flex h-screen bg-secondary overflow-hidden">
-            <Sidebar
-              currentView={currentView}
-              onViewChange={(view) => navigate(`/dashboard/${view}`)}
-              userRole={user.role}
-              userName={user.name}
-              isCollapsed={isSidebarCollapsed}
-              onToggleCollapse={() => setIsSidebarCollapsed(!isSidebarCollapsed)}
-            />
-            <main className={`flex-1 overflow-auto transition-all duration-300 ${isSidebarCollapsed ? 'ml-16' : 'ml-64'}`}>
-              {renderView()}
-            </main>
-            <TTSWidget />
-            <VoiceAssistant />
-          </div>
+    <VoiceCommandProvider>
+      <div className="flex h-screen bg-secondary overflow-hidden">
+        <Sidebar
+          currentView={currentView}
+          onViewChange={(view) => navigate(`/dashboard/${view}`)}
+          userRole={user.role}
+          userName={user.name}
+          isCollapsed={isSidebarCollapsed}
+          onToggleCollapse={() => setIsSidebarCollapsed(!isSidebarCollapsed)}
+        />
+        <main className={`flex-1 overflow-auto transition-all duration-300 ${isSidebarCollapsed ? 'ml-16' : 'ml-64'}`}>
+          {renderView()}
+        </main>
+        <VoiceAssistant />
+      </div>
 
-          {/* Panneau raccourcis clavier (touche ?) */}
-          {showShortcuts && (
-            <KeyboardShortcutsPanel onClose={() => setShowShortcuts(false)} />
-          )}
-        </VoiceCommandProvider>
-      </TTSProvider>
-    </FontSizeProvider>
+      {/* Panneau raccourcis clavier (touche ?) */}
+      {showShortcuts && (
+        <KeyboardShortcutsPanel onClose={() => setShowShortcuts(false)} />
+      )}
+    </VoiceCommandProvider>
   );
 }
