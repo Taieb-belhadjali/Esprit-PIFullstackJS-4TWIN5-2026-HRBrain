@@ -1,6 +1,7 @@
 import {
   IsArray,
   IsEmail,
+  IsMongoId,
   IsNotEmpty,
   IsOptional,
   IsString,
