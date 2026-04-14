@@ -5,6 +5,17 @@ import AddEmployeeModal from "../employees/AddEmployeeModel";
 import EditEmployeeModal from "../employees/EditEmployeeModel";
 import ViewEmployeeModal from "../employees/ViewEmployeeModel";
 import { deleteEmployee, getEmployees } from '../../../api/employeeApi';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from '../ui/alert-dialog';
 
 type UserRole = 'HR' | 'Manager' | 'Employee';
 
@@ -34,6 +45,7 @@ export function Employees({ userRole }: EmployeesProps) {
   const [editingEmployee, setEditingEmployee] = useState<Employee | null>(null);
   const [viewEmployee, setViewEmployee] = useState<Employee | null>(null);
   const [viewOpen, setViewOpen] = useState(false);
+  const [employeeToDelete, setEmployeeToDelete] = useState<Employee | null>(null);
 
   // ✅ PAGINATION STATE
   const [currentPage, setCurrentPage] = useState(1);
@@ -239,17 +251,42 @@ export function Employees({ userRole }: EmployeesProps) {
                           <Edit className="w-4 h-4 text-muted-foreground" />
                         </button>
 
-                        <button
-                          className="p-2 hover:bg-secondary rounded-lg"
-                          onClick={async () => {
-                            if (confirm(`Delete ${employee.name}?`)) {
-                              await deleteEmployee(employee.id);
-                              fetchEmployees();
-                            }
+                        <AlertDialog
+                          open={employeeToDelete?.id === employee.id}
+                          onOpenChange={(open) => {
+                            if (!open) setEmployeeToDelete(null);
                           }}
                         >
-                          <Trash2 className="w-4 h-4 text-destructive" />
-                        </button>
+                          <AlertDialogTrigger asChild>
+                            <button
+                              className="p-2 hover:bg-secondary rounded-lg"
+                              onClick={() => setEmployeeToDelete(employee)}
+                            >
+                              <Trash2 className="w-4 h-4 text-destructive" />
+                            </button>
+                          </AlertDialogTrigger>
+                          <AlertDialogContent>
+                            <AlertDialogHeader>
+                              <AlertDialogTitle>Delete employee?</AlertDialogTitle>
+                              <AlertDialogDescription>
+                                This will permanently delete <b>{employee.name}</b>.
+                              </AlertDialogDescription>
+                            </AlertDialogHeader>
+                            <AlertDialogFooter>
+                              <AlertDialogCancel>Cancel</AlertDialogCancel>
+                              <AlertDialogAction
+                                className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                                onClick={async () => {
+                                  await deleteEmployee(employee.id);
+                                  await fetchEmployees();
+                                  setEmployeeToDelete(null);
+                                }}
+                              >
+                                Delete
+                              </AlertDialogAction>
+                            </AlertDialogFooter>
+                          </AlertDialogContent>
+                        </AlertDialog>
                       </>
                     )}
 

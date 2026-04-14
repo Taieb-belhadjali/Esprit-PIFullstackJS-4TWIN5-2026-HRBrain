@@ -1,0 +1,44 @@
+# Docker « en ligne » sans Docker Desktop : le job tourne sur un runner GitHub
+# où Docker est déjà disponible, et les étapes tests s’exécutent dans l’image officielle node:20.
+
+name: BackOffice - CI dans conteneur Node (Docker cloud)
+
+on:
+  push:
+    branches:
+      - Ahmed
+  pull_request:
+    branches:
+      - Ahmed
+
+jobs:
+  test-in-docker:
+    name: Tests + couverture (conteneur node:20)
+    runs-on: ubuntu-latest
+    container:
+      image: node:20-bookworm-slim
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install + tests department + coverage
+        working-directory: BackOffice
+        run: |
+          npm ci
+          npm run test:cov:department
+
+      - name: Artefacts couverture
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-backoffice
+          path: BackOffice/coverage
+
+  validate-compose:
+    name: Valider docker-compose (lint fichier)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: docker compose config
+        run: docker compose -f infra/docker-compose.yml config

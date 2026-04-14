@@ -7,6 +7,16 @@ import { SkillsFilters } from '../skills/SkillsFilters';
 import { SkillsHeader } from '../skills/SkillsHeader';
 import { SkillsStats } from '../skills/SkillsStats';
 import { Skill, SkillSortBy } from '../skills/types';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '../ui/alert-dialog';
 
 type UserRole = 'HR' | 'Manager' | 'Employee';
 
@@ -23,6 +33,7 @@ export const Skills: React.FC<SkillsProps> = ({ userRole }) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [sortBy, setSortBy] = useState<SkillSortBy>('name-asc');
   const [withDescriptionOnly, setWithDescriptionOnly] = useState(false);
+  const [skillToDelete, setSkillToDelete] = useState<Skill | null>(null);
 
   useEffect(() => {
     fetchSkills();
@@ -50,7 +61,6 @@ export const Skills: React.FC<SkillsProps> = ({ userRole }) => {
   };
 
   const handleDelete = async (id: string) => {
-    if (!window.confirm('Voulez-vous vraiment supprimer ce skill ?')) return;
     try {
       await axios.delete(`http://localhost:3000/skills/${id}`);
       fetchSkills();
@@ -157,12 +167,41 @@ export const Skills: React.FC<SkillsProps> = ({ userRole }) => {
             name={skill.name}
             description={skill.description}
             onEdit={() => handleEdit(skill)}
-            onDelete={() => handleDelete(skill._id)}
+            onDelete={() => setSkillToDelete(skill)}
             onPreview={() => setSelectedSkill(skill)}
           />
           ))}
         </div>
       )}
+
+      <AlertDialog
+        open={Boolean(skillToDelete)}
+        onOpenChange={(open) => {
+          if (!open) setSkillToDelete(null);
+        }}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Supprimer ce skill ?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Cette action est définitive{skillToDelete?.name ? ` : ${skillToDelete.name}` : ''}.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Annuler</AlertDialogCancel>
+            <AlertDialogAction
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              onClick={async () => {
+                if (!skillToDelete) return;
+                await handleDelete(skillToDelete._id);
+                setSkillToDelete(null);
+              }}
+            >
+              Supprimer
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
       {selectedSkill && (
         <SkillGrandFormatCard

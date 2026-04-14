@@ -10,6 +10,16 @@ import {
 import { DepartmentsFilters } from '../departments/DepartmentsFilters';
 import { DepartmentsStats } from '../departments/DepartmentsStats';
 import type { DepartmentSortBy } from '../departments/types';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '../ui/alert-dialog';
 
 type UserRole = 'HR' | 'Manager' | 'Employee';
 
@@ -28,6 +38,7 @@ export function Departments({ userRole }: DepartmentsProps) {
   const [editManager, setEditManager] = useState('');
   const [searchTerm, setSearchTerm] = useState('');
   const [sortBy, setSortBy] = useState<DepartmentSortBy>('name-asc');
+  const [deptToDelete, setDeptToDelete] = useState<Department | null>(null);
 
   const loadDepartments = async () => {
     setLoading(true);
@@ -102,7 +113,6 @@ export function Departments({ userRole }: DepartmentsProps) {
   };
 
   const handleDelete = async (id: string) => {
-    if (!window.confirm('Supprimer ce département ?')) return;
     try {
       await deleteDepartment(id);
       await loadDepartments();
@@ -320,7 +330,7 @@ export function Departments({ userRole }: DepartmentsProps) {
                     </button>
                     <button
                       type="button"
-                      onClick={() => handleDelete(dept._id)}
+                      onClick={() => setDeptToDelete(dept)}
                       className="flex-1 rounded-lg bg-red-600 py-2 text-sm font-medium text-white hover:bg-red-700"
                     >
                       Supprimer
@@ -332,6 +342,35 @@ export function Departments({ userRole }: DepartmentsProps) {
           ))}
         </div>
       )}
+
+      <AlertDialog
+        open={Boolean(deptToDelete)}
+        onOpenChange={(open) => {
+          if (!open) setDeptToDelete(null);
+        }}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Supprimer ce département ?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Cette action est définitive{deptToDelete?.name ? ` : ${deptToDelete.name}` : ''}.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Annuler</AlertDialogCancel>
+            <AlertDialogAction
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              onClick={async () => {
+                if (!deptToDelete) return;
+                await handleDelete(deptToDelete._id);
+                setDeptToDelete(null);
+              }}
+            >
+              Supprimer
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
       {!loading && departments.length === 0 && !showAddForm && (
         <div className="rounded-2xl border border-dashed border-slate-300 bg-slate-50 p-12">

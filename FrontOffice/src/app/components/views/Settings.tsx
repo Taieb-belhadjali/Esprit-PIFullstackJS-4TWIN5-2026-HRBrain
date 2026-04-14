@@ -1,5 +1,16 @@
 import { useState } from 'react';
 import { Globe, Moon, Bell, Shield, LogOut, Save } from 'lucide-react';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from '../ui/alert-dialog';
 
 interface SettingsProps {
   onLogout: () => void;
@@ -12,6 +23,7 @@ export function Settings({ onLogout }: SettingsProps) {
   const [pushNotifications, setPushNotifications] = useState(true);
   const [activityNotifications, setActivityNotifications] = useState(true);
   const [recommendationNotifications, setRecommendationNotifications] = useState(true);
+  const [logoutOpen, setLogoutOpen] = useState(false);
 
   return (
     <div className="p-6 space-y-6">
@@ -211,13 +223,37 @@ export function Settings({ onLogout }: SettingsProps) {
           <Save className="w-5 h-5" />
           Save Changes
         </button>
-        <button
-          onClick={onLogout}
-          className="flex items-center justify-center gap-2 flex-1 md:flex-none bg-destructive text-white px-6 py-3 rounded-lg hover:bg-destructive/90 transition-colors"
-        >
-          <LogOut className="w-5 h-5" />
-          Logout
-        </button>
+        <AlertDialog open={logoutOpen} onOpenChange={setLogoutOpen}>
+          <AlertDialogTrigger asChild>
+            <button
+              onClick={() => setLogoutOpen(true)}
+              className="flex items-center justify-center gap-2 flex-1 md:flex-none bg-destructive text-white px-6 py-3 rounded-lg hover:bg-destructive/90 transition-colors"
+            >
+              <LogOut className="w-5 h-5" />
+              Logout
+            </button>
+          </AlertDialogTrigger>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Logout?</AlertDialogTitle>
+              <AlertDialogDescription>
+                You’ll be signed out of your account.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>Cancel</AlertDialogCancel>
+              <AlertDialogAction
+                className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                onClick={() => {
+                  setLogoutOpen(false);
+                  onLogout();
+                }}
+              >
+                Logout
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
       </div>
     </div>
   );
