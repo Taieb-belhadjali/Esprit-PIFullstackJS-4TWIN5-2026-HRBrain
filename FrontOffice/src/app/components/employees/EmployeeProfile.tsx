@@ -1,6 +1,6 @@
 import { ArrowLeft, Mail, Phone, MapPin, Calendar, Edit, Plus } from 'lucide-react';
 
-type UserRole = 'HR' | 'Manager' | 'Employee';
+type UserRole = 'HR' | 'Manager' | 'Employee' | 'SUPERADMIN';
 
 interface EmployeeProfileProps {
   employeeId: string;

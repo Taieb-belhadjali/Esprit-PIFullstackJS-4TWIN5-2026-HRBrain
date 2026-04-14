@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { X, Users, ChevronUp, ChevronDown, Award, TrendingUp, Brain } from 'lucide-react';
-import axios from 'axios';
+import API from '../../../api/api';
 
 interface RecommendationResult {
   employee: { _id: string; name: string; email: string; skills: any[] };
@@ -43,7 +43,7 @@ export const ActivityRecommendations: React.FC<Props> = ({ activityId, activityT
   const load = async () => {
     setLoading(true);
     try {
-      const res = await axios.get(`http://localhost:3000/activities/${activityId}/recommendations`);
+      const res = await API.get(`/activities/${activityId}/recommendations`);
       setResults(res.data);
       setLoaded(true);
     } catch { alert('Erreur lors du chargement des recommandations'); }

@@ -15,7 +15,7 @@ import {
 import { ViewType } from './Dashboard';
 import { useTranslation } from '../../../api/translations';
 
-type UserRole = 'HR' | 'Manager' | 'Employee';
+type UserRole = 'HR' | 'Manager' | 'Employee' | 'SUPERADMIN';
 
 interface SidebarProps {
   currentView: ViewType;
@@ -50,61 +50,61 @@ export function Sidebar({
       id: 'home',
       labelKey: 'home',
       icon: <Home className="w-5 h-5" />,
-      roles: ['HR', 'Manager', 'Employee'],
+      roles: ['HR', 'Manager', 'Employee', 'SUPERADMIN'],
     },
     {
       id: 'employees',
       labelKey: 'employees',
       icon: <Users className="w-5 h-5" />,
-      roles: ['HR', 'Manager'],
+      roles: ['HR', 'Manager', 'SUPERADMIN'],
     },
     {
       id: 'departments',
       labelKey: 'departments',
       icon: <Building2 className="w-5 h-5" />,
-      roles: ['HR'],
+      roles: ['HR', 'SUPERADMIN'],
     },
     {
       id: 'skills',
       labelKey: 'skills',
       icon: <Brain className="w-5 h-5" />,
-      roles: ['HR', 'Manager', 'Employee'],
+      roles: ['HR', 'Manager', 'Employee', 'SUPERADMIN'],
     },
     {
       id: 'activities',
       labelKey: 'activities',
       icon: <Activity className="w-5 h-5" />,
-      roles: ['HR', 'Manager', 'Employee'],
+      roles: ['HR', 'Manager', 'Employee', 'SUPERADMIN'],
     },
     {
       id: 'recommendations',
       labelKey: 'recommendations',
       icon: <Target className="w-5 h-5" />,
-      roles: ['HR', 'Manager'],
+      roles: ['HR', 'Manager', 'SUPERADMIN'],
     },
     {
       id: 'analytics',
       labelKey: 'analytics',
       icon: <BarChart3 className="w-5 h-5" />,
-      roles: ['HR', 'Manager'],
+      roles: ['HR', 'Manager', 'SUPERADMIN'],
     },
     {
       id: 'notifications',
       labelKey: 'notifications',
       icon: <Bell className="w-5 h-5" />,
-      roles: ['HR', 'Manager', 'Employee'],
+      roles: ['HR', 'Manager', 'Employee', 'SUPERADMIN'],
     },
     {
       id: 'profile',
       labelKey: 'profile',
       icon: <User className="w-5 h-5" />,
-      roles: ['HR', 'Manager', 'Employee'],
+      roles: ['HR', 'Manager', 'Employee', 'SUPERADMIN'],
     },
     {
       id: 'settings',
       labelKey: 'settings',
       icon: <Settings className="w-5 h-5" />,
-      roles: ['HR', 'Manager', 'Employee'],
+      roles: ['HR', 'Manager', 'Employee', 'SUPERADMIN'],
     },
   ];
 

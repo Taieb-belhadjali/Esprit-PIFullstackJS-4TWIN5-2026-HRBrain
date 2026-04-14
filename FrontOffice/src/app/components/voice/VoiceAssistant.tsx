@@ -1,11 +1,10 @@
-// Assistant vocal : écoute, parse la commande et exécute l’action (CRUD, navigation, recherche)
+﻿// Assistant vocal : écoute, parse la commande et exécute l’action (CRUD, navigation, recherche)
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import axios from 'axios';
+import API from '../../../api/api';
 import { useVoiceCommand } from './VoiceCommandContext';
 import { parseCommand, isValidCommand, getErrorMessage, Intent, EntityType } from './CommandParser';
 
-const API_URL = 'http://localhost:3000';
 
 declare global {
   interface Window {
@@ -270,14 +269,14 @@ export const VoiceAssistant: React.FC<{}> = () => {
         setPendingCreate({ entity: 'department', name, step: 'awaiting-manager' });
         speak(`Département ${name}. Quel est l'identifiant du manager ?`, true);
       } else if (entity === 'skill') {
-        const depts = (await axios.get(`${API_URL}/departments`)).data;
+        const depts = (await API.get(`/departments`)).data;
         if (depts.length > 0) {
           const deptList = depts.slice(0, 6).map((d: any) => d.name).join(', ');
           setPendingCreate({ entity: 'skill', name, step: 'awaiting-department', departments: depts });
           speak(`Skill ${name}. Dans quel département ? Disponibles : ${deptList}. Dites le nom du département.`, true);
         } else {
           // Aucun département — créer sans departmentId
-          await axios.post(`${API_URL}/skills`, { name, description: '' });
+          await API.post(`/skills`, { name, description: '' });
           setPendingCommand('create-skill' as any, { name });
           navigate('/dashboard/skills');
           speak(`Skill ${name} créé`);
@@ -296,12 +295,12 @@ export const VoiceAssistant: React.FC<{}> = () => {
       if (pc.entity === 'skill') {
         const body: any = { name: pc.name, description: '' };
         if (extra) body.departmentId = extra;
-        await axios.post(`${API_URL}/skills`, body);
+        await API.post(`/skills`, body);
         setPendingCommand('create-skill' as any, { name: pc.name });
         navigate('/dashboard/skills');
         speak(`Skill ${pc.name} créé avec succès`);
       } else if (pc.entity === 'department') {
-        await axios.post(`${API_URL}/departments`, { name: pc.name, user_id: extra || 'default-manager' });
+        await API.post(`/departments`, { name: pc.name, user_id: extra || 'default-manager' });
         setPendingCommand('create-department' as any, { name: pc.name });
         navigate('/dashboard/departments');
         speak(`Département ${pc.name} créé avec succès`);
@@ -320,12 +319,12 @@ export const VoiceAssistant: React.FC<{}> = () => {
       if (pm.entity === 'skill') {
         const body: any = { name: newName };
         if (pm.currentDeptId) body.departmentId = pm.currentDeptId;
-        await axios.patch(`${API_URL}/skills/${pm.id}`, body);
+        await API.patch(`/skills/${pm.id}`, body);
         setPendingCommand('modify-skill' as any, { name: newName });
         navigate('/dashboard/skills');
         speak(`Skill renommé en ${newName} avec succès`);
       } else if (pm.entity === 'department') {
-        await axios.patch(`${API_URL}/departments/${pm.id}`, {
+        await API.patch(`/departments/${pm.id}`, {
           name: newName,
           user_id: pm.currentUserId || 'default-manager',
         });
@@ -333,7 +332,7 @@ export const VoiceAssistant: React.FC<{}> = () => {
         navigate('/dashboard/departments');
         speak(`Département renommé en ${newName} avec succès`);
       } else if (pm.entity === 'employee') {
-        await axios.patch(`${API_URL}/users/${pm.id}`, { name: newName });
+        await API.patch(`/users/${pm.id}`, { name: newName });
         setPendingCommand('modify-employee' as any, { name: newName });
         navigate('/dashboard/employees');
         speak(`Employé renommé en ${newName} avec succès`);
@@ -356,9 +355,9 @@ export const VoiceAssistant: React.FC<{}> = () => {
     }
     try {
       let items: any[] = [];
-      if (entity === 'skill')           items = (await axios.get(`${API_URL}/skills`)).data;
-      else if (entity === 'employee')   items = (await axios.get(`${API_URL}/users`)).data;
-      else if (entity === 'department') items = (await axios.get(`${API_URL}/departments`)).data;
+      if (entity === 'skill')           items = (await API.get(`/skills`)).data;
+      else if (entity === 'employee')   items = (await API.get(`/users`)).data;
+      else if (entity === 'department') items = (await API.get(`/departments`)).data;
 
       const found = fuzzyFind(items, name);
       if (!found) { speak(`${entityLabel(entity)} "${name}" introuvable. Vérifiez le nom.`); return; }
@@ -396,9 +395,9 @@ export const VoiceAssistant: React.FC<{}> = () => {
     }
     try {
       let items: any[] = [];
-      if (entity === 'skill')          { items = (await axios.get(`${API_URL}/skills`)).data; }
-      else if (entity === 'employee')  { items = (await axios.get(`${API_URL}/users`)).data; }
-      else if (entity === 'department') { items = (await axios.get(`${API_URL}/departments`)).data; }
+      if (entity === 'skill')          { items = (await API.get(`/skills`)).data; }
+      else if (entity === 'employee')  { items = (await API.get(`/users`)).data; }
+      else if (entity === 'department') { items = (await API.get(`/departments`)).data; }
 
       const found = fuzzyFind(items, name);
 
@@ -418,11 +417,11 @@ export const VoiceAssistant: React.FC<{}> = () => {
     if (pConf.type === 'delete') {
       try {
         const endpoints: Record<string, string> = {
-          skill: `${API_URL}/skills`, employee: `${API_URL}/users`, department: `${API_URL}/departments`,
+          skill: `/skills`, employee: `/users`, department: `/departments`,
         };
         const endpoint = endpoints[pConf.entity as string];
         if (endpoint) {
-          await axios.delete(`${endpoint}/${pConf.id}`);
+          await API.delete(`${endpoint}/${pConf.id}`);
           const entity = pConf.entity;
           const cmd = getCommandTypeForEntity(entity, 'delete');
           if (cmd) setPendingCommand(cmd as any, { name: pConf.name });
@@ -455,19 +454,19 @@ export const VoiceAssistant: React.FC<{}> = () => {
     const target = entity === 'unknown' ? inferEntityFromRoute() : entity;
     try {
       if (target === 'skill') {
-        const { data } = await axios.get(`${API_URL}/skills`);
+        const { data } = await API.get(`/skills`);
         speak(`Il y a ${data.length} skill${data.length > 1 ? 's' : ''} dans la plateforme`);
       } else if (target === 'employee') {
-        const { data } = await axios.get(`${API_URL}/users`);
+        const { data } = await API.get(`/users`);
         speak(`Il y a ${data.length} employé${data.length > 1 ? 's' : ''} dans la plateforme`);
       } else if (target === 'department') {
-        const { data } = await axios.get(`${API_URL}/departments`);
+        const { data } = await API.get(`/departments`);
         speak(`Il y a ${data.length} département${data.length > 1 ? 's' : ''} dans la plateforme`);
       } else {
         const [skills, users, depts] = await Promise.all([
-          axios.get(`${API_URL}/skills`),
-          axios.get(`${API_URL}/users`),
-          axios.get(`${API_URL}/departments`),
+          API.get(`/skills`),
+          API.get(`/users`),
+          API.get(`/departments`),
         ]);
         speak(`La plateforme contient ${skills.data.length} skills, ${users.data.length} employés et ${depts.data.length} départements`);
       }
@@ -481,19 +480,19 @@ export const VoiceAssistant: React.FC<{}> = () => {
     const limit = 8;
     try {
       if (target === 'skill') {
-        const { data } = await axios.get(`${API_URL}/skills`);
+        const { data } = await API.get(`/skills`);
         if (!data.length) { speak('Aucun skill dans la plateforme'); return; }
         const names = data.slice(0, limit).map((s: any) => s.name).join(', ');
         const extra = data.length > limit ? ` et ${data.length - limit} autres` : '';
         speak(`Les skills sont : ${names}${extra}`);
       } else if (target === 'department') {
-        const { data } = await axios.get(`${API_URL}/departments`);
+        const { data } = await API.get(`/departments`);
         if (!data.length) { speak('Aucun département dans la plateforme'); return; }
         const names = data.slice(0, limit).map((d: any) => d.name).join(', ');
         const extra = data.length > limit ? ` et ${data.length - limit} autres` : '';
         speak(`Les départements sont : ${names}${extra}`);
       } else if (target === 'employee') {
-        const { data } = await axios.get(`${API_URL}/users`);
+        const { data } = await API.get(`/users`);
         if (!data.length) { speak('Aucun employé dans la plateforme'); return; }
         const names = data.slice(0, limit).map((e: any) => e.name || e.email).join(', ');
         const extra = data.length > limit ? ` et ${data.length - limit} autres` : '';
@@ -513,9 +512,9 @@ export const VoiceAssistant: React.FC<{}> = () => {
     }
     try {
       let items: any[] = [];
-      if (entity === 'skill')           items = (await axios.get(`${API_URL}/skills`)).data;
-      else if (entity === 'employee')   items = (await axios.get(`${API_URL}/users`)).data;
-      else if (entity === 'department') items = (await axios.get(`${API_URL}/departments`)).data;
+      if (entity === 'skill')           items = (await API.get(`/skills`)).data;
+      else if (entity === 'employee')   items = (await API.get(`/users`)).data;
+      else if (entity === 'department') items = (await API.get(`/departments`)).data;
       else { speak(`Affichage de ${entityLabel(entity)} non supporté`); return; }
 
       const found = fuzzyFind(items, name);
@@ -794,8 +793,11 @@ export const VoiceAssistant: React.FC<{}> = () => {
       const msgs: Record<string, string> = {
         'audio-capture': 'Microphone non disponible.',
         'not-allowed': 'Permission microphone refusée.',
-        'network': 'Erreur réseau.',
+        'network': 'Erreur réseau — vérifiez votre connexion internet (la reconnaissance vocale nécessite internet).',
         'aborted': '',
+        'service-not-allowed': 'Service vocal non autorisé — utilisez Chrome avec HTTPS.',
+        'bad-grammar': 'Erreur de configuration vocale.',
+        'language-not-supported': 'Langue non supportée.',
       };
       const msg = msgs[event.error] ?? `Erreur : ${event.error}`;
       if (msg) setError(msg);
@@ -1067,3 +1069,6 @@ export const VoiceAssistant: React.FC<{}> = () => {
     </div>
   );
 };
+
+
+

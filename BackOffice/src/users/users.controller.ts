@@ -11,6 +11,9 @@ import {
   NotFoundException,
   Res,
   BadRequestException,
+  UseGuards,
+  ForbiddenException,
+  Request,
 } from '@nestjs/common';
 import type { Response } from 'express';
 import { UsersService } from './users.service';
@@ -18,13 +21,20 @@ import { FileInterceptor } from '@nestjs/platform-express';
 import { diskStorage } from 'multer';
 import { extname, resolve } from 'path';
 import { createReadStream, existsSync } from 'fs';
+import { JwtAuthGuard } from '../auth/jwt-auth.guard';
+import { RolesGuard, Roles } from '../auth/roles.guard';
 
-// Users Controller to handle user-related requests
 @Controller('users')
 export class UsersController {
   constructor(private readonly usersService: UsersService) {}
 
-  // Get CV file path
+  @Get('me')
+  @UseGuards(JwtAuthGuard)
+  async getMe(@Request() req: any) {
+    const user = await this.usersService.findOne(req.user.sub);
+    return user;
+  }
+
   @Get(':id/cv')
   async getCvFile(@Param('id') id: string) {
     const user = await this.usersService.findOne(id);
@@ -36,7 +46,7 @@ export class UsersController {
     }
     return { cvPath: user.cv };
   }
-  //Download CV
+//Download CV
   @Get(':id/cv/download')
   async downloadCv(@Param('id') id: string, @Res() res: Response) {
     try {
@@ -76,8 +86,9 @@ export class UsersController {
     }
   }
 
-  // Create a new user with optional CV file upload
   @Post()
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('SUPERADMIN', 'HR')
   @UseInterceptors(
     FileInterceptor('cv', {
       storage: diskStorage({
@@ -87,7 +98,6 @@ export class UsersController {
           callback(null, uniqueName + extname(file.originalname));
         },
       }),
-      // Only allow PDF and TXT files
       fileFilter: (req, file, callback) => {
         const allowedMimes = ['application/pdf', 'text/plain'];
         if (!allowedMimes.includes(file.mimetype)) {
@@ -97,11 +107,11 @@ export class UsersController {
       },
     }),
   )
-  // Create a new user with optional CV file upload
-  create(@Body() body: any, @UploadedFile() file: Express.Multer.File) {
-    console.log('BODY:', body);
-    console.log('FILE:', file);
-
+  create(@Body() body: any, @UploadedFile() file: Express.Multer.File, @Request() req: any) {
+    // Seul SUPERADMIN peut créer un compte HR
+    if (body.role === 'HR' && req.user?.role !== 'SUPERADMIN') {
+      throw new ForbiddenException('Seul le SUPERADMIN peut créer un compte HR');
+    }
     return this.usersService.create(body, file);
   }
 
@@ -110,23 +120,21 @@ export class UsersController {
     return this.usersService.findAll();
   }
 
-  @Get('settings/languages')
-  getSupportedLanguages() {
-    return this.usersService.getSupportedLanguages();
-  }
-
   @Get(':id')
   findOne(@Param('id') id: string) {
     return this.usersService.findOne(id);
   }
 
   @Put(':id')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('SUPERADMIN', 'HR')
   update(@Param('id') id: string, @Body() body: any) {
-    console.log('Update user called:', id, body);
     return this.usersService.update(id, body);
   }
 
   @Delete(':id')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('SUPERADMIN', 'HR')
   remove(@Param('id') id: string) {
     return this.usersService.remove(id);
   }

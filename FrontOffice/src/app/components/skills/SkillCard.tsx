@@ -3,7 +3,7 @@ import React from 'react';
 import { Edit2, Trash2, ArrowRight, Building2 } from 'lucide-react';
 import { Skill } from './types';
 
-type UserRole = 'HR' | 'Manager' | 'Employee';
+type UserRole = 'HR' | 'Manager' | 'Employee' | 'SUPERADMIN';
 
 interface SkillCardProps {
   id: string;

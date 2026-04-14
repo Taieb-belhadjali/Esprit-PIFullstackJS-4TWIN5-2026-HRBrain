@@ -2,7 +2,7 @@ import React from 'react';
 import { Calendar, Target, Edit, Trash2, Tag, Building2, BookOpen, Users, History } from 'lucide-react';
 import { Activity, RequiredSkill } from './types';
 
-type UserRole = 'HR' | 'Manager' | 'Employee';
+type UserRole = 'HR' | 'Manager' | 'Employee' | 'SUPERADMIN';
 
 interface ActivityCardProps {
   activity: Activity;
@@ -48,7 +48,7 @@ const ActivityCard: React.FC<ActivityCardProps> = ({
   onRecommend,
   onHistory,
 }) => {
-  const canManage = userRole === 'HR' || userRole === 'Manager';
+  const canManage = userRole === 'Manager' || userRole === 'SUPERADMIN';
 
   return (
     <div className="group bg-card rounded-xl shadow-md hover:shadow-xl transition-all duration-300 border border-gray-100 overflow-hidden hover:border-blue-200">

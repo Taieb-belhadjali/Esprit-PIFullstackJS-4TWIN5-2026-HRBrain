@@ -1,5 +1,5 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
-import { Document } from 'mongoose';
+import { Document, Types } from 'mongoose';
 
 export type DepartmentDocument = Department & Document;
 
@@ -8,8 +8,9 @@ export class Department {
   @Prop({ required: true, unique: true, trim: true, minlength: 1 })
   name: string;
 
-  @Prop({ required: true, trim: true })
-  user_id: string;
+  /** IDs des managers responsables de ce département */
+  @Prop({ type: [{ type: Types.ObjectId, ref: 'User' }], default: [] })
+  managerIds: Types.ObjectId[];
 }
 
 export const DepartmentSchema = SchemaFactory.createForClass(Department);

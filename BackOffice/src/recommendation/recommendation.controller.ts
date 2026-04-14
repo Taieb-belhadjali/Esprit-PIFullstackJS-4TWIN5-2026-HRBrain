@@ -59,4 +59,17 @@ export class RecommendationController {
   getTop100(@Param('activityId') activityId: string) {
     return this.recoService.getTop100(activityId);
   }
+
+  @Get(':activityId/status')
+  getStatus(@Param('activityId') activityId: string) {
+    const state = this.recoService.getGenerationStatus(activityId);
+    if (!state) return { status: 'idle', activityId };
+    return { activityId, ...state };
+  }
+
+  /** Activités approuvées pour un employee (pour la page profil) */
+  @Get('employee/:employeeId/approved')
+  getApprovedForEmployee(@Param('employeeId') employeeId: string) {
+    return this.recoService.getApprovedActivitiesForEmployee(employeeId);
+  }
 }

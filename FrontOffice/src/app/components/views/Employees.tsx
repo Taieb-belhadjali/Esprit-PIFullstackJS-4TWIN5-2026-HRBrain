@@ -8,7 +8,7 @@ import { deleteEmployee, getEmployees } from '../../../api/employeeApi';
 import { useVoiceCommand } from '../voice/VoiceCommandContext';
 import Pagination from '../ui/Pagination';
 
-type UserRole = 'HR' | 'Manager' | 'Employee';
+type UserRole = 'HR' | 'Manager' | 'Employee' | 'SUPERADMIN';
 
 interface EmployeesProps {
   userRole: UserRole;
@@ -179,7 +179,7 @@ export function Employees({ userRole }: EmployeesProps) {
           </p>
         </div>
 
-        {userRole === 'HR' && (
+        {(userRole === 'HR' || userRole === 'SUPERADMIN') && (
           <button
             onClick={() => {
               setPrefilledName(null);
@@ -281,7 +281,7 @@ export function Employees({ userRole }: EmployeesProps) {
                       <Eye className="w-4 h-4 text-muted-foreground" />
                     </button>
 
-                    {userRole === 'HR' && (
+                    {(userRole === 'HR' || userRole === 'SUPERADMIN') && (
                       <>
                         <button
                           className="p-2 hover:bg-secondary rounded-lg"
@@ -334,6 +334,7 @@ export function Employees({ userRole }: EmployeesProps) {
         }}
         onCreated={fetchEmployees}
         prefilledName={prefilledName}
+        userRole={userRole}
       />
 
       <EditEmployeeModal

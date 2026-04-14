@@ -18,7 +18,7 @@ import {
   ResponsiveContainer,
 } from 'recharts';
 
-type UserRole = 'HR' | 'Manager' | 'Employee';
+type UserRole = 'HR' | 'Manager' | 'Employee' | 'SUPERADMIN';
 
 interface AnalyticsProps {
   userRole: UserRole;

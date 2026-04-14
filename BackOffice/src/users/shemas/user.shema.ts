@@ -14,7 +14,7 @@ export class User {
   @Prop({ required: true })
   password: string;
 
-  @Prop({ enum: ['HR', 'MANAGER', 'EMPLOYEE'], default: 'EMPLOYEE' })
+  @Prop({ enum: ['SUPERADMIN', 'HR', 'MANAGER', 'EMPLOYEE'], default: 'EMPLOYEE' })
   role: string;
 
   @Prop()
@@ -28,6 +28,9 @@ export class User {
 
   @Prop({ default: true })
   mustChangePassword: boolean;
+
+  @Prop({ type: Types.ObjectId, ref: 'Department', required: false, default: null })
+  departmentId?: Types.ObjectId;
 }
 
 export const UserSchema = SchemaFactory.createForClass(User);

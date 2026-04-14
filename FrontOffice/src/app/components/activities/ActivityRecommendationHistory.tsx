@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { X, History, Brain, Clock, ChevronDown, ChevronUp, TrendingUp } from 'lucide-react';
-import axios from 'axios';
+import API from '../../../api/api';
 
 interface HistoryEntry {
   _id: string;
@@ -42,8 +42,8 @@ export const ActivityRecommendationHistory: React.FC<Props> = ({ activityId, act
 
   useEffect(() => {
     Promise.all([
-      axios.get(`http://localhost:3000/recommendations/${activityId}/history`),
-      axios.get(`http://localhost:3000/recommendations/${activityId}/top100`),
+      API.get(`/recommendations/${activityId}/history`),
+      API.get(`/recommendations/${activityId}/top100`),
     ])
       .then(([histRes, top100Res]) => {
         setHistory(histRes.data);

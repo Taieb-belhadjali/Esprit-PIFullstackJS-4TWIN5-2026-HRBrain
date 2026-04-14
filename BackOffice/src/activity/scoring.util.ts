@@ -1,4 +1,11 @@
-// Niveaux ordinaux (entiers) pour les calculs de gap et ratio
+/**
+ * scoring.util.ts — Système de scoring HRBrain
+ *
+ * Score final = skillMatch×40% + progression×30% + context×30%
+ * Chaque score est dans [0, 100].
+ */
+
+// ── Niveaux ordinaux ─────────────────────────────────────────────────────────
 export const LEVEL_ORDINAL: Record<string, number> = {
   LOW: 1,    Low: 1,
   MEDIUM: 2, Medium: 2,
@@ -6,6 +13,7 @@ export const LEVEL_ORDINAL: Record<string, number> = {
   EXPERT: 4, Expert: 4,
 };
 
+// ── Interfaces ───────────────────────────────────────────────────────────────
 export interface EmployeeSkillLevel {
   skillId: string;
   skillName: string;
@@ -15,10 +23,11 @@ export interface EmployeeSkillLevel {
 export interface RequiredSkillInput {
   skillId: string;
   skillName: string;
-  level: string;           // niveau désiré
-  contributionToScore: number; // poids brut (ex: 30, 50, 20 — somme libre)
+  level: string;
+  contributionToScore: number; // poids brut (somme libre)
 }
 
+// ── Parser CV ────────────────────────────────────────────────────────────────
 export function parseCvSkillLevels(
   cvText: string,
   skillMap: Map<string, string>,
@@ -26,10 +35,9 @@ export function parseCvSkillLevels(
   const result: EmployeeSkillLevel[] = [];
   for (const line of cvText.split('\n')) {
     const trimmed = line.trim();
-    // Accept both "NAME:LEVEL" and "NAME:LEVEL:optionalId"
     const match = trimmed.match(/^([A-Za-z0-9\s#\+\.\-\_@]+):([A-Za-z]+)(?::[^\s]*)?$/i);
     if (!match) continue;
-    const name = match[1].trim().toUpperCase();
+    const name  = match[1].trim().toUpperCase();
     const level = match[2].toUpperCase();
     const skillId = skillMap.get(name);
     if (skillId) result.push({ skillId, skillName: name, level });
@@ -37,15 +45,48 @@ export function parseCvSkillLevels(
   return result;
 }
 
+// ── Helpers internes ─────────────────────────────────────────────────────────
+
+/** Résout l'employé pour un skill requis (ID d'abord, puis nom) */
+function resolveEmp(
+  req: RequiredSkillInput,
+  empById: Map<string, EmployeeSkillLevel>,
+  empByName: Map<string, EmployeeSkillLevel>,
+): EmployeeSkillLevel | undefined {
+  return empById.get(req.skillId) ?? empByName.get(req.skillName.toUpperCase());
+}
+
 /**
- * Score 1 — Skill Match (0–100)
+ * Score de progression pour un gap donné.
  *
- * Pour chaque compétence requise :
- *   weight      = contributionToScore / totalContribution
- *   matchRatio  = min(empOrdinal / reqOrdinal, 1.0)
+ * gap = reqOrdinal - empOrdinal  (peut être négatif si emp > req)
+ *
+ * | gap | signification              | score contribution (×weight×100) |
+ * |-----|----------------------------|----------------------------------|
+ * | ≤0  | déjà au niveau ou au-delà  | 0   (rien à apprendre)           |
+ * |  1  | zone idéale (1 cran)       | 50  (gap/2 × 100)                |
+ * |  2  | zone idéale (2 crans)      | 100 (gap/2 × 100)                |
+ * |  3  | trop loin, crédit partiel  | 35                               |
+ * |  4  | très loin                  | 20                               |
+ * | ≥5  | hors portée               | 10                               |
+ */
+function progressionContribution(gap: number): number {
+  if (gap <= 0) return 0;
+  if (gap <= 2) return (gap / 2) * 100;
+  if (gap === 3) return 35;
+  if (gap === 4) return 20;
+  return 10;
+}
+
+// ── Score 1 — Skill Match (0–100) ────────────────────────────────────────────
+/**
+ * Mesure la couverture des skills requis.
+ *
+ * Pour chaque skill requis :
+ *   matchRatio = min(empOrdinal / reqOrdinal, 1.0)
  *   contribution = matchRatio × weight × 100
  *
- * Si l'employé n'a pas la compétence → contribution = 0
+ * Absent → contribution = 0
  */
 export function calculateSkillMatchScore(
   employeeSkills: EmployeeSkillLevel[],
@@ -56,13 +97,14 @@ export function calculateSkillMatchScore(
   const totalWeight = requiredSkills.reduce((s, r) => s + r.contributionToScore, 0);
   if (totalWeight === 0) return 0;
 
-  const empMap = new Map(employeeSkills.map((s) => [s.skillId, s]));
+  const empById   = new Map(employeeSkills.map((s) => [s.skillId, s]));
+  const empByName = new Map(employeeSkills.map((s) => [s.skillName.toUpperCase(), s]));
   let score = 0;
 
   for (const req of requiredSkills) {
     const weight = req.contributionToScore / totalWeight;
-    const emp = empMap.get(req.skillId);
-    if (!emp) continue; // pas la compétence → 0
+    const emp = resolveEmp(req, empById, empByName);
+    if (!emp) continue;
 
     const empOrdinal = LEVEL_ORDINAL[emp.level] ?? 1;
     const reqOrdinal = LEVEL_ORDINAL[req.level] ?? 1;
@@ -70,22 +112,19 @@ export function calculateSkillMatchScore(
     score += matchRatio * weight * 100;
   }
 
-  return Math.round(score * 100) / 100;
+  return Math.round(score);
 }
 
+// ── Score 2 — Progression (0–100) ────────────────────────────────────────────
 /**
- * Score 2 — Progression (0–100)
+ * Mesure le potentiel d'apprentissage pendant l'activité.
  *
- * Pour chaque compétence requise :
- *   weight = contributionToScore / totalWeight
- *
- *   Si l'employé A la compétence :
- *     gap = reqOrdinal - empOrdinal
- *     si gap == 1 ou gap == 2 → contribution = (gap / 2) × weight × 100
- *     sinon (gap ≤ 0 ou gap > 2) → contribution = 0
- *
- *   Si l'employé N'A PAS la compétence :
- *     contribution = weight × 50   (bonus fixe "à acquérir")
+ * Présent  → progressionContribution(gap) × weight × 1
+ * Absent   → bonus acquisition pondéré par le poids du skill :
+ *              skill important (weight > 0.3) → 20
+ *              skill secondaire               → 30
+ *            (absent = moins bien que gap idéal, mais skill secondaire absent
+ *             est moins pénalisant qu'un skill clé absent)
  */
 export function calculateProgressionScore(
   employeeSkills: EmployeeSkillLevel[],
@@ -96,54 +135,84 @@ export function calculateProgressionScore(
   const totalWeight = requiredSkills.reduce((s, r) => s + r.contributionToScore, 0);
   if (totalWeight === 0) return 0;
 
-  const empMap = new Map(employeeSkills.map((s) => [s.skillId, s]));
+  const empById   = new Map(employeeSkills.map((s) => [s.skillId, s]));
+  const empByName = new Map(employeeSkills.map((s) => [s.skillName.toUpperCase(), s]));
   let score = 0;
 
   for (const req of requiredSkills) {
     const weight = req.contributionToScore / totalWeight;
-    const emp = empMap.get(req.skillId);
+    const emp = resolveEmp(req, empById, empByName);
 
     if (!emp) {
-      // Compétence absente → bonus fixe
-      score += weight * 50;
+      // Absent : bonus acquisition inversement proportionnel à l'importance
+      const absentBonus = weight > 0.3 ? 20 : 30;
+      score += weight * absentBonus;
     } else {
       const empOrdinal = LEVEL_ORDINAL[emp.level] ?? 1;
       const reqOrdinal = LEVEL_ORDINAL[req.level] ?? 1;
       const gap = reqOrdinal - empOrdinal;
-
-      if (gap === 1 || gap === 2) {
-        score += (gap / 2) * weight * 100;
-      }
-      // gap <= 0 (déjà au niveau) ou gap > 2 (trop loin) → 0
+      score += weight * progressionContribution(gap);
     }
   }
 
-  return Math.round(score * 100) / 100;
+  return Math.round(score);
 }
 
+// ── Score 3 — Context (0–100) ─────────────────────────────────────────────────
 /**
- * Score 3 — Context (50–75)
+ * Score contextuel : fixe par type d'activité + bonus dynamique
+ * basé sur le ratio de skills couverts par l'employé.
  *
- * Identique pour tous les employés d'une même activité.
- * base = 50
- * + Upskilling    → +20 → 70
- * + Consolidation → +15 → 65
- * + Expertise     → +25 → 75
+ * Base :
+ *   Expertise     → 75  (profil expert attendu)
+ *   Upskilling    → 70  (montée en compétence)
+ *   Consolidation → 65  (renforcement)
+ *   Autre         → 65
+ *
+ * Bonus dynamique (+0 à +10) selon la couverture des skills requis :
+ *   couverture ≥ 80% → +10
+ *   couverture ≥ 60% → +7
+ *   couverture ≥ 40% → +4
+ *   couverture ≥ 20% → +2
+ *   couverture < 20% → +0
+ *
+ * Score final capé à 100.
  */
-export function calculateContextScore(activityContext: string): number {
+export function calculateContextScore(
+  activityContext: string,
+  employeeSkills: EmployeeSkillLevel[] = [],
+  requiredSkills: RequiredSkillInput[] = [],
+): number {
   const ctx = (activityContext ?? '').toLowerCase();
-  let bonus = 0;
-  if (ctx === 'upskilling')         bonus = 20;
-  else if (ctx === 'consolidation') bonus = 15;
-  else if (ctx === 'expertise')     bonus = 25;
-  return Math.min(50 + bonus, 100);
+  let base = 65;
+  if (ctx === 'expertise')     base = 75;
+  else if (ctx === 'upskilling')    base = 70;
+  else if (ctx === 'consolidation') base = 65;
+
+  // Bonus dynamique si on a les données
+  if (requiredSkills.length > 0 && employeeSkills.length > 0) {
+    const empById   = new Map(employeeSkills.map((s) => [s.skillId, s]));
+    const empByName = new Map(employeeSkills.map((s) => [s.skillName.toUpperCase(), s]));
+    const covered = requiredSkills.filter((r) => resolveEmp(r, empById, empByName)).length;
+    const ratio = covered / requiredSkills.length;
+
+    let bonus = 0;
+    if (ratio >= 0.8)      bonus = 10;
+    else if (ratio >= 0.6) bonus = 7;
+    else if (ratio >= 0.4) bonus = 4;
+    else if (ratio >= 0.2) bonus = 2;
+
+    return Math.min(base + bonus, 100);
+  }
+
+  return base;
 }
 
+// ── Score final ───────────────────────────────────────────────────────────────
 /**
- * Score final pondéré
+ * Score final pondéré (entier 0–100)
  *
- * totalScore = skillMatch × 0.40 + progression × 0.30 + context × 0.30
- * Arrondi : Math.round(score × 100) / 100
+ * total = skillMatch×40% + progression×30% + context×30%
  */
 export function calculateFinalScore(
   skillMatch: number,
@@ -152,8 +221,8 @@ export function calculateFinalScore(
   weights = { skillMatch: 0.40, progression: 0.30, context: 0.30 },
 ): number {
   const raw =
-    skillMatch      * weights.skillMatch +
+    skillMatch       * weights.skillMatch +
     progressionScore * weights.progression +
-    contextScore    * weights.context;
-  return Math.round(raw * 100) / 100;
+    contextScore     * weights.context;
+  return Math.round(raw);
 }
