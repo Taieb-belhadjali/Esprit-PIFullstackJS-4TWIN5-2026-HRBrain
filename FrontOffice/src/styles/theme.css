@@ -130,27 +130,6 @@
     @apply border-border outline-ring/50;
   }
 
-  :where(
-      a[href],
-      button,
-      input,
-      select,
-      textarea,
-      summary,
-      [role="button"],
-      [role="menuitem"],
-      [role="option"],
-      [tabindex]:not([tabindex="-1"])
-    ):focus-visible {
-    outline: 2px solid var(--ring);
-    outline-offset: 2px;
-  }
-
-  :where([data-slot]):focus-visible {
-    outline: 2px solid var(--ring);
-    outline-offset: 2px;
-  }
-
   body {
     @apply bg-background text-foreground;
   }

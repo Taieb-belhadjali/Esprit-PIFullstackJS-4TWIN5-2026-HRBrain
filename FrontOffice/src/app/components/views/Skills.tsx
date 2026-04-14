@@ -8,22 +8,9 @@ import { SkillsFilters } from '../skills/SkillsFilters';
 import { SkillsHeader } from '../skills/SkillsHeader';
 import { SkillsStats } from '../skills/SkillsStats';
 import { Skill, SkillSortBy } from '../skills/types';
-<<<<<<< HEAD
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from '../ui/alert-dialog';
-=======
 import { useVoiceCommand } from '../voice/VoiceCommandContext';
 import Pagination from '../ui/Pagination';
 import { SkillsDepartmentChart } from '../skills/SkillsDepartmentChart';
->>>>>>> 694a338275269afbd2bb20b2e4dca8a4d2ba4d91
 
 
 type UserRole = 'HR' | 'Manager' | 'Employee' | 'SUPERADMIN';
@@ -41,10 +28,6 @@ export const Skills: React.FC<SkillsProps> = ({ userRole }) => {
   const [selectedSkill, setSelectedSkill] = useState<Skill | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [sortBy, setSortBy] = useState<SkillSortBy>('name-asc');
-<<<<<<< HEAD
-  const [withDescriptionOnly, setWithDescriptionOnly] = useState(false);
-  const [skillToDelete, setSkillToDelete] = useState<Skill | null>(null);
-=======
   const [departments, setDepartments] = useState<any[]>([]);
   const [selectedDepartment, setSelectedDepartment] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
@@ -54,7 +37,6 @@ export const Skills: React.FC<SkillsProps> = ({ userRole }) => {
   useEffect(() => {
     fetchDepartments();
   }, []);
->>>>>>> 694a338275269afbd2bb20b2e4dca8a4d2ba4d91
 
   useEffect(() => {
     fetchSkills();
@@ -155,6 +137,7 @@ export const Skills: React.FC<SkillsProps> = ({ userRole }) => {
 
   // Supprime un skill après confirmation
   const handleDelete = async (id: string) => {
+    if (!window.confirm('Voulez-vous vraiment supprimer ce skill ?')) return;
     try {
       await API.delete(`/skills/${id}`);
       fetchSkills();
@@ -279,61 +262,6 @@ export const Skills: React.FC<SkillsProps> = ({ userRole }) => {
           </p>
         </div>
       ) : (
-<<<<<<< HEAD
-        <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
-          {filteredSkills.map((skill) => (
-          <SkillCard
-            key={skill._id}
-            id={skill._id}
-            name={skill.name}
-            description={skill.description}
-            onEdit={() => handleEdit(skill)}
-            onDelete={() => setSkillToDelete(skill)}
-            onPreview={() => setSelectedSkill(skill)}
-          />
-          ))}
-        </div>
-      )}
-
-      <AlertDialog
-        open={Boolean(skillToDelete)}
-        onOpenChange={(open) => {
-          if (!open) setSkillToDelete(null);
-        }}
-      >
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Supprimer ce skill ?</AlertDialogTitle>
-            <AlertDialogDescription>
-              Cette action est définitive{skillToDelete?.name ? ` : ${skillToDelete.name}` : ''}.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Annuler</AlertDialogCancel>
-            <AlertDialogAction
-              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-              onClick={async () => {
-                if (!skillToDelete) return;
-                await handleDelete(skillToDelete._id);
-                setSkillToDelete(null);
-              }}
-            >
-              Supprimer
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
-
-      {selectedSkill && (
-        <SkillGrandFormatCard
-          skill={selectedSkill}
-          onClose={() => setSelectedSkill(null)}
-          onEdit={(skill) => {
-            handleEdit(skill);
-            setSelectedSkill(null);
-          }}
-        />
-=======
         <>
           <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
             {paginatedSkills.map((skill) => {
@@ -362,7 +290,6 @@ export const Skills: React.FC<SkillsProps> = ({ userRole }) => {
             onPageChange={setCurrentPage}
           />
         </>
->>>>>>> 694a338275269afbd2bb20b2e4dca8a4d2ba4d91
       )}
 
       {/* Formulaire Create / Update */}

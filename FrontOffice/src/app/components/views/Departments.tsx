@@ -6,22 +6,9 @@ import {
 import { DepartmentsFilters } from '../departments/DepartmentsFilters';
 import { DepartmentsStats } from '../departments/DepartmentsStats';
 import type { DepartmentSortBy } from '../departments/types';
-<<<<<<< HEAD
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from '../ui/alert-dialog';
-=======
 import { useVoiceCommand } from '../voice/VoiceCommandContext';
 import Pagination from '../ui/Pagination';
 import API from '../../../api/api';
->>>>>>> 694a338275269afbd2bb20b2e4dca8a4d2ba4d91
 
 type UserRole = 'HR' | 'Manager' | 'Employee' | 'SUPERADMIN';
 interface Manager { _id: string; name: string; email: string; }
@@ -38,14 +25,10 @@ export function Departments({ userRole }: { userRole: UserRole }) {
   const [editManagerIds, setEditManagerIds] = useState<string[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [sortBy, setSortBy] = useState<DepartmentSortBy>('name-asc');
-<<<<<<< HEAD
-  const [deptToDelete, setDeptToDelete] = useState<Department | null>(null);
-=======
   const [viewDept, setViewDept] = useState<Department | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 9;
   const { pendingCommand, commandData, clearPendingCommand } = useVoiceCommand();
->>>>>>> 694a338275269afbd2bb20b2e4dca8a4d2ba4d91
 
   const loadDepartments = async () => {
     setLoading(true);
@@ -113,15 +96,6 @@ export function Departments({ userRole }: { userRole: UserRole }) {
   };
 
   const handleDelete = async (id: string) => {
-<<<<<<< HEAD
-    try {
-      await deleteDepartment(id);
-      await loadDepartments();
-    } catch (err) {
-      console.error(err);
-      alert('Erreur lors de la suppression');
-    }
-=======
     if (!window.confirm('Supprimer ce département ?')) return;
     try { await deleteDepartment(id); await loadDepartments(); }
     catch { alert('Erreur lors de la suppression'); }
@@ -134,7 +108,6 @@ export function Departments({ userRole }: { userRole: UserRole }) {
       const m = managers.find(mg => mg._id === id || (mg as any)._id?.toString() === id?.toString());
       return m ? m.name : id;
     }).join(', ');
->>>>>>> 694a338275269afbd2bb20b2e4dca8a4d2ba4d91
   };
 
   const filteredDepartments = useMemo(() => {
@@ -252,70 +225,13 @@ export function Departments({ userRole }: { userRole: UserRole }) {
                       </button>
                     </div>
                   </div>
-<<<<<<< HEAD
-                  <div className="mt-4 flex gap-2">
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setEditId(dept._id);
-                        setEditName(dept.name);
-                        setEditManager(dept.user_id);
-                      }}
-                      className="flex-1 rounded-lg bg-amber-500 py-2 text-sm font-medium text-white hover:bg-amber-600"
-                    >
-                      Modifier
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setDeptToDelete(dept)}
-                      className="flex-1 rounded-lg bg-red-600 py-2 text-sm font-medium text-white hover:bg-red-700"
-                    >
-                      Supprimer
-                    </button>
-                  </div>
-                </>
-              )}
-            </div>
-          ))}
-        </div>
-=======
                 )}
               </div>
             ))}
           </div>
           <Pagination currentPage={currentPage} totalPages={totalPages} totalItems={filteredDepartments.length} itemsPerPage={itemsPerPage} onPageChange={setCurrentPage} />
         </>
->>>>>>> 694a338275269afbd2bb20b2e4dca8a4d2ba4d91
       )}
-
-      <AlertDialog
-        open={Boolean(deptToDelete)}
-        onOpenChange={(open) => {
-          if (!open) setDeptToDelete(null);
-        }}
-      >
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Supprimer ce département ?</AlertDialogTitle>
-            <AlertDialogDescription>
-              Cette action est définitive{deptToDelete?.name ? ` : ${deptToDelete.name}` : ''}.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Annuler</AlertDialogCancel>
-            <AlertDialogAction
-              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-              onClick={async () => {
-                if (!deptToDelete) return;
-                await handleDelete(deptToDelete._id);
-                setDeptToDelete(null);
-              }}
-            >
-              Supprimer
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
 
       {!loading && departments.length === 0 && !showAddForm && (
         <div className="rounded-2xl border border-dashed border-slate-300 bg-slate-50 p-12 text-center">
