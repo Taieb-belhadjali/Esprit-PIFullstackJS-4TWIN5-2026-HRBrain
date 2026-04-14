@@ -1,4 +1,4 @@
-// Correction pour Pie label
+﻿// Correction pour Pie label
 const renderPieLabel = ({ name, percent }: any) => `${name} ${(percent * 100).toFixed(0)}%`;
 import { Users, Brain, Activity, Target, TrendingUp, AlertCircle } from 'lucide-react';
 import {
@@ -14,7 +14,7 @@ import {
   Cell,
   Legend
 } from 'recharts';
-import { useTranslation } from '../../../api/translations';
+import { useAppTranslation } from '../../hooks/useAppTranslation';
 
 type UserRole = 'HR' | 'Manager' | 'Employee';
 
@@ -38,8 +38,8 @@ const skillGapsData = [
   { name: 'Low', value: 67, color: '#10B981' },
 ];
 
-export function Home({ userRole, language = 'en' }: HomeProps) {
-  const t = useTranslation(language);
+export function Home({ userRole }: HomeProps) {
+  const t = useAppTranslation();
   
   const metrics = [
     {
@@ -216,3 +216,5 @@ export function Home({ userRole, language = 'en' }: HomeProps) {
     </div>
   );
 }
+
+

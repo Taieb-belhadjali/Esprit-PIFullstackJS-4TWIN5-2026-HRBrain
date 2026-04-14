@@ -1,7 +1,7 @@
-import React, { useState, useEffect, useRef } from 'react';
+﻿import React, { useState, useEffect, useRef } from 'react';
 import { Target, Brain, CheckCircle, XCircle, TrendingUp, Sparkles, ChevronDown, Clock, PlayCircle, Users, X } from 'lucide-react';
 import axios from 'axios';
-import { useTranslation } from '../../../api/translations';
+import { useAppTranslation } from '../../hooks/useAppTranslation';
 import API from '../../../api/api';
 
 type UserRole = 'HR' | 'Manager' | 'Employee' | 'SUPERADMIN';
@@ -190,8 +190,8 @@ function RecommendationCard({ rec, index, activityId, expandedId, setExpandedId,
   );
 }
 
-export function Recommendations({ userRole, language = 'en' }: RecommendationsProps) {
-  const t = useTranslation(language);
+export function Recommendations({ userRole }: RecommendationsProps) {
+  const t = useAppTranslation();
   const [activities, setActivities] = useState<Activity[]>([]);
   const [selectedActivityId, setSelectedActivityId] = useState('');
   const [apiResults, setApiResults] = useState<ApiRecommendation[]>([]);
@@ -680,3 +680,5 @@ export function Recommendations({ userRole, language = 'en' }: RecommendationsPr
     </div>
   );
 }
+
+

@@ -1,4 +1,4 @@
-// Vue principale Skills : liste, filtres, pagination, export CSV, graphique départements
+﻿// Vue principale Skills : liste, filtres, pagination, export CSV, graphique départements
 import React, { useState, useEffect, useMemo } from 'react';
 import API from '../../../api/api';
 import { SkillCard } from '../skills/SkillCard';
@@ -11,7 +11,7 @@ import { Skill, SkillSortBy } from '../skills/types';
 import { useVoiceCommand } from '../voice/VoiceCommandContext';
 import Pagination from '../ui/Pagination';
 import { SkillsDepartmentChart } from '../skills/SkillsDepartmentChart';
-import { useTranslation } from '../../../api/translations';
+import { useAppTranslation } from '../../hooks/useAppTranslation';
 
 
 type UserRole = 'HR' | 'Manager' | 'Employee' | 'SUPERADMIN';
@@ -22,8 +22,8 @@ interface SkillsProps {
 }
 
 
-export const Skills: React.FC<SkillsProps> = ({ userRole, language = 'en' }) => {
-  const t = useTranslation(language);
+export const Skills: React.FC<SkillsProps> = ({ userRole }) => {
+  const t = useAppTranslation();
   const [skills, setSkills] = useState<Skill[]>([]);
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
@@ -334,3 +334,5 @@ export const Skills: React.FC<SkillsProps> = ({ userRole, language = 'en' }) => 
     </div>
   );
 };
+
+

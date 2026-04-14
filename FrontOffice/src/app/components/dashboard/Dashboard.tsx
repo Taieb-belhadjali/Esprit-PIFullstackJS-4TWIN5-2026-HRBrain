@@ -17,8 +17,21 @@ import { KeyboardShortcutsPanel } from '../ui/KeyboardShortcutsPanel';
 import { TTSProvider } from '../tts/TTSContext';
 import { TTSWidget } from '../tts/TTSWidget';
 import { FontSizeProvider } from '../a11y/FontSizeContext';
+import { LanguageProvider } from '../../context/LanguageContext';
 
-type UserRole = 'HR' | 'Manager' | 'Employee';
+type UserRole = 'HR' | 'Manager' | 'Employee' | 'SUPERADMIN';
+
+export type ViewType =
+  | 'home'
+  | 'employees'
+  | 'departments'
+  | 'skills'
+  | 'activities'
+  | 'recommendations'
+  | 'analytics'
+  | 'notifications'
+  | 'profile'
+  | 'settings';
 
 interface User {
   email: string;
@@ -42,16 +55,16 @@ export function Dashboard({ user, onLogout, theme, setTheme, language, setLangua
   const [showShortcuts, setShowShortcuts] = useState(false);
 
   const viewRoles: Record<ViewType, UserRole[]> = {
-    home: ['HR', 'Manager', 'Employee'],
-    employees: ['HR', 'Manager'],
-    departments: ['HR'],
-    skills: ['HR', 'Manager', 'Employee'],
-    activities: ['HR', 'Manager', 'Employee'],
-    recommendations: ['HR', 'Manager'],
-    analytics: ['HR', 'Manager'],
-    notifications: ['HR', 'Manager', 'Employee'],
-    profile: ['HR', 'Manager', 'Employee'],
-    settings: ['HR', 'Manager', 'Employee'],
+    home:            ['HR', 'Manager', 'Employee', 'SUPERADMIN'],
+    employees:       ['HR', 'Manager', 'SUPERADMIN'],
+    departments:     ['HR', 'SUPERADMIN'],
+    skills:          ['HR', 'Manager', 'Employee', 'SUPERADMIN'],
+    activities:      ['HR', 'Manager', 'Employee', 'SUPERADMIN'],
+    recommendations: ['HR', 'Manager', 'SUPERADMIN'],
+    analytics:       ['HR', 'Manager', 'SUPERADMIN'],
+    notifications:   ['HR', 'Manager', 'Employee', 'SUPERADMIN'],
+    profile:         ['HR', 'Manager', 'Employee', 'SUPERADMIN'],
+    settings:        ['HR', 'Manager', 'Employee', 'SUPERADMIN'],
   };
 
   const currentView = useMemo<ViewType>(() => {
@@ -152,44 +165,36 @@ export function Dashboard({ user, onLogout, theme, setTheme, language, setLangua
   }, [handleKeyShortcuts]);
 
   const renderView = () => {
+    const role = user.role as any;
     switch (currentView) {
-      case 'home':
-        return <Home userRole={user.role} language={language} />;
-      case 'employees':
-        return <Employees userRole={user.role} language={language} />;
-      case 'departments':
-        return <Departments userRole={user.role} language={language} />;
-      case 'skills':
-        return <Skills userRole={user.role} language={language} />;
-      case 'activities':
-        return <Activities userRole={user.role} language={language} />;
-      case 'recommendations':
-        return <Recommendations userRole={user.role} language={language} />;
-      case 'analytics':
-        return <Analytics userRole={user.role} language={language} />;
-      case 'notifications':
-        return <Notifications language={language} />;
-      case 'profile':
-        return <Profile user={user} language={language} />;
-      case 'settings':
-        return <Settings onLogout={onLogout} theme={theme} setTheme={setTheme} language={language} setLanguage={setLanguage} />;
-      default:
-        return <Home userRole={user.role} language={language} />;
+      case 'home':            return <Home userRole={role} />;
+      case 'employees':       return <Employees userRole={role} />;
+      case 'departments':     return <Departments userRole={role} />;
+      case 'skills':          return <Skills userRole={role} />;
+      case 'activities':      return <Activities userRole={role} />;
+      case 'recommendations': return <Recommendations userRole={role} />;
+      case 'analytics':       return <Analytics userRole={role} />;
+      case 'notifications':   return <Notifications />;
+      case 'profile':         return <Profile user={{ ...user, role: role }} />;
+      case 'settings':        return <Settings onLogout={onLogout} theme={theme} setTheme={setTheme} language={language} setLanguage={setLanguage} />;
+      default:                return <Home userRole={role} />;
     }
   };
 
   return (
-    <FontSizeProvider>
+    <LanguageProvider initialLanguage={language} onLanguageChange={setLanguage}>
+      <FontSizeProvider>
       <TTSProvider>
         <VoiceCommandProvider>
           <div className="flex h-screen bg-secondary overflow-hidden">
             <Sidebar
               currentView={currentView}
               onViewChange={(view) => navigate(`/dashboard/${view}`)}
-              userRole={user.role}
+              userRole={user.role as any}
               userName={user.name}
               isCollapsed={isSidebarCollapsed}
               onToggleCollapse={() => setIsSidebarCollapsed(!isSidebarCollapsed)}
+              language={language}
             />
             <main className={`flex-1 overflow-auto transition-all duration-300 ${isSidebarCollapsed ? 'ml-16' : 'ml-64'}`}>
               {renderView()}
@@ -205,5 +210,6 @@ export function Dashboard({ user, onLogout, theme, setTheme, language, setLangua
         </VoiceCommandProvider>
       </TTSProvider>
     </FontSizeProvider>
+    </LanguageProvider>
   );
 }
