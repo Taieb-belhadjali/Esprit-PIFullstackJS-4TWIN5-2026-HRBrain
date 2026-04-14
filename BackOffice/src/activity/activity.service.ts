@@ -10,6 +10,7 @@ import { UpdateActivityDto } from './dto-activity/update-activity.dto';
 import { User } from '../users/shemas/user.shema';
 import { Skill } from '../skill/skill.schema';
 import { Department } from '../department/department.schema';
+import { NotificationService } from '../notification/notification.service';
 import {
   parseCvSkillLevels,
   calculateSkillMatchScore,
@@ -27,10 +28,40 @@ export class ActivityService {
     @InjectModel(User.name) private userModel: Model<User>,
     @InjectModel(Skill.name) private skillModel: Model<Skill>,
     @InjectModel(Department.name) private departmentModel: Model<Department>,
+    private readonly notifService: NotificationService,
   ) {}
 
   async create(dto: CreateActivityDto): Promise<ActivityDocument> {
-    return new this.activityModel(dto).save();
+    // Normaliser les IDs string → ObjectId
+    const payload: any = { ...dto };
+    if (payload.targetedDepartmentId && typeof payload.targetedDepartmentId === 'string') {
+      payload.targetedDepartmentId = new Types.ObjectId(payload.targetedDepartmentId);
+    }
+    if (payload.createdById && typeof payload.createdById === 'string') {
+      payload.createdById = new Types.ObjectId(payload.createdById);
+    }
+    const activity = await new this.activityModel(payload).save();
+
+    // Scénario 3 — Notifier les employés du département ciblé
+    if (dto.targetedDepartmentId) {
+      try {
+        const dept = await this.departmentModel.findById(dto.targetedDepartmentId).lean();
+        const employees = await this.userModel
+          .find({ role: 'EMPLOYEE', departmentId: new Types.ObjectId(dto.targetedDepartmentId) }, { _id: 1 })
+          .lean();
+        const employeeIds = employees.map(e => String(e._id));
+        if (employeeIds.length > 0) {
+          await this.notifService.notifyNewActivityInDepartment(
+            employeeIds,
+            dto.title,
+            (dept as any)?.name ?? '',
+            String(activity._id),
+          );
+        }
+      } catch { /* non-blocking */ }
+    }
+
+    return activity;
   }
 
   async findAll(departmentId?: string): Promise<ActivityDocument[]> {
@@ -42,12 +73,30 @@ export class ActivityService {
   /** Retourne uniquement les activités des départements gérés par ce manager */
   async findAllForManager(managerId: string, departmentId?: string): Promise<ActivityDocument[]> {
     const departments = await this.departmentModel
-      .find({ managerIds: new Types.ObjectId(managerId) }, { _id: 1 })
+      .find({
+        $or: [
+          { managerIds: new Types.ObjectId(managerId) },
+          { managerIds: managerId },
+        ],
+      }, { _id: 1 })
       .lean();
     const deptIds = departments.map((d) => d._id);
+    const deptStrings = deptIds.map(id => String(id));
 
-    const filter: any = { targetedDepartmentId: { $in: deptIds } };
-    if (departmentId) filter.targetedDepartmentId = departmentId;
+    if (deptIds.length === 0) return [];
+
+    const filter: any = {
+      $or: [
+        { targetedDepartmentId: { $in: deptIds } },
+        { targetedDepartmentId: { $in: deptStrings } },
+      ],
+    };
+    if (departmentId) {
+      filter.$or = [
+        { targetedDepartmentId: new Types.ObjectId(departmentId) },
+        { targetedDepartmentId: departmentId },
+      ];
+    }
 
     return this.activityModel.find(filter).populate('requiredSkills.skillId').exec();
   }
@@ -65,7 +114,10 @@ export class ActivityService {
     if (!departmentId) return false;
     const dept = await this.departmentModel.findOne({
       _id: new Types.ObjectId(departmentId),
-      managerIds: new Types.ObjectId(managerId),
+      $or: [
+        { managerIds: new Types.ObjectId(managerId) },
+        { managerIds: managerId },
+      ],
     });
     return !!dept;
   }

@@ -1,87 +1,41 @@
-You are an expert HR analyst specialised in matching employees to professional development activities.
-Your task: select and rank the top {{top_k}} employees best suited for the activity described below.
+You are an HR analyst. Rank the top {{top_k}} employees for the activity below.
 
-════════════════════════════════════════════════════════════
 ACTIVITY
-════════════════════════════════════════════════════════════
-Title       : {{activity.title}}
-Type        : {{activity.type}}
-Context     : {{activity.context}}
-Description : {{activity.description}}
-Required skills (name → required level × weight): {{activity.skills}}
+Title: {{activity.title}} | Type: {{activity.type}} | Context: {{activity.context}}
+Required skills: {{activity.skills}}
 
-════════════════════════════════════════════════════════════
-SCORING SYSTEM (pre-computed by the algorithm)
-════════════════════════════════════════════════════════════
-Skill levels are ordinal: LOW=1, MEDIUM=2, HIGH=3, EXPERT=4
-Gap = required_level − employee_level
+SCORING (pre-computed)
+Levels: LOW=1 MEDIUM=2 HIGH=3 EXPERT=4 | Gap = req - emp
+Score1 Skill Match 40%: (emp/req)×weight×100 per skill
+Score2 Progression 30%: gap1-2→(gap/2)×w×100 | gap0→0 | gap>2→w×50 | absent→w×25
+Score3 Context 30%: Upskilling=70 Expertise=75 Consolidation=65
+AlgoTotal = S1×{{weight_skill}}% + S2×{{weight_progression}}% + S3×{{weight_context}}%
 
-Score 1 — Skill Match (40%)
-  For each required skill the employee HAS:
-    contribution = (emp_level / req_level) × weight × 100
-  Missing skill → 0
-
-Score 2 — Progression (30%)
-  gap 1 or 2 → (gap/2) × weight × 100   ← ideal learning zone
-  gap 0      → 0                          (already at level, nothing to learn)
-  gap > 2    → weight × 50               (too far, partial credit)
-  absent     → weight × 25               (acquisition bonus — less than ideal gap)
-
-Score 3 — Context (30%) — fixed per activity
-  Upskilling    → 70
-  Expertise     → 75
-  Consolidation → 65
-
-AlgoTotal = skillMatch×{{weight_skill}}% + progression×{{weight_progression}}% + context×{{weight_context}}%
-
-════════════════════════════════════════════════════════════
-CANDIDATES  (pre-sorted by AlgoTotal, best first — top 20 of 100)
-════════════════════════════════════════════════════════════
-Rejected employees have already been removed from this list.
-[HR:APPROVED] employees must appear in your final top {{top_k}}.
+CANDIDATES (sorted by AlgoTotal, rejected removed, [HR:APPROVED] must be in top {{top_k}})
 {{employees}}
 
-════════════════════════════════════════════════════════════
-PREVIOUS HR DECISIONS FOR THIS ACTIVITY
-════════════════════════════════════════════════════════════
+HR DECISIONS
 {{hr_feedback}}
 
-════════════════════════════════════════════════════════════
-YOUR TASK
-════════════════════════════════════════════════════════════
-1. Select exactly {{top_k}} DIFFERENT candidates from the list above. Use their EXACT employeeId — do NOT modify or truncate any ID.
-2. Assign each a UNIQUE integer score (0-100). Do NOT copy AlgoTotal.
-   [HR:APPROVED] employees must receive the highest scores.
-3. Write exactly 3 reasons per employee using ONLY real skill names and real levels from their data.
+INSTRUCTIONS
+1. Pick exactly {{top_k}} DIFFERENT candidates. Use EXACT employeeId unchanged.
+2. Assign UNIQUE integer scores 0-100. Do NOT copy AlgoTotal. [HR:APPROVED] get highest scores.
+3. Write exactly 3 reasons using ONLY real skill names/levels from candidate data.
 
-── REASON 1 (skill coverage) ───────────────────────────────
-Use the RequiredSkillStatus field to write R1.
-  "SKILLNAME:NOT_IN_CV" → write: "Lacks SKILLNAME entirely — must acquire it from scratch"
-  "SKILLNAME:emp=EMP_LEVEL,req=REQ_LEVEL,gap=0" → write: "Has SKILLNAME:EMP_LEVEL, activity requires REQ_LEVEL — already meets requirement"
-  "SKILLNAME:emp=EMP_LEVEL,req=REQ_LEVEL,gap=N" (N>0) → write: "Has SKILLNAME:EMP_LEVEL, activity requires REQ_LEVEL — gap of N"
-  Pick the most important required skill (highest weight or first listed).
+R1 (skill coverage) — use RequiredSkillStatus, pick most important skill:
+  NOT_IN_CV → "Lacks SKILL entirely"
+  gap=0 → "Has SKILL:EMP_LEVEL, meets requirement"
+  gap=N → "Has SKILL:EMP_LEVEL, requires REQ_LEVEL — gap of N"
 
-── REASON 2 (progression) ──────────────────────────────────
-Use RequiredSkillStatus for a DIFFERENT required skill than R1.
-IMPORTANT: Only use skills from RequiredSkillStatus — do NOT use skills from the employee's Skills list.
-  "SKILLNAME:NOT_IN_CV" → write: "No baseline on SKILLNAME — full acquisition required"
-  "SKILLNAME:emp=EMP_LEVEL,req=REQ_LEVEL,gap=0" → write: "Already at required level on SKILLNAME — no progression gap"
-  "SKILLNAME:emp=EMP_LEVEL,req=REQ_LEVEL,gap=1" → write: "Gap of 1 on SKILLNAME (EMP_LEVEL→REQ_LEVEL) — ideal learning zone"
-  "SKILLNAME:emp=EMP_LEVEL,req=REQ_LEVEL,gap=2" → write: "Gap of 2 on SKILLNAME (EMP_LEVEL→REQ_LEVEL) — ideal learning zone"
-  "SKILLNAME:emp=EMP_LEVEL,req=REQ_LEVEL,gap=N" (N>2) → write: "Gap of N on SKILLNAME (EMP_LEVEL→REQ_LEVEL) — significant effort needed"
-  If only one required skill exists, R2 may reference the same skill with a different angle.
+R2 (progression) — use RequiredSkillStatus, DIFFERENT skill than R1:
+  NOT_IN_CV → "No baseline on SKILL — full acquisition"
+  gap=1-2 → "Gap of N on SKILL (EMP→REQ) — ideal learning zone"
+  gap>2 → "Gap of N on SKILL — significant effort needed"
 
-── REASON 3 (context fit) ──────────────────────────────────
-Pick any skill from THIS employee's own "Skills:" field in the candidate line above.
-FORBIDDEN: do NOT use any skill listed in "Required skills" above ({{required_skill_names}}).
-Use their actual skill name and level exactly as written in the Skills list.
-  "Brings ACTUAL_SKILL:LEVEL as a foundation for this {{activity.context}} activity"
-  "Leverages ACTUAL_SKILL:LEVEL to accelerate learning of {{primary_skill}}"
-  "Background in ACTUAL_SKILL:LEVEL supports the activity objectives"
-  If Skills is "none" → write: "No existing skill baseline — full upskilling profile"
-IMPORTANT: Replace ACTUAL_SKILL with a real skill name from the employee's Skills list, NOT from RequiredSkillStatus.
+R3 (context fit) — use a skill from employee's Skills list ONLY:
+  FORBIDDEN: do NOT use skills from {{required_skill_names}}
+  "Leverages SKILL:LEVEL to accelerate learning of {{primary_skill}}"
+  If Skills=none → "No existing skill baseline — full upskilling profile"
 
-════════════════════════════════════════════════════════════
-OUTPUT — return ONLY valid JSON, no text before or after
-════════════════════════════════════════════════════════════
-{"rankings":[{"employeeId":"<exact id>","score":<unique int>,"reasons":["<r1>","<r2>","<r3>"]}]}
+OUTPUT — return ONLY valid JSON, nothing else:
+{"rankings":[{"employeeId":"<exact id>","score":<int>,"reasons":["<r1>","<r2>","<r3>"]}]}

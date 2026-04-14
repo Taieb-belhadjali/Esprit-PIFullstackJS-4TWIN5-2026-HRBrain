@@ -1,20 +1,26 @@
+import { createRoot } from "react-dom/client";
+import { BrowserRouter } from "react-router-dom";
+import App from "./app/App.tsx";
+import "./styles/index.css";
+import "bootstrap/dist/css/bootstrap.min.css";
+import { CursorProvider } from "./app/context/CursorContext.tsx";
+import { ReadingMaskProvider } from "./app/context/ReadingMaskContext.tsx";
+import { ReadingMask } from "./app/components/accessibility/ReadingMask.tsx";
 
-  import { createRoot } from "react-dom/client";
-  import { BrowserRouter } from "react-router-dom";
-  import App from "./app/App.tsx";
-  import "./styles/index.css";
-  import "bootstrap/dist/css/bootstrap.min.css";
+const THEME_KEY = 'hrbrain_theme';
+const savedTheme = localStorage.getItem(THEME_KEY) as 'light' | 'dark' | null;
+const theme = savedTheme || 'light';
+if (theme === 'dark') {
+  document.documentElement.classList.add('dark');
+}
 
-  const THEME_KEY = 'hrbrain_theme';
-  const savedTheme = localStorage.getItem(THEME_KEY) as 'light' | 'dark' | null;
-  const theme = savedTheme || 'light';
-  if (theme === 'dark') {
-    document.documentElement.classList.add('dark');
-  }
-
-  createRoot(document.getElementById("root")!).render(
-    <BrowserRouter>
-      <App initialTheme={theme} />
-    </BrowserRouter>
-  );
-  
+createRoot(document.getElementById("root")!).render(
+  <BrowserRouter>
+    <CursorProvider>
+      <ReadingMaskProvider>
+        <ReadingMask />
+        <App initialTheme={theme} />
+      </ReadingMaskProvider>
+    </CursorProvider>
+  </BrowserRouter>
+);

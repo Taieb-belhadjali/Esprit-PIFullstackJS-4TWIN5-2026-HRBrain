@@ -7,6 +7,7 @@ import { HrDecision, HrDecisionSchema } from './hr-decision.schema';
 import { Activity, ActivitySchema } from '../activity/activity.schema';
 import { User, UserSchema } from '../users/shemas/user.shema';
 import { Skill, SkillSchema } from '../skill/skill.schema';
+import { NotificationModule } from '../notification/notification.module';
 
 @Module({
   imports: [
@@ -17,6 +18,7 @@ import { Skill, SkillSchema } from '../skill/skill.schema';
       { name: User.name,           schema: UserSchema },
       { name: Skill.name,          schema: SkillSchema },
     ]),
+    NotificationModule,
   ],
   controllers: [RecommendationController],
   providers: [RecommendationService],

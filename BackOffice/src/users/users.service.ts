@@ -15,6 +15,7 @@ import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { Skill } from '../skill/skill.schema';
 import { Department } from '../department/department.schema';
+import { NotificationService } from '../notification/notification.service';
 
 @Injectable()
 export class UsersService {
@@ -25,6 +26,7 @@ export class UsersService {
     private skillModel: Model<Skill>,
     @InjectModel(Department.name)
     private departmentModel: Model<Department>,
+    private readonly notifService: NotificationService,
   ) {}
 
   private escapeRegex(value: string) {
@@ -272,6 +274,21 @@ export class UsersService {
         console.log(`CV auto-généré: ${cvPath} avec ${skillIds.length} skills`);
       }
 
+      // Scénario 4 — Notifier les managers du département si EMPLOYEE
+      if (data.role === 'EMPLOYEE' && data.departmentId) {
+        try {
+          const dept = await this.departmentModel.findById(data.departmentId).lean();
+          if (dept && (dept as any).managerIds?.length > 0) {
+            const managerIds = (dept as any).managerIds.map((id: any) => String(id));
+            await this.notifService.notifyNewEmployeeInDepartment(
+              managerIds,
+              (data as any).name ?? 'Nouvel employé',
+              (dept as any).name ?? '',
+            );
+          }
+        } catch { /* non-blocking */ }
+      }
+
       // Ajouter l'employé au dataset CSV
       if (data.role === 'EMPLOYEE') {
         try {
@@ -316,8 +333,24 @@ export class UsersService {
   }
 
   async remove(id: string) {
-    const user = await this.userModel.findByIdAndDelete(id);
+    const user = await this.userModel.findByIdAndDelete(id).lean();
     if (!user) throw new NotFoundException('User not found');
+
+    // Supprimer la ligne du CSV si c'est un EMPLOYEE
+    if ((user as any).role === 'EMPLOYEE') {
+      try {
+        const csvPath = join(process.cwd(), 'DataSets', 'employees_updated.csv');
+        const email = (user as any).email ?? '';
+        const content = await readFile(csvPath, 'utf-8');
+        const lines = content.split('\n');
+        const filtered = lines.filter(line => !line.includes(email));
+        await writeFile(csvPath, filtered.join('\n'), 'utf-8');
+        console.log(`Employé supprimé du CSV: ${email}`);
+      } catch (err) {
+        console.error('Erreur suppression CSV:', err);
+      }
+    }
+
     return { message: 'User deleted' };
   }
 }
