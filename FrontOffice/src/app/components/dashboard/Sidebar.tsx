@@ -13,8 +13,9 @@ import {
   ChevronRight,
 } from 'lucide-react';
 import { ViewType } from './Dashboard';
+import { useFontSize } from '../a11y/FontSizeContext';
 
-type UserRole = 'HR' | 'Manager' | 'Employee' | 'SUPERADMIN';
+type UserRole = 'HR' | 'Manager' | 'Employee';
 
 interface SidebarProps {
   currentView: ViewType;
@@ -40,66 +41,67 @@ export function Sidebar({
   isCollapsed,
   onToggleCollapse,
 }: SidebarProps) {
+  const { increase, decrease, reset, canIncrease, canDecrease, sizeIndex, percent } = useFontSize();
   const menuItems: MenuItem[] = [
     {
       id: 'home',
       label: 'Dashboard',
       icon: <Home className="w-5 h-5" />,
-      roles: ['HR', 'Manager', 'Employee', 'SUPERADMIN'],
+      roles: ['HR', 'Manager', 'Employee'],
     },
     {
       id: 'employees',
       label: 'Employees',
       icon: <Users className="w-5 h-5" />,
-      roles: ['HR', 'Manager', 'SUPERADMIN'],
+      roles: ['HR', 'Manager'],
     },
     {
       id: 'departments',
       label: 'Departments',
       icon: <Building2 className="w-5 h-5" />,
-      roles: ['HR', 'SUPERADMIN'],
+      roles: ['HR'],
     },
     {
       id: 'skills',
       label: 'Skills',
       icon: <Brain className="w-5 h-5" />,
-      roles: ['HR', 'Manager', 'Employee', 'SUPERADMIN'],
+      roles: ['HR', 'Manager', 'Employee'],
     },
     {
       id: 'activities',
       label: 'Activities',
       icon: <Activity className="w-5 h-5" />,
-      roles: ['HR', 'Manager', 'Employee', 'SUPERADMIN'],
+      roles: ['HR', 'Manager', 'Employee'],
     },
     {
       id: 'recommendations',
       label: 'Recommendations',
       icon: <Target className="w-5 h-5" />,
-      roles: ['HR', 'Manager', 'SUPERADMIN'],
+      roles: ['HR', 'Manager'],
     },
     {
       id: 'analytics',
       label: 'Analytics',
       icon: <BarChart3 className="w-5 h-5" />,
-      roles: ['HR', 'Manager', 'SUPERADMIN'],
+      roles: ['HR', 'Manager'],
     },
     {
       id: 'notifications',
       label: 'Notifications',
       icon: <Bell className="w-5 h-5" />,
-      roles: ['HR', 'Manager', 'Employee', 'SUPERADMIN'],
+      roles: ['HR', 'Manager', 'Employee'],
     },
     {
       id: 'profile',
       label: 'Profile',
       icon: <User className="w-5 h-5" />,
-      roles: ['HR', 'Manager', 'Employee', 'SUPERADMIN'],
+      roles: ['HR', 'Manager', 'Employee'],
     },
     {
       id: 'settings',
       label: 'Settings',
       icon: <Settings className="w-5 h-5" />,
-      roles: ['HR', 'Manager', 'Employee', 'SUPERADMIN'],
+      roles: ['HR', 'Manager', 'Employee'],
     },
   ];
 
@@ -182,6 +184,59 @@ export function Sidebar({
             ))}
           </ul>
         </nav>
+
+        {/* Text size controls – WCAG 1.4.4 */}
+        <div className="p-3 border-t border-sidebar-border">
+          {isCollapsed ? (
+            <button
+              onClick={increase}
+              disabled={!canIncrease}
+              title="Agrandir le texte"
+              aria-label="Agrandir le texte"
+              className="w-full flex items-center justify-center py-1.5 rounded-lg text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-foreground disabled:opacity-30 disabled:cursor-not-allowed transition-colors text-xs font-semibold"
+            >
+              A+
+            </button>
+          ) : (
+            <div
+              role="group"
+              aria-label="Taille du texte"
+              className="flex items-center justify-between"
+            >
+              <span className="text-xs text-sidebar-foreground/50 font-medium">Texte</span>
+              <div className="flex items-center gap-0.5">
+                <button
+                  onClick={decrease}
+                  disabled={!canDecrease}
+                  aria-label="Réduire la taille du texte"
+                  title="A−"
+                  className="w-7 h-7 rounded-md flex items-center justify-center text-sidebar-foreground/70 text-xs font-semibold hover:bg-sidebar-accent hover:text-sidebar-foreground disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+                >
+                  A−
+                </button>
+                <button
+                  onClick={reset}
+                  aria-label={`Réinitialiser la taille (${percent}%)`}
+                  title={`Réinitialiser (${percent}%)`}
+                  className="h-7 px-1.5 rounded-md flex items-center justify-center text-[11px] font-medium hover:bg-sidebar-accent transition-colors min-w-[36px]"
+                >
+                  <span className={sizeIndex === 0 ? 'text-sidebar-foreground/40' : 'text-blue-300'}>
+                    {sizeIndex === 0 ? 'A' : `${percent}%`}
+                  </span>
+                </button>
+                <button
+                  onClick={increase}
+                  disabled={!canIncrease}
+                  aria-label="Augmenter la taille du texte"
+                  title="A+"
+                  className="w-7 h-7 rounded-md flex items-center justify-center text-sidebar-foreground/70 text-sm font-semibold hover:bg-sidebar-accent hover:text-sidebar-foreground disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+                >
+                  A+
+                </button>
+              </div>
+            </div>
+          )}
+        </div>
       </div>
     </aside>
   );
