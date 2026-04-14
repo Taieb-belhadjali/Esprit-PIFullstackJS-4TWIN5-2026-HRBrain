@@ -107,8 +107,7 @@ export class ActivityService {
       };
     });
 
-    // 3. contextScore — identique pour tous les employés de cette activité
-    const contextScore = calculateContextScore(activity.context ?? '');
+    // 3. contextScore — calculé dynamiquement par employé dans la boucle
 
     // 4. Build skill name -> id map for CV parsing
     const allSkills = await this.skillModel.find({}, { _id: 1, name: 1 }).lean();
@@ -159,6 +158,7 @@ export class ActivityService {
 
       const skillMatch = calculateSkillMatchScore(employeeSkills, requiredSkills);
       const progression = calculateProgressionScore(employeeSkills, requiredSkills);
+      const contextScore = calculateContextScore(activity.context ?? '', employeeSkills, requiredSkills);
       const final = calculateFinalScore(skillMatch, progression, contextScore);
 
       results.push({
