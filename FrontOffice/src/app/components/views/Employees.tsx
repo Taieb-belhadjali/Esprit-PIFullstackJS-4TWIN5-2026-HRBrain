@@ -5,6 +5,7 @@ import AddEmployeeModal from "../employees/AddEmployeeModel";
 import EditEmployeeModal from "../employees/EditEmployeeModel";
 import ViewEmployeeModal from "../employees/ViewEmployeeModel";
 import { deleteEmployee, getEmployees } from '../../../api/employeeApi';
+<<<<<<< HEAD
 import {
   AlertDialog,
   AlertDialogAction,
@@ -16,8 +17,12 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from '../ui/alert-dialog';
+=======
+import { useVoiceCommand } from '../voice/VoiceCommandContext';
+import Pagination from '../ui/Pagination';
+>>>>>>> 694a338275269afbd2bb20b2e4dca8a4d2ba4d91
 
-type UserRole = 'HR' | 'Manager' | 'Employee';
+type UserRole = 'HR' | 'Manager' | 'Employee' | 'SUPERADMIN';
 
 interface EmployeesProps {
   userRole: UserRole;
@@ -45,7 +50,12 @@ export function Employees({ userRole }: EmployeesProps) {
   const [editingEmployee, setEditingEmployee] = useState<Employee | null>(null);
   const [viewEmployee, setViewEmployee] = useState<Employee | null>(null);
   const [viewOpen, setViewOpen] = useState(false);
+<<<<<<< HEAD
   const [employeeToDelete, setEmployeeToDelete] = useState<Employee | null>(null);
+=======
+  const [prefilledName, setPrefilledName] = useState<string | null>(null);
+  const { pendingCommand, commandData, clearPendingCommand } = useVoiceCommand();
+>>>>>>> 694a338275269afbd2bb20b2e4dca8a4d2ba4d91
 
   // ✅ PAGINATION STATE
   const [currentPage, setCurrentPage] = useState(1);
@@ -72,6 +82,74 @@ export function Employees({ userRole }: EmployeesProps) {
   useEffect(() => {
     fetchEmployees();
   }, []);
+
+  // Écouter les commandes vocales pour créer un employé
+  useEffect(() => {
+    if (pendingCommand === 'create-employee') {
+      if (commandData?.name) {
+        // Pré-remplir le nom et ouvrir le formulaire
+        setPrefilledName(commandData.name);
+        setOpenModal(true);
+      } else {
+        // Ouvrir le formulaire sans pré-remplissage
+        setPrefilledName(null);
+        setOpenModal(true);
+      }
+      clearPendingCommand();
+    }
+  }, [pendingCommand, commandData, clearPendingCommand]);
+
+  // Écouter les commandes vocales pour modifier un employé
+  // VoiceAssistant a déjà effectué le PATCH — on rafraîchit seulement la liste
+  useEffect(() => {
+    if (pendingCommand === 'modify-employee') {
+      fetchEmployees();
+      clearPendingCommand();
+    }
+  }, [pendingCommand, clearPendingCommand]);
+
+  // Écouter les commandes vocales pour supprimer un employé
+  // La suppression et confirmation sont gérées par VoiceAssistant — on rafraîchit juste la liste
+  useEffect(() => {
+    if (pendingCommand === 'delete-employee') {
+      fetchEmployees();
+      clearPendingCommand();
+    }
+  }, [pendingCommand, clearPendingCommand]);
+
+  // Écouter les commandes vocales pour rechercher un employé
+  useEffect(() => {
+    if (pendingCommand === 'search-employee' || pendingCommand === 'filter-employee') {
+      if (commandData?.name) {
+        setSearchTerm(commandData.name);
+      }
+      clearPendingCommand();
+    }
+  }, [pendingCommand, commandData, clearPendingCommand]);
+
+  // Écouter les commandes vocales pour afficher le détail d'un employé
+  useEffect(() => {
+    if (pendingCommand === 'view-employee') {
+      if (commandData?.name && employees.length > 0) {
+        const found = employees.find(
+          (e) => (e.name || e.email).toLowerCase() === commandData.name!.toLowerCase()
+        ) || employees.find(
+          (e) => (e.name || e.email).toLowerCase().includes(commandData.name!.toLowerCase())
+        );
+        if (found) { setViewEmployee(found); setViewOpen(true); }
+      }
+      clearPendingCommand();
+    }
+  }, [pendingCommand, commandData, clearPendingCommand, employees]);
+
+  const handleDelete = async (id: string) => {
+    try {
+      await deleteEmployee(id);
+      fetchEmployees();
+    } catch (error) {
+      console.error('Failed to delete employee:', error);
+    }
+  };
 
   // ✅ FILTERING
   const filteredEmployees = employees.filter((emp) => {
@@ -119,9 +197,12 @@ export function Employees({ userRole }: EmployeesProps) {
           </p>
         </div>
 
-        {userRole === 'HR' && (
+        {(userRole === 'HR' || userRole === 'SUPERADMIN') && (
           <button
-            onClick={() => setOpenModal(true)}
+            onClick={() => {
+              setPrefilledName(null);
+              setOpenModal(true);
+            }}
             className="flex items-center gap-2 bg-primary text-white px-4 py-2 rounded-lg hover:bg-primary/90 transition-colors"
           >
             <Plus className="w-5 h-5" />
@@ -131,52 +212,34 @@ export function Employees({ userRole }: EmployeesProps) {
       </div>
 
       {/* FILTERS */}
-      <div className="bg-white rounded-lg shadow-sm p-6 border border-border">
-
-        <div className="flex flex-col md:flex-row gap-4">
-
-          {/* SEARCH */}
-          <div className="card mb-3 shadow-sm w-full">
-            <div className="card-body">
-              <div className="row g-2">
-
-                <div className="col-md-6">
-                  <input
-                    type="text"
-                    className="form-control"
-                    placeholder="Search by name or email..."
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                  />
-                </div>
-
-                <div className="col-md-6 text-md-end text-muted d-flex align-items-center justify-content-md-end">
-                  Showing {filteredEmployees.length} employees
-                </div>
-
-              </div>
-            </div>
+      <div className="bg-white rounded-lg shadow-sm p-4 border border-border">
+        <div className="flex flex-col md:flex-row gap-3">
+          <div className="relative flex-1">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+            <input
+              type="text"
+              placeholder="Search by name or email..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="w-full pl-9 pr-4 py-2 border border-input rounded-lg focus:outline-none focus:ring-2 focus:ring-primary text-sm"
+            />
           </div>
-
-          {/* DEPARTMENT FILTER */}
           <div className="flex items-center gap-2">
-            <Filter className="w-5 h-5 text-muted-foreground" />
+            <Filter className="w-4 h-4 text-muted-foreground shrink-0" />
             <select
               value={selectedDepartment}
               onChange={(e) => setSelectedDepartment(e.target.value)}
-              className="px-4 py-2 border border-input rounded-lg"
+              className="px-3 py-2 border border-input rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary"
             >
               {departments.map((dept) => (
                 <option key={dept} value={dept}>{dept}</option>
               ))}
             </select>
           </div>
-
         </div>
-
-        <div className="mt-4 text-sm text-muted-foreground">
+        <p className="mt-3 text-sm text-muted-foreground">
           Showing {filteredEmployees.length} of {employees.length} employees
-        </div>
+        </p>
       </div>
 
       {/* TABLE */}
@@ -185,10 +248,8 @@ export function Employees({ userRole }: EmployeesProps) {
           <thead className="bg-secondary border-b border-border">
             <tr>
               <th className="text-left px-6 py-4 text-sm font-medium text-gray-900">Employee</th>
-              <th className="text-left px-6 py-4 text-sm font-medium text-gray-900">Department</th>
-              <th className="text-left px-6 py-4 text-sm font-medium text-gray-900">Position</th>
+              <th className="text-left px-6 py-4 text-sm font-medium text-gray-900">Role</th>
               <th className="text-center px-6 py-4 text-sm font-medium text-gray-900">Skills</th>
-              <th className="text-center px-6 py-4 text-sm font-medium text-gray-900">Activities</th>
               <th className="text-right px-6 py-4 text-sm font-medium text-gray-900">Actions</th>
             </tr>
           </thead>
@@ -210,22 +271,18 @@ export function Employees({ userRole }: EmployeesProps) {
                 </td>
 
                 <td className="px-6 py-4">
-                  <span className="inline-flex px-3 py-1 rounded-full text-sm bg-blue-100 text-blue-700">
-                    {employee.department}
+                  <span className={`inline-flex px-3 py-1 rounded-full text-sm font-medium ${
+                    employee.role === 'HR' ? 'bg-red-100 text-red-700' :
+                    employee.role === 'MANAGER' ? 'bg-yellow-100 text-yellow-700' :
+                    'bg-green-100 text-green-700'
+                  }`}>
+                    {employee.role}
                   </span>
                 </td>
-
-                <td className="px-6 py-4 text-gray-900">{employee.position}</td>
 
                 <td className="px-6 py-4 text-center">
                   <span className="inline-flex px-3 py-1 rounded-full text-sm bg-purple-100 text-purple-700">
                     {employee.skillsCount || 0}
-                  </span>
-                </td>
-
-                <td className="px-6 py-4 text-center">
-                  <span className="inline-flex px-3 py-1 rounded-full text-sm bg-green-100 text-green-700">
-                    {employee.activitiesCount || 0}
                   </span>
                 </td>
 
@@ -242,7 +299,7 @@ export function Employees({ userRole }: EmployeesProps) {
                       <Eye className="w-4 h-4 text-muted-foreground" />
                     </button>
 
-                    {userRole === 'HR' && (
+                    {(userRole === 'HR' || userRole === 'SUPERADMIN') && (
                       <>
                         <button
                           className="p-2 hover:bg-secondary rounded-lg"
@@ -298,43 +355,15 @@ export function Employees({ userRole }: EmployeesProps) {
           </tbody>
         </table>
 
-        {/* ✅ PAGINATION UI */}
-        <div className="flex justify-between items-center p-4 border-t">
-          <span className="text-sm text-muted-foreground">
-            Page {currentPage} of {totalPages || 1}
-          </span>
-
-          <div className="flex gap-2">
-
-            <button
-              className="px-3 py-1 rounded border"
-              disabled={currentPage === 1}
-              onClick={() => setCurrentPage(p => p - 1)}
-            >
-              Prev
-            </button>
-
-            {[...Array(totalPages)].map((_, i) => (
-              <button
-                key={i}
-                className={`px-3 py-1 rounded border ${
-                  currentPage === i + 1 ? "bg-primary text-white" : ""
-                }`}
-                onClick={() => setCurrentPage(i + 1)}
-              >
-                {i + 1}
-              </button>
-            ))}
-
-            <button
-              className="px-3 py-1 rounded border"
-              disabled={currentPage === totalPages || totalPages === 0}
-              onClick={() => setCurrentPage(p => p + 1)}
-            >
-              Next
-            </button>
-
-          </div>
+        {/* PAGINATION */}
+        <div className="border-t border-border px-4">
+          <Pagination
+            currentPage={currentPage}
+            totalPages={totalPages}
+            totalItems={filteredEmployees.length}
+            itemsPerPage={itemsPerPage}
+            onPageChange={setCurrentPage}
+          />
         </div>
 
       </div>
@@ -342,8 +371,13 @@ export function Employees({ userRole }: EmployeesProps) {
       {/* MODALS */}
       <AddEmployeeModal
         open={openModal}
-        onClose={() => setOpenModal(false)}
+        onClose={() => {
+          setOpenModal(false);
+          setPrefilledName(null);
+        }}
         onCreated={fetchEmployees}
+        prefilledName={prefilledName}
+        userRole={userRole}
       />
 
       <EditEmployeeModal

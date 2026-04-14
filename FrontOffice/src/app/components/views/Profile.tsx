@@ -1,202 +1,216 @@
-import { Mail, Briefcase, Calendar, Edit, Plus } from 'lucide-react';
+import { useEffect, useState } from 'react';
+import { Mail, Briefcase, Building2, BookOpen, CheckCircle, Star } from 'lucide-react';
+import API from '../../../api/api';
 
-type UserRole = 'HR' | 'Manager' | 'Employee';
-
-interface User {
-  email: string;
-  role: UserRole;
-  name: string;
-}
+type UserRole = 'HR' | 'Manager' | 'Employee' | 'SUPERADMIN';
 
 interface ProfileProps {
-  user: User;
+  user: { email: string; role: UserRole; name: string; id?: string };
 }
 
-const mockSkills = [
-  { name: 'React', type: 'Know-How', level: 'Expert', progress: 95 },
-  { name: 'TypeScript', type: 'Know-How', level: 'Expert', progress: 90 },
-  { name: 'Communication', type: 'Soft Skill', level: 'Good', progress: 75 },
-  { name: 'Team Leadership', type: 'Soft Skill', level: 'Good', progress: 70 },
-];
-
-const mockActivities = [
-  {
-    id: '1',
-    title: 'Cloud Migration Training',
-    status: 'In Progress',
-    startDate: '2026-01-15',
-    progress: 60,
-  },
-  {
-    id: '2',
-    title: 'Advanced React Patterns',
-    status: 'Completed',
-    startDate: '2025-11-20',
-    progress: 100,
-  },
-];
+const LEVEL_COLORS: Record<string, string> = {
+  LOW:    'bg-yellow-50 text-yellow-700',
+  MEDIUM: 'bg-blue-50 text-blue-700',
+  HIGH:   'bg-green-50 text-green-700',
+  EXPERT: 'bg-purple-50 text-purple-700',
+};
 
 export function Profile({ user }: ProfileProps) {
-  const getLevelColor = (level: string) => {
-    switch (level) {
-      case 'Expert':
-        return 'bg-green-100 text-green-700';
-      case 'Good':
-        return 'bg-blue-100 text-blue-700';
-      case 'Medium':
-        return 'bg-yellow-100 text-yellow-700';
-      case 'Low':
-        return 'bg-red-100 text-red-700';
-      default:
-        return 'bg-gray-100 text-gray-700';
-    }
-  };
+  const [profile, setProfile]       = useState<any>(null);
+  const [departments, setDepartments] = useState<any[]>([]);
+  const [approvedActivities, setApprovedActivities] = useState<any[]>([]);
+  const [loading, setLoading]       = useState(true);
 
-  const getTypeColor = (type: string) => {
-    switch (type) {
-      case 'Knowledge':
-        return 'bg-purple-100 text-purple-700';
-      case 'Know-How':
-        return 'bg-blue-100 text-blue-700';
-      case 'Soft Skill':
-        return 'bg-pink-100 text-pink-700';
-      default:
-        return 'bg-gray-100 text-gray-700';
-    }
-  };
+  useEffect(() => {
+    const load = async () => {
+      setLoading(true);
+      try {
+        const meRes = await API.get('/users/me');
+        setProfile(meRes.data);
+
+        if (user.role === 'Manager') {
+          const deptRes = await API.get('/departments/my');
+          setDepartments(deptRes.data || []);
+        }
+
+        if (user.role === 'Employee') {
+          const approvedRes = await API.get(`/recommendations/employee/${meRes.data._id}/approved`);
+          setApprovedActivities(approvedRes.data || []);
+        }
+      } catch (err) {
+        console.error(err);
+      } finally {
+        setLoading(false);
+      }
+    };
+    load();
+  }, [user.role]);
+
+  if (loading) return <div className="p-6 text-center text-slate-500">Chargement du profil…</div>;
+  if (!profile) return <div className="p-6 text-center text-red-500">Impossible de charger le profil.</div>;
+
+  const skills: any[] = profile.skills || [];
+  const initials = profile.name?.substring(0, 2).toUpperCase() ?? '??';
 
   return (
-    <div className="p-6 space-y-6">
-      {/* Header */}
-      <div>
-        <h1 className="text-3xl mb-2 text-gray-900">My Profile</h1>
-        <p className="text-muted-foreground">View and manage your personal information</p>
-      </div>
+    <div className="p-6 space-y-6 max-w-4xl mx-auto">
 
-      {/* Profile Card */}
-      <div className="bg-white rounded-lg shadow-sm p-6 border border-border">
-        <div className="flex items-start justify-between mb-6">
-          <div className="flex items-start gap-6">
-            <div className="w-24 h-24 rounded-full bg-primary/10 flex items-center justify-center text-primary text-3xl font-semibold">
-              {user.name.substring(0, 2).toUpperCase()}
+      {/* ── Card Info ── */}
+      <div className="bg-white rounded-xl shadow-sm border border-border p-6">
+        <div className="flex items-start gap-6">
+          <div className="w-20 h-20 rounded-full bg-primary/10 flex items-center justify-center text-primary text-2xl font-bold flex-shrink-0">
+            {initials}
+          </div>
+          <div className="flex-1">
+            <h1 className="text-2xl font-bold text-gray-900 mb-1">{profile.name}</h1>
+            <div className="space-y-1 text-sm text-muted-foreground">
+              <div className="flex items-center gap-2"><Mail className="w-4 h-4" />{profile.email}</div>
+              <div className="flex items-center gap-2"><Briefcase className="w-4 h-4" />{profile.role}</div>
+              {profile.departmentId?.name && (
+                <div className="flex items-center gap-2"><Building2 className="w-4 h-4" />{profile.departmentId.name}</div>
+              )}
             </div>
-            <div>
-              <h2 className="text-2xl mb-2 text-gray-900">{user.name}</h2>
-              <div className="space-y-2 text-muted-foreground">
-                <div className="flex items-center gap-2">
-                  <Mail className="w-4 h-4" />
-                  <span>{user.email}</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <Briefcase className="w-4 h-4" />
-                  <span>{user.role}</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <Calendar className="w-4 h-4" />
-                  <span>Joined January 2022</span>
-                </div>
+          </div>
+          <div className="grid grid-cols-2 gap-4 text-center">
+            <div className="bg-slate-50 rounded-lg p-3">
+              <p className="text-2xl font-bold text-gray-900">{skills.length}</p>
+              <p className="text-xs text-muted-foreground">Skills</p>
+            </div>
+            {user.role === 'Employee' && (
+              <div className="bg-slate-50 rounded-lg p-3">
+                <p className="text-2xl font-bold text-gray-900">{approvedActivities.length}</p>
+                <p className="text-xs text-muted-foreground">Activités</p>
               </div>
-            </div>
-          </div>
-          <button className="flex items-center gap-2 bg-primary text-white px-4 py-2 rounded-lg hover:bg-primary/90 transition-colors">
-            <Edit className="w-4 h-4" />
-            Edit Profile
-          </button>
-        </div>
-
-        <div className="grid grid-cols-3 gap-4 pt-6 border-t border-border">
-          <div className="text-center">
-            <p className="text-2xl font-semibold text-gray-900">{mockSkills.length}</p>
-            <p className="text-sm text-muted-foreground">Skills</p>
-          </div>
-          <div className="text-center">
-            <p className="text-2xl font-semibold text-gray-900">{mockActivities.length}</p>
-            <p className="text-sm text-muted-foreground">Activities</p>
-          </div>
-          <div className="text-center">
-            <p className="text-2xl font-semibold text-gray-900">3.2</p>
-            <p className="text-sm text-muted-foreground">Avg Skill Level</p>
+            )}
+            {user.role === 'Manager' && (
+              <div className="bg-slate-50 rounded-lg p-3">
+                <p className="text-2xl font-bold text-gray-900">{departments.length}</p>
+                <p className="text-xs text-muted-foreground">Départements</p>
+              </div>
+            )}
           </div>
         </div>
       </div>
 
-      {/* My Skills */}
-      <div className="bg-white rounded-lg shadow-sm p-6 border border-border">
-        <div className="flex items-center justify-between mb-6">
-          <h2 className="text-2xl text-gray-900">My Skills</h2>
-          <button className="flex items-center gap-2 text-primary hover:underline">
-            <Plus className="w-4 h-4" />
-            Add Skill
-          </button>
-        </div>
-
-        <div className="space-y-4">
-          {mockSkills.map((skill, index) => (
-            <div key={index} className="border border-border rounded-lg p-4">
-              <div className="flex items-center justify-between mb-3">
-                <div className="flex items-center gap-3">
-                  <h3 className="font-medium text-gray-900">{skill.name}</h3>
-                  <span className={`text-xs px-2 py-1 rounded-full ${getTypeColor(skill.type)}`}>
-                    {skill.type}
-                  </span>
-                  <span className={`text-xs px-2 py-1 rounded-full ${getLevelColor(skill.level)}`}>
-                    {skill.level}
-                  </span>
-                </div>
-                <span className="text-sm text-muted-foreground">{skill.progress}%</span>
-              </div>
-              <div className="w-full bg-secondary rounded-full h-2">
-                <div
-                  className="bg-primary h-2 rounded-full transition-all"
-                  style={{ width: `${skill.progress}%` }}
-                />
-              </div>
-            </div>
-          ))}
-        </div>
-      </div>
-
-      {/* My Activities */}
-      <div className="bg-white rounded-lg shadow-sm p-6 border border-border">
-        <h2 className="text-2xl mb-6 text-gray-900">My Activities</h2>
-        <div className="space-y-4">
-          {mockActivities.map((activity) => (
-            <div
-              key={activity.id}
-              className="border border-border rounded-lg p-4 hover:bg-secondary/50 transition-colors"
-            >
-              <div className="flex items-center justify-between mb-3">
-                <div>
-                  <h3 className="font-medium text-gray-900 mb-1">{activity.title}</h3>
-                  <p className="text-sm text-muted-foreground">
-                    Started: {new Date(activity.startDate).toLocaleDateString()}
-                  </p>
-                </div>
-                <span
-                  className={`px-3 py-1 rounded-full text-sm ${
-                    activity.status === 'Completed'
-                      ? 'bg-green-100 text-green-700'
-                      : 'bg-blue-100 text-blue-700'
-                  }`}
-                >
-                  {activity.status}
+      {/* ── Card Skills (Employee + Manager) ── */}
+      {(user.role === 'Employee' || user.role === 'Manager') && (
+        <div className="bg-white rounded-xl shadow-sm border border-border p-6">
+          <div className="flex items-center gap-2 mb-4">
+            <Star className="w-5 h-5 text-primary" />
+            <h2 className="text-lg font-semibold text-gray-900">Mes Skills</h2>
+            <span className="ml-auto text-sm text-muted-foreground">{skills.length} skill{skills.length > 1 ? 's' : ''}</span>
+          </div>
+          {skills.length === 0 ? (
+            <p className="text-sm text-slate-400 italic">Aucun skill enregistré.</p>
+          ) : (
+            <div className="flex flex-wrap gap-2">
+              {skills.map((s: any, i: number) => (
+                <span key={i} className={`text-xs px-3 py-1 rounded-full font-medium ${LEVEL_COLORS[s.level?.toUpperCase?.()] ?? 'bg-gray-100 text-gray-700'}`}>
+                  {s.name ?? s}
                 </span>
-              </div>
-              <div className="flex items-center gap-3">
-                <div className="flex-1 bg-secondary rounded-full h-2">
-                  <div
-                    className={`h-2 rounded-full transition-all ${
-                      activity.status === 'Completed' ? 'bg-green-500' : 'bg-blue-500'
-                    }`}
-                    style={{ width: `${activity.progress}%` }}
-                  />
-                </div>
-                <span className="text-sm text-muted-foreground">{activity.progress}%</span>
-              </div>
+              ))}
             </div>
-          ))}
+          )}
         </div>
-      </div>
+      )}
+
+      {/* ── Card Activités approuvées (Employee uniquement) ── */}
+      {user.role === 'Employee' && (
+        <div className="bg-white rounded-xl shadow-sm border border-border p-6">
+          <div className="flex items-center gap-2 mb-4">
+            <CheckCircle className="w-5 h-5 text-green-500" />
+            <h2 className="text-lg font-semibold text-gray-900">Activités approuvées</h2>
+          </div>
+          {approvedActivities.length === 0 ? (
+            <p className="text-sm text-slate-400 italic">Aucune activité approuvée pour le moment.</p>
+          ) : (
+            <div className="space-y-3">
+              {approvedActivities.map((a: any) => (
+                <div key={a._id} className="border border-border rounded-lg p-4">
+                  <div className="flex items-start justify-between">
+                    <div>
+                      <h3 className="font-medium text-gray-900">{a.title}</h3>
+                      <p className="text-xs text-muted-foreground mt-1">
+                        {a.type && <span className="mr-2">{a.type}</span>}
+                        {a.context && <span className="mr-2">· {a.context}</span>}
+                        {a.decidedAt && <span>· Approuvé le {new Date(a.decidedAt).toLocaleDateString('fr-FR')}</span>}
+                      </p>
+                    </div>
+                    {a.aiScore != null && (
+                      <span className="text-sm font-semibold text-green-600 bg-green-50 px-2 py-1 rounded-lg">
+                        Score {a.aiScore}
+                      </span>
+                    )}
+                  </div>
+                  {a.requiredSkills?.length > 0 && (
+                    <div className="flex flex-wrap gap-1 mt-2">
+                      {a.requiredSkills.map((rs: any, i: number) => (
+                        <span key={i} className="text-xs px-2 py-0.5 bg-blue-50 text-blue-700 rounded-full">
+                          {typeof rs.skillId === 'object' ? rs.skillId.name : rs.skillId}
+                        </span>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* ── Card Départements (Manager uniquement) ── */}
+      {user.role === 'Manager' && (
+        <div className="bg-white rounded-xl shadow-sm border border-border p-6">
+          <div className="flex items-center gap-2 mb-4">
+            <Building2 className="w-5 h-5 text-blue-500" />
+            <h2 className="text-lg font-semibold text-gray-900">Mes Départements</h2>
+          </div>
+          {departments.length === 0 ? (
+            <p className="text-sm text-slate-400 italic">Aucun département assigné.</p>
+          ) : (
+            <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
+              {departments.map((d: any) => (
+                <div key={d._id} className="border border-border rounded-lg p-4 bg-slate-50">
+                  <div className="flex items-center gap-2">
+                    <div className="w-8 h-8 rounded-lg bg-blue-100 flex items-center justify-center">
+                      <Building2 className="w-4 h-4 text-blue-600" />
+                    </div>
+                    <div>
+                      <p className="font-medium text-gray-900">{d.name}</p>
+                      <p className="text-xs text-muted-foreground font-mono">{d._id}</p>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* ── Card Skills HR/SUPERADMIN ── */}
+      {(user.role === 'HR' || user.role === 'SUPERADMIN') && (
+        <div className="bg-white rounded-xl shadow-sm border border-border p-6">
+          <div className="flex items-center gap-2 mb-4">
+            <BookOpen className="w-5 h-5 text-primary" />
+            <h2 className="text-lg font-semibold text-gray-900">Informations du compte</h2>
+          </div>
+          <div className="space-y-2 text-sm text-slate-700">
+            <div className="flex justify-between py-2 border-b border-slate-100">
+              <span className="text-muted-foreground">Nom</span>
+              <span className="font-medium">{profile.name}</span>
+            </div>
+            <div className="flex justify-between py-2 border-b border-slate-100">
+              <span className="text-muted-foreground">Email</span>
+              <span className="font-medium">{profile.email}</span>
+            </div>
+            <div className="flex justify-between py-2">
+              <span className="text-muted-foreground">Rôle</span>
+              <span className="font-medium">{profile.role}</span>
+            </div>
+          </div>
+        </div>
+      )}
+
     </div>
   );
 }

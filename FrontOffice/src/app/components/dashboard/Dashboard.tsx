@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState, useCallback } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { Sidebar } from './Sidebar';
 import { Home } from '../views/Home';
@@ -11,8 +11,11 @@ import { Notifications } from '../views/Notifications';
 import { Profile } from '../views/Profile';
 import { Settings } from '../views/Settings';
 import { Departments } from '../views/Departments';
+import { VoiceAssistant } from '../voice/VoiceAssistant';
+import { VoiceCommandProvider } from '../voice/VoiceCommandContext';
+import { KeyboardShortcutsPanel } from '../ui/KeyboardShortcutsPanel';
 
-type UserRole = 'HR' | 'Manager' | 'Employee';
+type UserRole = 'HR' | 'Manager' | 'Employee' | 'SUPERADMIN';
 
 interface User {
   email: string;
@@ -41,18 +44,19 @@ export function Dashboard({ user, onLogout }: DashboardProps) {
   const navigate = useNavigate();
   const location = useLocation();
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
+  const [showShortcuts, setShowShortcuts] = useState(false);
 
   const viewRoles: Record<ViewType, UserRole[]> = {
-    home: ['HR', 'Manager', 'Employee'],
-    employees: ['HR', 'Manager'],
-    departments: ['HR'],
-    skills: ['HR', 'Manager', 'Employee'],
-    activities: ['HR', 'Manager', 'Employee'],
-    recommendations: ['HR', 'Manager'],
-    analytics: ['HR', 'Manager'],
-    notifications: ['HR', 'Manager', 'Employee'],
-    profile: ['HR', 'Manager', 'Employee'],
-    settings: ['HR', 'Manager', 'Employee'],
+    home: ['HR', 'Manager', 'Employee', 'SUPERADMIN'],
+    employees: ['HR', 'Manager', 'SUPERADMIN'],
+    departments: ['HR', 'SUPERADMIN'],
+    skills: ['HR', 'Manager', 'Employee', 'SUPERADMIN'],
+    activities: ['HR', 'Manager', 'Employee', 'SUPERADMIN'],
+    recommendations: ['HR', 'Manager', 'SUPERADMIN'],
+    analytics: ['HR', 'Manager', 'SUPERADMIN'],
+    notifications: ['HR', 'Manager', 'Employee', 'SUPERADMIN'],
+    profile: ['HR', 'Manager', 'Employee', 'SUPERADMIN'],
+    settings: ['HR', 'Manager', 'Employee', 'SUPERADMIN'],
   };
 
   const currentView = useMemo<ViewType>(() => {
@@ -73,6 +77,84 @@ export function Dashboard({ user, onLogout }: DashboardProps) {
       navigate('/dashboard/home', { replace: true });
     }
   }, [currentView, location.pathname, navigate, user.role]);
+
+  // ── Raccourcis clavier globaux ─────────────────────────────────────────────
+  const handleKeyShortcuts = useCallback((e: KeyboardEvent) => {
+    // Ignorer si l'utilisateur tape dans un champ texte
+    const tag = (e.target as HTMLElement).tagName;
+    const isTyping = tag === 'INPUT' || tag === 'TEXTAREA' || (e.target as HTMLElement).isContentEditable;
+    if (isTyping) return;
+
+    // Alt+E → Employés  (e.code = touche physique, fonctionne sur macOS & Windows)
+    if (e.altKey && e.code === 'KeyE') {
+      e.preventDefault();
+      navigate('/dashboard/employees');
+      return;
+    }
+    // Alt+S → Skills
+    if (e.altKey && e.code === 'KeyS') {
+      e.preventDefault();
+      navigate('/dashboard/skills');
+      return;
+    }
+    // Alt+D → Départements
+    if (e.altKey && e.code === 'KeyD') {
+      e.preventDefault();
+      navigate('/dashboard/departments');
+      return;
+    }
+    // Alt+T → Activités  (Alt+A est réservé par Chrome sur macOS)
+    if (e.altKey && e.code === 'KeyT') {
+      e.preventDefault();
+      navigate('/dashboard/activities');
+      return;
+    }
+    // Alt+R → Recommandations
+    if (e.altKey && e.code === 'KeyR') {
+      e.preventDefault();
+      navigate('/dashboard/recommendations');
+      return;
+    }
+    // Alt+L → Analytics
+    if (e.altKey && e.code === 'KeyL') {
+      e.preventDefault();
+      navigate('/dashboard/analytics');
+      return;
+    }
+    // Alt+N → Notifications
+    if (e.altKey && e.code === 'KeyN') {
+      e.preventDefault();
+      navigate('/dashboard/notifications');
+      return;
+    }
+    // Alt+P → Profil
+    if (e.altKey && e.code === 'KeyP') {
+      e.preventDefault();
+      navigate('/dashboard/profile');
+      return;
+    }
+    // Alt+H → Accueil
+    if (e.altKey && e.code === 'KeyH') {
+      e.preventDefault();
+      navigate('/dashboard/home');
+      return;
+    }
+    // ? → Aide raccourcis
+    if (e.key === '?') {
+      e.preventDefault();
+      setShowShortcuts(s => !s);
+      return;
+    }
+    // Échap → Fermer panneau
+    if (e.key === 'Escape') {
+      setShowShortcuts(false);
+    }
+  }, [navigate]);
+
+  useEffect(() => {
+    window.addEventListener('keydown', handleKeyShortcuts, { capture: true });
+    return () => window.removeEventListener('keydown', handleKeyShortcuts, { capture: true });
+  }, [handleKeyShortcuts]);
 
   const renderView = () => {
     switch (currentView) {
@@ -102,18 +184,26 @@ export function Dashboard({ user, onLogout }: DashboardProps) {
   };
 
   return (
-    <div className="flex h-screen bg-secondary overflow-hidden">
-      <Sidebar
-        currentView={currentView}
-        onViewChange={(view) => navigate(`/dashboard/${view}`)}
-        userRole={user.role}
-        userName={user.name}
-        isCollapsed={isSidebarCollapsed}
-        onToggleCollapse={() => setIsSidebarCollapsed(!isSidebarCollapsed)}
-      />
-      <main className={`flex-1 overflow-auto transition-all duration-300 ${isSidebarCollapsed ? 'ml-16' : 'ml-64'}`}>
-        {renderView()}
-      </main>
-    </div>
+    <VoiceCommandProvider>
+      <div className="flex h-screen bg-secondary overflow-hidden">
+        <Sidebar
+          currentView={currentView}
+          onViewChange={(view) => navigate(`/dashboard/${view}`)}
+          userRole={user.role}
+          userName={user.name}
+          isCollapsed={isSidebarCollapsed}
+          onToggleCollapse={() => setIsSidebarCollapsed(!isSidebarCollapsed)}
+        />
+        <main className={`flex-1 overflow-auto transition-all duration-300 ${isSidebarCollapsed ? 'ml-16' : 'ml-64'}`}>
+          {renderView()}
+        </main>
+        <VoiceAssistant />
+      </div>
+
+      {/* Panneau raccourcis clavier (touche ?) */}
+      {showShortcuts && (
+        <KeyboardShortcutsPanel onClose={() => setShowShortcuts(false)} />
+      )}
+    </VoiceCommandProvider>
   );
 }

@@ -8,23 +8,19 @@ import { JwtStrategy } from './jwt.strategy';
 import { GoogleStrategy } from './google.strategy';
 import { User, UserSchema } from '../users/shemas/user.shema';
 
-const googleOAuthConfigured =
-  Boolean(process.env.GOOGLE_CLIENT_ID?.trim()) &&
-  Boolean(process.env.GOOGLE_CLIENT_SECRET?.trim());
-
 @Module({
   imports: [
     PassportModule,
     JwtModule.register({
       secret: 'hrbrain_secret_key',
-      signOptions: { expiresIn: '8h' },
+      signOptions: { expiresIn: '24h' },
     }),
     MongooseModule.forFeature([{ name: User.name, schema: UserSchema }]),
   ],
   providers: [
     AuthService,
     JwtStrategy,
-    ...(googleOAuthConfigured ? [GoogleStrategy] : []),
+    GoogleStrategy,
   ],
   controllers: [AuthController],
 })

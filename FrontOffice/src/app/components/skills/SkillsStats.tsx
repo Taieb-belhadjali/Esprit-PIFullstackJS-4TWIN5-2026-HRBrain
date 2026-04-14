@@ -1,30 +1,56 @@
+// Cartes de statistiques : total skills et skills avec description
 import React from 'react';
+import { Layers, FileText } from 'lucide-react';
 
 interface SkillsStatsProps {
-  totalSkills: number;
-  totalWithDescription: number;
-  totalShown: number;
+  totalSkills: number;          // total chargé (filtré par département si sélectionné)
+  totalWithDescription: number; // parmi totalSkills, ceux avec description non vide
 }
+
+// Configuration des 2 cartes
+const stats = (totalSkills: number, totalWithDescription: number) => [
+  {
+    label: 'Total skills',
+    value: totalSkills,
+    icon: Layers,
+    iconClass: 'text-blue-600',
+    bgClass: 'bg-blue-50',
+    borderClass: 'border-slate-200',
+    valueClass: 'text-slate-900',
+  },
+  {
+    label: 'Avec description',
+    value: totalWithDescription,
+    icon: FileText,
+    iconClass: 'text-blue-600',
+    bgClass: 'bg-blue-50',
+    borderClass: 'border-slate-200',
+    valueClass: 'text-slate-900',
+  },
+];
 
 export const SkillsStats: React.FC<SkillsStatsProps> = ({
   totalSkills,
   totalWithDescription,
-  totalShown,
 }) => {
   return (
-    <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
-      <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
-        <p className="text-xs font-medium uppercase tracking-wide text-slate-500">Total skills</p>
-        <p className="mt-1 text-2xl font-bold text-slate-900">{totalSkills}</p>
-      </div>
-      <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
-        <p className="text-xs font-medium uppercase tracking-wide text-slate-500">Avec description</p>
-        <p className="mt-1 text-2xl font-bold text-slate-900">{totalWithDescription}</p>
-      </div>
-      <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
-        <p className="text-xs font-medium uppercase tracking-wide text-slate-500">Résultats affichés</p>
-        <p className="mt-1 text-2xl font-bold text-slate-900">{totalShown}</p>
-      </div>
+    <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+      {stats(totalSkills, totalWithDescription).map(
+        ({ label, value, icon: Icon, iconClass, bgClass, borderClass, valueClass }) => (
+          <div
+            key={label}
+            className={`flex items-center gap-4 rounded-xl border ${borderClass} bg-white p-4 shadow-sm transition hover:shadow-md`}
+          >
+            <div className={`flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-xl ${bgClass}`}>
+              <Icon size={20} className={iconClass} />
+            </div>
+            <div>
+              <p className="text-xs font-medium text-muted-foreground">{label}</p>
+              <p className={`text-2xl font-bold ${valueClass}`}>{value}</p>
+            </div>
+          </div>
+        ),
+      )}
     </div>
   );
 };

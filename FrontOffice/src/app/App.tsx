@@ -20,25 +20,49 @@ interface AuthState {
   mustChangePassword: boolean;
 }
 
-export default function App() {
-  const [auth, setAuth] = useState<AuthState | null>(null);
+const AUTH_KEY = 'hrbrain_auth';
 
-    const handleLogin = (result: { token: string; mustChangePassword: boolean; user: User }) => {
-        setAuth(result);
-    };
+function loadAuth(): AuthState | null {
+  try {
+    const raw = localStorage.getItem(AUTH_KEY);
+    return raw ? (JSON.parse(raw) as AuthState) : null;
+  } catch {
+    return null;
+  }
+}
+
+function saveAuth(auth: AuthState) {
+  localStorage.setItem(AUTH_KEY, JSON.stringify(auth));
+}
+
+function clearAuth() {
+  localStorage.removeItem(AUTH_KEY);
+}
+
+export default function App() {
+  const [auth, setAuth] = useState<AuthState | null>(loadAuth);
+
+  const handleLogin = (result: { token: string; mustChangePassword: boolean; user: User }) => {
+    saveAuth(result);
+    setAuth(result);
+  };
 
   const handlePasswordChanged = () => {
     if (auth) {
-      setAuth({ ...auth, mustChangePassword: false });
+      const updated = { ...auth, mustChangePassword: false };
+      saveAuth(updated);
+      setAuth(updated);
     }
   };
 
   const handleLogout = () => {
+    clearAuth();
     setAuth(null);
   };
 
   // Map backend roles to frontend roles
-  const mapRole = (role: string): 'HR' | 'Manager' | 'Employee' => {
+  const mapRole = (role: string): 'HR' | 'Manager' | 'Employee' | 'SUPERADMIN' => {
+    if (role === 'SUPERADMIN') return 'SUPERADMIN';
     if (role === 'HR') return 'HR';
     if (role === 'MANAGER') return 'Manager';
     return 'Employee';
