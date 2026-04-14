@@ -14,10 +14,13 @@ import {
   Cell,
   Legend
 } from 'recharts';
-type UserRole = 'HR' | 'Manager' | 'Employee' | 'SUPERADMIN';
+import { useTranslation } from '../../../api/translations';
+
+type UserRole = 'HR' | 'Manager' | 'Employee';
 
 interface HomeProps {
   userRole: UserRole;
+  language?: string;
 }
 
 const skillsDistributionData = [
@@ -35,31 +38,33 @@ const skillGapsData = [
   { name: 'Low', value: 67, color: '#10B981' },
 ];
 
-export function Home({ userRole }: HomeProps) {
+export function Home({ userRole, language = 'en' }: HomeProps) {
+  const t = useTranslation(language);
+  
   const metrics = [
     {
-      title: 'Total Employees',
+      titleKey: 'totalEmployees',
       value: '1,234',
       change: '+12%',
       icon: <Users className="w-6 h-6" />,
       color: 'bg-blue-500',
     },
     {
-      title: 'Skills Coverage',
+      titleKey: 'skillsCoverage',
       value: '87%',
       change: '+5%',
       icon: <Brain className="w-6 h-6" />,
       color: 'bg-purple-500',
     },
     {
-      title: 'Ongoing Activities',
+      titleKey: 'ongoingActivities',
       value: '42',
       change: '+8',
       icon: <Activity className="w-6 h-6" />,
       color: 'bg-green-500',
     },
     {
-      title: 'Pending Recommendations',
+      titleKey: 'pendingRecommendations',
       value: '18',
       change: '-3',
       icon: <Target className="w-6 h-6" />,
@@ -70,21 +75,21 @@ export function Home({ userRole }: HomeProps) {
   const alerts = [
     {
       type: 'critical',
-      title: 'Critical Skill Gap in Engineering',
-      description: 'React Expert level - 3 positions unfilled',
-      time: '2 hours ago',
+      titleKey: 'criticalSkillGap',
+      descriptionKey: 'criticalSkillGapDesc',
+      timeKey: 'hoursAgo2',
     },
     {
       type: 'warning',
-      title: 'Activity Deadline Approaching',
-      description: 'Cloud Migration Training ends in 3 days',
-      time: '5 hours ago',
+      titleKey: 'activityDeadline',
+      descriptionKey: 'activityDeadlineDesc',
+      timeKey: 'hoursAgo5',
     },
     {
       type: 'info',
-      title: 'New Recommendation Available',
-      description: '5 employees match the Data Science activity',
-      time: '1 day ago',
+      titleKey: 'newRecommendation',
+      descriptionKey: 'newRecommendationDesc',
+      timeKey: 'dayAgo1',
     },
   ];
 
@@ -92,9 +97,9 @@ export function Home({ userRole }: HomeProps) {
     <div className="p-6 space-y-6">
       {/* Header */}
       <div>
-        <h1 className="text-3xl mb-2 text-foreground">Dashboard</h1>
+        <h1 className="text-3xl mb-2 text-foreground">{t('dashboard')}</h1>
         <p className="text-muted-foreground">
-          Welcome back! Here's an overview of your organization's skills and activities.
+          {t('dashboardWelcome')}
         </p>
       </div>
 
@@ -115,7 +120,7 @@ export function Home({ userRole }: HomeProps) {
               </div>
             </div>
             <h3 className="text-2xl font-semibold mb-1 text-foreground">{metric.value}</h3>
-            <p className="text-sm text-muted-foreground">{metric.title}</p>
+            <p className="text-sm text-muted-foreground">{t(metric.titleKey as any)}</p>
           </div>
         ))}
       </div>
@@ -124,7 +129,7 @@ export function Home({ userRole }: HomeProps) {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Skills Distribution */}
         <div className="bg-card rounded-lg shadow-sm p-6 border border-border">
-          <h2 className="text-xl mb-4 text-foreground">Skills Distribution by Department</h2>
+          <h2 className="text-xl mb-4 text-foreground">{t('skillsDistribution')}</h2>
           <ResponsiveContainer width="100%" height={300}>
             <BarChart data={skillsDistributionData}>
               <CartesianGrid strokeDasharray="3 3" stroke="#E5E7EB" />
@@ -144,7 +149,7 @@ export function Home({ userRole }: HomeProps) {
 
         {/* Skill Gaps */}
         <div className="bg-card rounded-lg shadow-sm p-6 border border-border">
-          <h2 className="text-xl mb-4 text-foreground">Skill Gaps Overview</h2>
+          <h2 className="text-xl mb-4 text-foreground">{t('skillGaps')}</h2>
           <ResponsiveContainer width="100%" height={300}>
             <PieChart>
               <Pie
@@ -171,8 +176,8 @@ export function Home({ userRole }: HomeProps) {
       {/* Alerts and Notifications */}
       <div className="bg-card rounded-lg shadow-sm p-6 border border-border">
         <div className="flex items-center justify-between mb-4">
-          <h2 className="text-xl text-foreground">Recent Alerts & Notifications</h2>
-          <button className="text-primary hover:underline text-sm">View All</button>
+          <h2 className="text-xl text-foreground">{t('recentAlerts')}</h2>
+          <button className="text-primary hover:underline text-sm">{t('viewAll')}</button>
         </div>
         <div className="space-y-4">
           {alerts.map((alert, index) => (
@@ -200,9 +205,9 @@ export function Home({ userRole }: HomeProps) {
                 />
               </div>
               <div className="flex-1">
-                <h3 className="font-medium text-foreground mb-1">{alert.title}</h3>
-                <p className="text-sm text-muted-foreground mb-2">{alert.description}</p>
-                <p className="text-xs text-muted-foreground">{alert.time}</p>
+                <h3 className="font-medium text-foreground mb-1">{t(alert.titleKey as any)}</h3>
+                <p className="text-sm text-muted-foreground mb-2">{t(alert.descriptionKey as any)}</p>
+                <p className="text-xs text-muted-foreground">{t(alert.timeKey as any)}</p>
               </div>
             </div>
           ))}

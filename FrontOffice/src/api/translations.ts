@@ -40,6 +40,124 @@ export const translations = {
     recommendations: 'Recommendations',
     analytics: 'Analytics',
     profile: 'Profile',
+    
+    // Home
+    dashboard: 'Dashboard',
+    dashboardWelcome: "Welcome back! Here's an overview of your organization's skills and activities.",
+    totalEmployees: 'Total Employees',
+    skillsCoverage: 'Skills Coverage',
+    ongoingActivities: 'Ongoing Activities',
+    pendingRecommendations: 'Pending Recommendations',
+    skillsDistribution: 'Skills Distribution by Department',
+    skillGaps: 'Skill Gaps Overview',
+    recentAlerts: 'Recent Alerts & Notifications',
+    viewAll: 'View All',
+    criticalSkillGap: 'Critical Skill Gap in Engineering',
+    criticalSkillGapDesc: 'React Expert level - 3 positions unfilled',
+    activityDeadline: 'Activity Deadline Approaching',
+    activityDeadlineDesc: 'Cloud Migration Training ends in 3 days',
+    newRecommendation: 'New Recommendation Available',
+    newRecommendationDesc: '5 employees match the Data Science activity',
+    hoursAgo2: '2 hours ago',
+    hoursAgo5: '5 hours ago',
+    dayAgo1: '1 day ago',
+    
+    // Employees
+    searchEmployees: 'Search employees...',
+    employeesDesc: 'Manage employee profiles, skills, and activities',
+    showingEmployees: 'Showing {filteredEmployees.length} of {employees.length} employees',
+    addEmployee: 'Add Employee',
+    editEmployee: 'Edit Employee',
+    deleteEmployee: 'Delete Employee',
+    employeeName: 'Name',
+    employeeEmail: 'Email',
+    employeeRole: 'Role',
+    employeeSkills: 'Skills',
+    actions: 'Actions',
+    employeeDepartment: 'Department',
+    noEmployees: 'No employees found',
+    confirmDelete: 'Are you sure you want to delete this employee?',
+    viewEmployee: 'View Employee',
+    
+    // Departments
+    searchDepartments: 'Search departments...',
+    departmentsDesc: 'Manage departments and team structures',
+    addDepartment: 'Add Department',
+    editDepartment: 'Edit Department',
+    departmentName: 'Department Name',
+    manager: 'Manager',
+    noDepartments: 'No departments found',
+    
+    // Skills
+    searchSkills: 'Search skills...',
+    addSkill: 'Add Skill',
+    editSkill: 'Edit Skill',
+    skillName: 'Skill Name',
+    skillCategory: 'Category',
+    skillDepartment: 'Department',
+    noSkills: 'No skills found',
+    skills_title: 'Skills',
+    skills_competency_repository: 'Competency Repository',
+    skills_manage_by_department: 'Manage organization competencies by department',
+    skills_export_csv: 'Export CSV',
+    skills_add_skill: 'Add Skill',
+    skills_all_departments: 'All departments',
+    skills_search_placeholder: 'Search by name or description...',
+    skills_sort_name_asc: 'Name (A → Z)',
+    skills_sort_name_desc: 'Name (Z → A)',
+    skills_sort_desc_first: 'Descriptions first',
+    skills_reset: 'Reset',
+    skills_no_skills_yet: 'No skills yet',
+    skills_no_results: 'No results found',
+    skills_start_adding: 'Start by adding your first skill.',
+    skills_try_different_search: 'Try a different search or modify filters.',
+    
+    // Activities
+    searchActivities: 'Search activities...',
+    addActivity: 'Add Activity',
+    editActivity: 'Edit Activity',
+    activityTitle: 'Title',
+    activityDescription: 'Description',
+    activityType: 'Type',
+    activityStatus: 'Status',
+    startDate: 'Start Date',
+    endDate: 'End Date',
+    noActivities: 'No activities found',
+    activitiesDesc: 'Manage training programs and development activities',
+    showingActivities: 'Showing {count} of {total} activities',
+    noActivitiesYet: 'No activities yet',
+    noActivitiesFound: 'No results found',
+    startAddingActivity: 'Start by creating your first activity.',
+    tryDifferentSearch: 'Try a different search.',
+    
+    // Recommendations
+    searchRecommendations: 'Search recommendations...',
+    selectActivity: 'Select an activity to view recommendations',
+    noRecommendations: 'No recommendations found',
+    runAll: 'Run All',
+    
+    // Analytics
+    analyticsTitle: 'Analytics',
+    timeRange: 'Time Range',
+    last6Months: 'Last 6 months',
+    last12Months: 'Last 12 months',
+    lastYear: 'Last year',
+    
+    // Notifications
+    notificationsTitle: 'Notifications',
+    markAllRead: 'Mark all as read',
+    noNotifications: 'No notifications',
+    all: 'All',
+    unread: 'Unread',
+    
+    // Profile
+    profileTitle: 'Profile',
+    personalInfo: 'Personal Information',
+    mySkills: 'My Skills',
+    myActivities: 'My Activities',
+    editProfile: 'Edit Profile',
+    position: 'Position',
+    joinedDate: 'Joined Date',
   },
   fr: {
     settings: 'Paramètres',
@@ -82,6 +200,124 @@ export const translations = {
     recommendations: 'Recommandations',
     analytics: 'Analytique',
     profile: 'Profil',
+    
+    // Home
+    dashboard: 'Tableau de bord',
+    dashboardWelcome: 'Bienvenue ! Voici un aperçu des compétences et activités de votre organisation.',
+    totalEmployees: 'Total Employés',
+    skillsCoverage: 'Couverture des compétences',
+    ongoingActivities: 'Activités en cours',
+    pendingRecommendations: 'Recommandations en attente',
+    skillsDistribution: 'Répartition des compétences par département',
+    skillGaps: 'Aperçu des lacunes de compétences',
+    recentAlerts: 'Alertes et notifications récentes',
+    viewAll: 'Voir tout',
+    criticalSkillGap: 'Lacune critique en compétences - Ingénierie',
+    criticalSkillGapDesc: 'Niveau Expert React - 3 postes non pourvus',
+    activityDeadline: 'Échéance de l\'activité proche',
+    activityDeadlineDesc: 'La formation Cloud Migration se termine dans 3 jours',
+    newRecommendation: 'Nouvelle recommandation disponible',
+    newRecommendationDesc: '5 employés correspondent à l\'activité Data Science',
+    hoursAgo2: 'Il y a 2 heures',
+    hoursAgo5: 'Il y a 5 heures',
+    dayAgo1: 'Il y a 1 jour',
+    
+    // Employees
+    searchEmployees: 'Rechercher des employés...',
+    employeesDesc: 'Gérer les profils, compétences et activités des employés',
+    showingEmployees: 'Affichage de {filteredEmployees.length} sur {employees.length} employés',
+    addEmployee: 'Ajouter un employé',
+    editEmployee: 'Modifier l\'employé',
+    deleteEmployee: 'Supprimer l\'employé',
+    employeeName: 'Nom',
+    employeeEmail: 'Email',
+    employeeRole: 'Rôle',
+    employeeSkills: 'Compétences',
+    actions: 'Actions',
+    employeeDepartment: 'Département',
+    noEmployees: 'Aucun employé trouvé',
+    confirmDelete: 'Êtes-vous sûr de vouloir supprimer cet employé ?',
+    viewEmployee: 'Voir l\'employé',
+    
+// Departments
+    searchDepartments: 'Rechercher des départements...',
+    departmentsDesc: 'Gérer les départements et les structures d\'équipe',
+    addDepartment: 'Ajouter un département',
+    editDepartment: 'Modifier le département',
+    departmentName: 'Nom du département',
+    manager: 'Responsable',
+    noDepartments: 'Aucun département trouvé',
+    
+    // Skills
+    searchSkills: 'Rechercher des compétences...',
+    addSkill: 'Ajouter une compétence',
+    editSkill: 'Modifier la compétence',
+    skillName: 'Nom de la compétence',
+    skillCategory: 'Catégorie',
+    skillDepartment: 'Département',
+    noSkills: 'Aucune compétence trouvée',
+    skills_title: 'Compétences',
+    skills_competency_repository: 'Référentiel des compétences',
+    skills_manage_by_department: 'Gérez les compétences de l\'organisation par département',
+    skills_export_csv: 'Export CSV',
+    skills_add_skill: 'Ajouter une compétence',
+    skills_all_departments: 'Tous les départements',
+    skills_search_placeholder: 'Rechercher par nom ou description...',
+    skills_sort_name_asc: 'Nom (A → Z)',
+    skills_sort_name_desc: 'Nom (Z → A)',
+    skills_sort_desc_first: 'Descriptions en premier',
+    skills_reset: 'Réinitialiser',
+    skills_no_skills_yet: 'Aucun skill pour le moment',
+    skills_no_results: 'Aucun résultat trouvé',
+    skills_start_adding: 'Commence par ajouter ton premier skill.',
+    skills_try_different_search: 'Essaie une autre recherche ou modifie les filtres.',
+    
+    // Activities
+    searchActivities: 'Rechercher des activités...',
+    addActivity: 'Ajouter une activité',
+    editActivity: 'Modifier l\'activité',
+    activityTitle: 'Titre',
+    activityDescription: 'Description',
+    activityType: 'Type',
+    activityStatus: 'Statut',
+    startDate: 'Date de début',
+    endDate: 'Date de fin',
+    noActivities: 'Aucune activité trouvée',
+    activitiesDesc: 'Gérer les programmes de formation et les activités de développement',
+    showingActivities: 'Affichage de {count} sur {total} activités',
+    noActivitiesYet: 'Aucune activité pour le moment',
+    noActivitiesFound: 'Aucun résultat trouvé',
+    startAddingActivity: 'Commencez par créer votre première activité.',
+    tryDifferentSearch: 'Essayez une autre recherche.',
+    
+    // Recommendations
+    searchRecommendations: 'Rechercher des recommandations...',
+    selectActivity: 'Sélectionnez une activité pour voir les recommandations',
+    noRecommendations: 'Aucune recommandation trouvée',
+    runAll: 'Exécuter tout',
+    
+    // Analytics
+    analyticsTitle: 'Analytique',
+    timeRange: 'Période',
+    last6Months: '6 derniers mois',
+    last12Months: '12 derniers mois',
+    lastYear: 'Année dernière',
+    
+    // Notifications
+    notificationsTitle: 'Notifications',
+    markAllRead: 'Tout marquer comme lu',
+    noNotifications: 'Aucune notification',
+    all: 'Tous',
+    unread: 'Non lus',
+    
+    // Profile
+    profileTitle: 'Profil',
+    personalInfo: 'Informations personnelles',
+    mySkills: 'Mes compétences',
+    myActivities: 'Mes activités',
+    editProfile: 'Modifier le profil',
+    position: 'Poste',
+    joinedDate: 'Date d\'adhésion',
   },
   es: {
     settings: 'Configuración',
@@ -124,6 +360,27 @@ export const translations = {
     recommendations: 'Recomendaciones',
     analytics: 'Analítica',
     profile: 'Perfil',
+    
+    // Home
+    dashboard: 'Panel',
+    dashboardWelcome: '¡Bienvenido! Aquí tienes una visión general de las habilidades y actividades de tu organización.',
+    totalEmployees: 'Total de empleados',
+    skillsCoverage: 'Cobertura de habilidades',
+    ongoingActivities: 'Actividades en curso',
+    pendingRecommendations: 'Recomendaciones pendientes',
+    skillsDistribution: 'Distribución de habilidades por departamento',
+    skillGaps: 'Resumen de brechas de habilidades',
+    recentAlerts: 'Alertas y notificaciones recientes',
+    viewAll: 'Ver todo',
+    criticalSkillGap: 'Brecha crítica de habilidades en Ingeniería',
+    criticalSkillGapDesc: 'Nivel Experto React - 3 posiciones vacantes',
+    activityDeadline: 'Fecha límite de actividad próxima',
+    activityDeadlineDesc: 'La formación Cloud Migration termina en 3 días',
+    newRecommendation: 'Nueva recomendación disponible',
+    newRecommendationDesc: '5 empleados coinciden con la actividad Data Science',
+    hoursAgo2: 'Hace 2 horas',
+    hoursAgo5: 'Hace 5 horas',
+    dayAgo1: 'Hace 1 día',
   },
   de: {
     settings: 'Einstellungen',
@@ -166,6 +423,27 @@ export const translations = {
     recommendations: 'Empfehlungen',
     analytics: 'Analytik',
     profile: 'Profil',
+    
+    // Home
+    dashboard: 'Dashboard',
+    dashboardWelcome: 'Willkommen zurück! Hier ist ein Überblick über die Fähigkeiten und Aktivitäten Ihrer Organisation.',
+    totalEmployees: 'Mitarbeiter gesamt',
+    skillsCoverage: 'Fähigkeitsabdeckung',
+    ongoingActivities: 'Laufende Aktivitäten',
+    pendingRecommendations: 'Ausstehende Empfehlungen',
+    skillsDistribution: 'Fähigkeitsverteilung nach Abteilung',
+    skillGaps: 'Fähigkeitslücken-Übersicht',
+    recentAlerts: 'Aktuelle Warnungen & Benachrichtigungen',
+    viewAll: 'Alle anzeigen',
+    criticalSkillGap: 'Kritische Fähigkeitslücke in Ingenieurwesen',
+    criticalSkillGapDesc: 'React Experte - 3 Stellen unbesetzt',
+    activityDeadline: 'Aktivitätsfrist nähert sich',
+    activityDeadlineDesc: 'Cloud Migration Training endet in 3 Tagen',
+    newRecommendation: 'Neue Empfehlung verfügbar',
+    newRecommendationDesc: '5 Mitarbeiter entsprechen der Data Science Aktivität',
+    hoursAgo2: 'Vor 2 Stunden',
+    hoursAgo5: 'Vor 5 Stunden',
+    dayAgo1: 'Vor 1 Tag',
   },
   it: {
     settings: 'Impostazioni',
@@ -507,14 +785,24 @@ export const translations = {
 
 export type TranslationKey = keyof typeof translations.en;
 
-export function t(key: TranslationKey, language: string = 'en'): string {
+export function t(key: TranslationKey, language: string = 'en', params?: Record<string, string | number>): string {
   const lang = translations[language as keyof typeof translations];
+  let text = '';
   if (lang && lang[key]) {
-    return lang[key];
+    text = lang[key];
+  } else if (translations.en[key]) {
+    text = translations.en[key];
+  } else {
+    return key;
   }
-  return translations.en[key] || key;
+  if (params) {
+    Object.entries(params).forEach(([k, v]) => {
+      text = text.replace(new RegExp(`\\{${k}\\}`, 'g'), String(v));
+    });
+  }
+  return text;
 }
 
 export function useTranslation(language: string) {
-  return (key: TranslationKey) => t(key, language);
+  return (key: TranslationKey, params?: Record<string, string | number>) => t(key, language, params);
 }

@@ -47,11 +47,20 @@ function saveTheme(theme: 'light' | 'dark') {
 }
 
 function loadLanguage(): string {
+  const auth = loadAuth();
+  if (auth?.user?.language) {
+    return auth.user.language;
+  }
   return localStorage.getItem(LANGUAGE_KEY) || 'en';
 }
 
 function saveLanguage(language: string) {
   localStorage.setItem(LANGUAGE_KEY, language);
+  const auth = loadAuth();
+  if (auth) {
+    auth.user.language = language;
+    localStorage.setItem(AUTH_KEY, JSON.stringify(auth));
+  }
 }
 
 interface AppProps {
@@ -94,6 +103,17 @@ export default function App({ initialTheme = 'light' }: AppProps) {
   const handleLanguageChange = (lang: string) => {
     setLanguage(lang);
     saveLanguage(lang);
+    if (auth) {
+      const updatedAuth = {
+        ...auth,
+        user: {
+          ...auth.user,
+          language: lang
+        }
+      };
+      saveAuth(updatedAuth);
+      setAuth(updatedAuth);
+    }
   };
 
   // Map backend roles to frontend roles

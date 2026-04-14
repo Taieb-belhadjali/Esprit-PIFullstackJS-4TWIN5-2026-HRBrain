@@ -8,11 +8,13 @@ import { ActivityRecommendations } from '../activities/ActivityRecommendations';
 import { ActivityRecommendationHistory } from '../activities/ActivityRecommendationHistory';
 import { useVoiceCommand } from '../voice/VoiceCommandContext';
 import Pagination from '../ui/Pagination';
+import { useTranslation } from '../../../api/translations';
 
 type UserRole = 'HR' | 'Manager' | 'Employee' | 'SUPERADMIN';
 
 interface ActivitiesProps {
   userRole: UserRole;
+  language?: string;
 }
 
 interface SkillEntry { skillId: string; level: string; contributionToScore: number; }
@@ -31,7 +33,8 @@ const EMPTY_FORM = {
 
 const LEVELS = ['Low', 'Medium', 'High', 'Expert'];
 
-export function Activities({ userRole }: ActivitiesProps) {
+export function Activities({ userRole, language = 'en' }: ActivitiesProps) {
+  const t = useTranslation(language);
   const [activities, setActivities] = useState<Activity[]>([]);
   const [departments, setDepartments] = useState<any[]>([]);
   const [skills, setSkills] = useState<any[]>([]);
@@ -234,12 +237,12 @@ export function Activities({ userRole }: ActivitiesProps) {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl mb-1 text-foreground">Activities</h1>
-          <p className="text-muted-foreground">Manage training programs and development activities</p>
+          <h1 className="text-3xl mb-1 text-foreground">{t('activities')}</h1>
+          <p className="text-muted-foreground">{t('activitiesDesc')}</p>
         </div>
         {canManage && (
           <button onClick={openCreate} className="flex items-center gap-2 bg-primary text-white px-4 py-2 rounded-lg hover:bg-primary/90 transition-colors">
-            <Plus className="w-5 h-5" /> Create Activity
+            <Plus className="w-5 h-5" /> {t('addActivity')}
           </button>
         )}
       </div>
@@ -250,12 +253,13 @@ export function Activities({ userRole }: ActivitiesProps) {
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
           <input
             type="text"
-            placeholder="Search activities..."              aria-label="Rechercher une activité"            value={searchTerm}
+            placeholder={t('searchActivities')}
+              aria-label={t('searchActivities')}            value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             className="w-full pl-10 pr-4 py-2 border border-input rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
           />
         </div>
-        <p className="mt-2 text-sm text-muted-foreground">Showing {filtered.length} of {activities.length} activities</p>
+        <p className="mt-2 text-sm text-muted-foreground">{t('showingActivities', { count: filtered.length, total: activities.length })}</p>
       </div>
 
       {/* Cards */}
@@ -268,10 +272,10 @@ export function Activities({ userRole }: ActivitiesProps) {
       ) : filtered.length === 0 ? (
         <div className="rounded-xl border border-dashed border-slate-200 bg-slate-50 p-10 text-center">
           <p className="text-lg font-semibold text-foreground">
-            {activities.length === 0 ? 'Aucune activité pour le moment' : 'Aucun résultat trouvé'}
+            {activities.length === 0 ? t('noActivitiesYet') : t('noActivitiesFound')}
           </p>
           <p className="mt-2 text-sm text-muted-foreground">
-            {activities.length === 0 ? 'Commence par créer ta première activité.' : 'Essaie une autre recherche.'}
+            {activities.length === 0 ? t('startAddingActivity') : t('tryDifferentSearch')}
           </p>
         </div>
       ) : (

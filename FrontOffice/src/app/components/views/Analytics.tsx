@@ -17,11 +17,13 @@ import {
   Legend,
   ResponsiveContainer,
 } from 'recharts';
+import { useTranslation } from '../../../api/translations';
 
 type UserRole = 'HR' | 'Manager' | 'Employee' | 'SUPERADMIN';
 
 interface AnalyticsProps {
   userRole: UserRole;
+  language?: string;
 }
 
 const skillGapData = [
@@ -58,7 +60,8 @@ const departmentSkillsData = [
   { subject: 'Creativity', Engineering: 60, Marketing: 95, Sales: 50 },
 ];
 
-export function Analytics({ userRole }: AnalyticsProps) {
+export function Analytics({ userRole, language = 'en' }: AnalyticsProps) {
+  const t = useTranslation(language);
   const [timeRange, setTimeRange] = useState('6months');
 
   const metrics = [

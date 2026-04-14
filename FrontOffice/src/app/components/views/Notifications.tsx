@@ -1,5 +1,10 @@
 import { useState } from 'react';
 import { Bell, CheckCircle, AlertCircle, Info, Trash2, Filter } from 'lucide-react';
+import { useTranslation } from '../../../api/translations';
+
+interface NotificationsProps {
+  language?: string;
+}
 
 interface Notification {
   id: string;
@@ -68,7 +73,8 @@ const mockNotifications: Notification[] = [
   },
 ];
 
-export function Notifications() {
+export function Notifications({ language = 'en' }: NotificationsProps) {
+  const t = useTranslation(language);
   const [notifications, setNotifications] = useState(mockNotifications);
   const [filter, setFilter] = useState<'all' | 'unread'>('all');
   const [categoryFilter, setCategoryFilter] = useState<string>('All');
