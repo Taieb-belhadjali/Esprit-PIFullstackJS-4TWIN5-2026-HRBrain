@@ -6,7 +6,7 @@ import EditEmployeeModal from "../employees/EditEmployeeModel";
 import ViewEmployeeModal from "../employees/ViewEmployeeModel";
 import { deleteEmployee, getEmployees } from '../../../api/employeeApi';
 import { useVoiceCommand } from '../voice/VoiceCommandContext';
-import Pagination from '../ui/Pagination';
+import Pagination from '../ui/pagination';
 import { useAppTranslation } from '../../hooks/useAppTranslation';
 
 type UserRole = 'HR' | 'Manager' | 'Employee' | 'SUPERADMIN';
