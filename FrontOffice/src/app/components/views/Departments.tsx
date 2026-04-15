@@ -7,7 +7,7 @@ import { DepartmentsFilters } from '../departments/DepartmentsFilters';
 import { DepartmentsStats } from '../departments/DepartmentsStats';
 import type { DepartmentSortBy } from '../departments/types';
 import { useVoiceCommand } from '../voice/VoiceCommandContext';
-import Pagination from '../ui/Pagination';
+import Pagination from '../ui/pagination';
 import API from '../../../api/api';
 
 type UserRole = 'HR' | 'Manager' | 'Employee' | 'SUPERADMIN';
