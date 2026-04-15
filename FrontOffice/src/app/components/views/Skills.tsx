@@ -9,7 +9,7 @@ import { SkillsHeader } from '../skills/SkillsHeader';
 import { SkillsStats } from '../skills/SkillsStats';
 import { Skill, SkillSortBy } from '../skills/types';
 import { useVoiceCommand } from '../voice/VoiceCommandContext';
-import Pagination from '../ui/Pagination';
+import Pagination from '../ui/pagination';
 import { SkillsDepartmentChart } from '../skills/SkillsDepartmentChart';
 import { useAppTranslation } from '../../hooks/useAppTranslation';
 
