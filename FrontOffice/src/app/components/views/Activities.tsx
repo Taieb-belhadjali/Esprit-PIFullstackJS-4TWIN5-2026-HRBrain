@@ -7,7 +7,7 @@ import { Activity } from '../activities/types';
 import { ActivityRecommendations } from '../activities/ActivityRecommendations';
 import { ActivityRecommendationHistory } from '../activities/ActivityRecommendationHistory';
 import { useVoiceCommand } from '../voice/VoiceCommandContext';
-import Pagination from '../ui/Pagination';
+import Pagination from '../ui/pagination';
 import { useAppTranslation } from '../../hooks/useAppTranslation';
 
 type UserRole = 'HR' | 'Manager' | 'Employee' | 'SUPERADMIN';
