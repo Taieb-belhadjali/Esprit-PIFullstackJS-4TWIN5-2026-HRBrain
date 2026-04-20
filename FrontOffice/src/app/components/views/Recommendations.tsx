@@ -1,6 +1,5 @@
-﻿import React, { useState, useEffect, useRef } from 'react';
+﻿import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { Target, Brain, CheckCircle, XCircle, TrendingUp, Sparkles, ChevronDown, Clock, PlayCircle, Users, X } from 'lucide-react';
-import axios from 'axios';
 import { useAppTranslation } from '../../hooks/useAppTranslation';
 import API from '../../../api/api';
 
@@ -212,27 +211,33 @@ export function Recommendations({ userRole }: RecommendationsProps) {
   const cancelledRef = useRef(false);
   const currentActivityRef = useRef<string>('');
 
-  const mergeRankingsWithCandidates = (
+  const mergeRankingsWithCandidates = useCallback((
     rankings: { employeeId: string; score: number; reasons: string[] }[],
     candidates: ApiRecommendation[],
     decisions: { employeeId: string; decision: string }[] = [],
-  ): ApiRecommendation[] =>
-    rankings.map((r) => {
-      const candidate = candidates.find((c) => String(c.employee._id) === String(r.employeeId));
-      const dec = decisions.find((d) => String(d.employeeId) === String(r.employeeId));
+  ): ApiRecommendation[] => {
+    // Build O(1) lookup Maps instead of O(n) .find() inside the loop.
+    // With 100 candidates × 10 rankings = 1000 comparisons → now 110 operations.
+    const candidateMap = new Map(candidates.map((c) => [String(c.employee._id), c]));
+    const decisionMap  = new Map(decisions.map((d) => [String(d.employeeId), d]));
+
+    return rankings.map((r) => {
+      const candidate = candidateMap.get(String(r.employeeId));
+      const dec       = decisionMap.get(String(r.employeeId));
       return {
-        employee: candidate?.employee ?? { _id: r.employeeId, name: r.employeeId, email: '' },
-        skillMatchScore: candidate?.skillMatchScore ?? 0,
-        contextScore: candidate?.contextScore ?? 0,
-        progressionScore: candidate?.progressionScore ?? 0,
-        finalScore: r.score,
-        employeeSkills: candidate?.employeeSkills ?? [],
-        aiReasons: r.reasons,
-        decision: (dec?.decision as 'approved' | 'rejected') ?? undefined,
+        employee:        candidate?.employee ?? { _id: r.employeeId, name: r.employeeId, email: '' },
+        skillMatchScore: candidate?.skillMatchScore  ?? 0,
+        contextScore:    candidate?.contextScore     ?? 0,
+        progressionScore:candidate?.progressionScore ?? 0,
+        finalScore:      r.score,
+        employeeSkills:  candidate?.employeeSkills   ?? [],
+        aiReasons:       r.reasons,
+        decision:        (dec?.decision as 'approved' | 'rejected') ?? undefined,
       };
     });
+  }, []);
 
-  const loadLastRecommendation = async (activityId: string) => {
+  const loadLastRecommendation = useCallback(async (activityId: string) => {
     if (!activityId) return;
     currentActivityRef.current = activityId;
     setLoadingLast(true);
@@ -242,7 +247,6 @@ export function Recommendations({ userRole }: RecommendationsProps) {
     try {
       const recoRes = await API.get(`/recommendations/${activityId}`);
 
-      // Stale response — user already switched to another activity
       if (currentActivityRef.current !== activityId) return;
 
       const ollamaJson = recoRes.data?.jsonOllama;
@@ -253,31 +257,41 @@ export function Recommendations({ userRole }: RecommendationsProps) {
 
       setElapsedMs(ollamaJson.elapsedMs ?? null);
 
-      const decisionsRes = await API.get(`/recommendations/${activityId}/decisions`);
+      const candidatesPromise: Promise<ApiRecommendation[]> = ollamaJson.candidates?.length
+        ? Promise.resolve(
+            ollamaJson.candidates.map((c: any) => ({
+              employee: { _id: c.employeeId, name: c.name, email: c.email },
+              skillMatchScore: c.skillMatchScore ?? 0,
+              contextScore: c.contextScore ?? 0,
+              progressionScore: c.progressionScore ?? 0,
+              finalScore: 0,
+              employeeSkills: c.employeeSkills ?? [],
+            })),
+          )
+        : API.get(`/recommendations/${activityId}/top100`).then((r) => r.data?.candidates ?? []);
+
+      const [decisionsRes, candidates] = await Promise.all([
+        API.get(`/recommendations/${activityId}/decisions`),
+        candidatesPromise,
+      ]);
+
       if (currentActivityRef.current !== activityId) return;
 
-      let candidates: ApiRecommendation[] = [];
-      if (ollamaJson.candidates?.length) {
-        candidates = ollamaJson.candidates.map((c: any) => ({
-          employee: { _id: c.employeeId, name: c.name, email: c.email },
-          skillMatchScore: c.skillMatchScore ?? 0,
-          contextScore: c.contextScore ?? 0,
-          progressionScore: c.progressionScore ?? 0,
-          finalScore: 0,
-          employeeSkills: c.employeeSkills ?? [],
-        }));
-      } else {
-        const top100Res = await API.get(`/recommendations/${activityId}/top100`);
-        if (currentActivityRef.current !== activityId) return;
-        candidates = top100Res.data?.candidates ?? [];
-      }
+      const rankings: { employeeId: string; score: number; reasons: string[] }[] =
+        Array.isArray(ollamaJson.rankings) ? ollamaJson.rankings : [];
+      const safeDecisions: { employeeId: string; decision: string }[] =
+        Array.isArray(decisionsRes.data) ? decisionsRes.data : [];
+      const safeCandidates: ApiRecommendation[] =
+        Array.isArray(candidates) ? candidates : [];
 
-      setApiResults(mergeRankingsWithCandidates(ollamaJson.rankings, candidates, decisionsRes.data ?? []));
-    } catch { }
-    finally {
+      setApiResults(mergeRankingsWithCandidates(rankings, safeCandidates, safeDecisions));
+    } catch (err) {
+      // Silently ignore stale/cancelled requests — don't crash the component
+      console.warn('[Recommendations] loadLastRecommendation error:', err);
+    } finally {
       if (currentActivityRef.current === activityId) setLoadingLast(false);
     }
-  };
+  }, [mergeRankingsWithCandidates]);
 
   useEffect(() => {
     API.get('/activities')
@@ -290,7 +304,7 @@ export function Recommendations({ userRole }: RecommendationsProps) {
       })
       .catch(() => setActivities([]))
       .finally(() => setLoadingActivities(false));
-  }, []);
+  }, [loadLastRecommendation]);
 
   const handleCancel = () => {
     cancelledRef.current = true;
@@ -341,9 +355,12 @@ export function Recommendations({ userRole }: RecommendationsProps) {
       setElapsedMs(ollamaJson?.elapsedMs ?? null);
       const rankings: { employeeId: string; score: number; reasons: string[] }[] = ollamaJson?.rankings ?? [];
 
-      const top100Res = await API.get(`/recommendations/${selectedActivityId}/top100`);
+      // top100 and decisions are independent — fetch in parallel
+      const [top100Res, decisionsRes] = await Promise.all([
+        API.get(`/recommendations/${selectedActivityId}/top100`),
+        API.get(`/recommendations/${selectedActivityId}/decisions`),
+      ]);
       const candidates: ApiRecommendation[] = top100Res.data?.candidates ?? [];
-      const decisionsRes = await API.get(`/recommendations/${selectedActivityId}/decisions`);
       setApiResults(mergeRankingsWithCandidates(rankings, candidates, decisionsRes.data ?? []));
       setHasNoReco(false);
     } catch (err: any) {

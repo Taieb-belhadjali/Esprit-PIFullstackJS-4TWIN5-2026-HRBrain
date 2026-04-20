@@ -23,12 +23,21 @@ function Avatar({
 
 function AvatarImage({
   className,
+  // Default to lazy loading — avatars are rarely above the fold
+  loading = 'lazy',
+  // Decode off the main thread to avoid blocking INP
+  decoding = 'async',
   ...props
-}: React.ComponentProps<typeof AvatarPrimitive.Image>) {
+}: React.ComponentProps<typeof AvatarPrimitive.Image> & {
+  loading?: 'lazy' | 'eager'
+  decoding?: 'async' | 'sync' | 'auto'
+}) {
   return (
     <AvatarPrimitive.Image
       data-slot="avatar-image"
       className={cn("aspect-square size-full", className)}
+      loading={loading}
+      decoding={decoding}
       {...props}
     />
   );

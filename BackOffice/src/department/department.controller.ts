@@ -9,6 +9,7 @@ import {
   Logger,
   UseGuards,
   Request,
+  Header,
 } from '@nestjs/common';
 import { DepartmentService } from './department.service';
 import { CreateDepartmentDto } from './dto-department/create-department.dto';
@@ -36,6 +37,8 @@ export class DepartmentController {
   }
 
   @Get()
+  // Departments change rarely — cache 2 minutes
+  @Header('Cache-Control', 'private, max-age=120, stale-while-revalidate=60')
   findAll() {
     return this.departmentService.findAll();
   }

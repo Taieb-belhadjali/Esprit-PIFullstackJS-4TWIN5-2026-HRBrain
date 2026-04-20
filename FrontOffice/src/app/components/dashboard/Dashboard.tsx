@@ -1,23 +1,57 @@
-import { useEffect, useMemo, useState, useCallback } from 'react';
+import { lazy, Suspense, useEffect, useMemo, useState, useCallback } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { Sidebar } from './Sidebar';
-import { Home } from '../views/Home';
-import { Employees } from '../views/Employees';
-import { Skills } from '../views/Skills';
-import { Activities } from '../views/Activities';
-import { Recommendations } from '../views/Recommendations';
-import { Analytics } from '../views/Analytics';
-import { Notifications } from '../views/Notifications';
-import { Profile } from '../views/Profile';
-import { Settings } from '../views/Settings';
-import { Departments } from '../views/Departments';
-import { VoiceAssistant } from '../voice/VoiceAssistant';
 import { VoiceCommandProvider } from '../voice/VoiceCommandContext';
-import { KeyboardShortcutsPanel } from '../ui/KeyboardShortcutsPanel';
 import { TTSProvider } from '../tts/TTSContext';
-import { TTSWidget } from '../tts/TTSWidget';
 import { FontSizeProvider } from '../a11y/FontSizeContext';
 import { LanguageProvider } from '../../context/LanguageContext';
+
+// ── Lazy-loaded views (code splitting) ────────────────────────────────────────
+// Each view is loaded only when first visited, reducing initial bundle size
+// and improving LCP / TTI on first load.
+//
+// Prefetch hints (/* @vite-prefetch */) tell the browser to fetch the chunk
+// during idle time so the next navigation feels instant (0ms load delay).
+// Strategy:
+//   • prefetch  → views likely visited right after login, for all roles
+//   • no hint   → heavy/rare views (Analytics, Recommendations) — loaded on demand
+//   • widgets   → prefetched after main content is ready
+
+// Always visited early by every role
+const Home            = lazy(() => import('../views/Home').then(m => ({ default: m.Home })));
+const Notifications   = lazy(() => import(/* @vite-prefetch */ '../views/Notifications').then(m => ({ default: m.Notifications })));
+const Profile         = lazy(() => import(/* @vite-prefetch */ '../views/Profile').then(m => ({ default: m.Profile })));
+const Settings        = lazy(() => import(/* @vite-prefetch */ '../views/Settings').then(m => ({ default: m.Settings })));
+
+// Visited early by HR / Manager roles
+const Employees       = lazy(() => import(/* @vite-prefetch */ '../views/Employees').then(m => ({ default: m.Employees })));
+const Activities      = lazy(() => import(/* @vite-prefetch */ '../views/Activities').then(m => ({ default: m.Activities })));
+const Skills          = lazy(() => import(/* @vite-prefetch */ '../views/Skills').then(m => ({ default: m.Skills })));
+
+// Heavy views — loaded on demand only (no prefetch to avoid wasting bandwidth)
+const Recommendations = lazy(() => import('../views/Recommendations').then(m => ({ default: m.Recommendations })));
+const Analytics       = lazy(() => import('../views/Analytics').then(m => ({ default: m.Analytics })));
+const Departments     = lazy(() => import('../views/Departments').then(m => ({ default: m.Departments })));
+
+// Heavy widgets — prefetched after main content is interactive
+const VoiceAssistant         = lazy(() => import(/* @vite-prefetch */ '../voice/VoiceAssistant').then(m => ({ default: m.VoiceAssistant })));
+const KeyboardShortcutsPanel = lazy(() => import(/* @vite-prefetch */ '../ui/KeyboardShortcutsPanel').then(m => ({ default: m.KeyboardShortcutsPanel })));
+const TTSWidget              = lazy(() => import(/* @vite-prefetch */ '../tts/TTSWidget').then(m => ({ default: m.TTSWidget })));
+
+// Minimal skeleton shown while a view chunk is loading (avoids CLS)
+function ViewSkeleton() {
+  return (
+    <div className="p-6 space-y-4 animate-pulse" aria-busy="true" aria-label="Chargement…">
+      <div className="h-8 bg-secondary rounded w-1/3" />
+      <div className="h-4 bg-secondary rounded w-2/3" />
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-6">
+        {[1, 2, 3].map(i => (
+          <div key={i} className="h-32 bg-secondary rounded-lg" />
+        ))}
+      </div>
+    </div>
+  );
+}
 
 type UserRole = 'HR' | 'Manager' | 'Employee' | 'SUPERADMIN';
 
@@ -184,32 +218,38 @@ export function Dashboard({ user, onLogout, theme, setTheme, language, setLangua
   return (
     <LanguageProvider initialLanguage={language} onLanguageChange={setLanguage}>
       <FontSizeProvider>
-      <TTSProvider>
-        <VoiceCommandProvider>
-          <div className="flex h-screen bg-secondary overflow-hidden">
-            <Sidebar
-              currentView={currentView}
-              onViewChange={(view) => navigate(`/dashboard/${view}`)}
-              userRole={user.role as any}
-              userName={user.name}
-              isCollapsed={isSidebarCollapsed}
-              onToggleCollapse={() => setIsSidebarCollapsed(!isSidebarCollapsed)}
-              language={language}
-            />
-            <main className={`flex-1 overflow-auto transition-all duration-300 ${isSidebarCollapsed ? 'ml-16' : 'ml-64'}`}>
-              {renderView()}
-            </main>
-            <TTSWidget />
-            <VoiceAssistant />
-          </div>
+        <TTSProvider>
+          <VoiceCommandProvider>
+            <div className="flex h-screen bg-secondary overflow-hidden">
+              <Sidebar
+                currentView={currentView}
+                onViewChange={(view) => navigate(`/dashboard/${view}`)}
+                userRole={user.role as any}
+                userName={user.name}
+                isCollapsed={isSidebarCollapsed}
+                onToggleCollapse={() => setIsSidebarCollapsed(!isSidebarCollapsed)}
+                language={language}
+              />
+              <main className={`flex-1 overflow-auto transition-all duration-300 ${isSidebarCollapsed ? 'ml-16' : 'ml-64'}`}>
+                <Suspense fallback={<ViewSkeleton />}>
+                  {renderView()}
+                </Suspense>
+              </main>
+              <Suspense fallback={null}>
+                <TTSWidget />
+                <VoiceAssistant />
+              </Suspense>
+            </div>
 
-          {/* Panneau raccourcis clavier (touche ?) */}
-          {showShortcuts && (
-            <KeyboardShortcutsPanel onClose={() => setShowShortcuts(false)} />
-          )}
-        </VoiceCommandProvider>
-      </TTSProvider>
-    </FontSizeProvider>
+            {/* Panneau raccourcis clavier (touche ?) */}
+            {showShortcuts && (
+              <Suspense fallback={null}>
+                <KeyboardShortcutsPanel onClose={() => setShowShortcuts(false)} />
+              </Suspense>
+            )}
+          </VoiceCommandProvider>
+        </TTSProvider>
+      </FontSizeProvider>
     </LanguageProvider>
   );
 }

@@ -3,11 +3,10 @@ import React from 'react';
 import { Layers, FileText } from 'lucide-react';
 
 interface SkillsStatsProps {
-  totalSkills: number;          // total chargé (filtré par département si sélectionné)
-  totalWithDescription: number; // parmi totalSkills, ceux avec description non vide
+  totalSkills: number;
+  totalWithDescription: number;
 }
 
-// Configuration des 2 cartes
 const stats = (totalSkills: number, totalWithDescription: number) => [
   {
     label: 'Total skills',
@@ -29,10 +28,7 @@ const stats = (totalSkills: number, totalWithDescription: number) => [
   },
 ];
 
-export const SkillsStats: React.FC<SkillsStatsProps> = ({
-  totalSkills,
-  totalWithDescription,
-}) => {
+function SkillsStatsComponent({ totalSkills, totalWithDescription }: SkillsStatsProps) {
   return (
     <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
       {stats(totalSkills, totalWithDescription).map(
@@ -53,4 +49,7 @@ export const SkillsStats: React.FC<SkillsStatsProps> = ({
       )}
     </div>
   );
-};
+}
+
+// React.memo: SkillsStats only re-renders when counts change — not on search/sort/pagination.
+export const SkillsStats = React.memo(SkillsStatsComponent);

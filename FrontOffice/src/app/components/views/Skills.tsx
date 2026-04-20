@@ -1,6 +1,6 @@
 ﻿// Vue principale Skills : liste, filtres, pagination, export CSV, graphique départements
 import React, { useState, useEffect, useMemo } from 'react';
-import API from '../../../api/api';
+import API, { apiGet } from '../../../api/api';
 import { SkillCard } from '../skills/SkillCard';
 import { SkillForm } from '../skills/SkillForm';
 import { SkillGrandFormatCard } from '../skills/SkillGrandFormatCard';
@@ -38,10 +38,22 @@ export const Skills: React.FC<SkillsProps> = ({ userRole }) => {
   const { pendingCommand, commandData, clearPendingCommand } = useVoiceCommand();
 
   useEffect(() => {
-    fetchDepartments();
+    // Fire departments + skills in parallel on mount.
+    // apiGet deduplicates /departments if Activities is also mounted.
+    Promise.all([
+      apiGet('/departments').catch(() => ({ data: [] })),
+      apiGet('/skills').catch(() => ({ data: [] })),
+    ]).then(([deptRes, skillRes]) => {
+      setDepartments(deptRes.data);
+      const validSkills = (skillRes.data as any[]).filter((s: any) => s.name);
+      setSkills(validSkills);
+      setLoading(false);
+    });
   }, []);
 
   useEffect(() => {
+    // Re-fetch skills when department filter changes (after initial load)
+    if (selectedDepartment === '') return; // initial load handled above
     fetchSkills();
   }, [selectedDepartment]);
 
@@ -105,12 +117,12 @@ export const Skills: React.FC<SkillsProps> = ({ userRole }) => {
     }
   }, [pendingCommand, commandData, clearPendingCommand, skills]);
 
-  // Chargement initial des départements
+  // Chargement initial des départements (kept for manual refresh after mutations)
   const fetchDepartments = async () => {
     try {
-      const res = await API.get('/departments');
+      const res = await apiGet('/departments');
       setDepartments(res.data);
-    } catch (err) {
+    } catch {
       setDepartments([]);
     }
   };
@@ -181,7 +193,11 @@ export const Skills: React.FC<SkillsProps> = ({ userRole }) => {
     return result;
   }, [skills, searchTerm, sortBy]);
 
-  const totalWithDescription = skills.filter((skill) => Boolean(skill.description?.trim())).length;
+  // Memoized — avoids re-counting on every render unrelated to skills data
+  const totalWithDescription = useMemo(
+    () => skills.filter((skill) => Boolean(skill.description?.trim())).length,
+    [skills],
+  );
 
   // Génère le fichier CSV avec BOM UTF-8 pour Excel
   const handleExportCsv = () => {
@@ -189,7 +205,7 @@ export const Skills: React.FC<SkillsProps> = ({ userRole }) => {
     const header = ['Nom', 'Description', 'Département', 'Date de création'];
     const rows = filteredSkills.map((skill: any) => {
       const depId = skill.departmentId?._id || skill.departmentId;
-      const dep = departments.find((d: any) => d._id === depId);
+      const dep = departmentMap.get(depId);
       return [
         skill.name || '',
         skill.description || '—',
@@ -208,6 +224,12 @@ export const Skills: React.FC<SkillsProps> = ({ userRole }) => {
     link.click();
     URL.revokeObjectURL(url);
   };
+
+  // O(1) department lookup — avoids O(n) .find() inside the render loop
+  const departmentMap = useMemo(
+    () => new Map(departments.map((d) => [d._id, d])),
+    [departments],
+  );
 
   // Reset page on filter change
   useEffect(() => { setCurrentPage(1); }, [searchTerm, sortBy, selectedDepartment]);
@@ -274,7 +296,7 @@ export const Skills: React.FC<SkillsProps> = ({ userRole }) => {
         <>
           <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
             {paginatedSkills.map((skill) => {
-              const department = departments.find(dep => dep._id === skill.departmentId);
+              const department = departmentMap.get(skill.departmentId as any);
               return (
                 <SkillCard
                   key={skill._id}
@@ -320,7 +342,7 @@ export const Skills: React.FC<SkillsProps> = ({ userRole }) => {
         <SkillGrandFormatCard
           skill={selectedSkill}
           departmentName={(() => {
-            const department = departments.find((dep) => dep._id === selectedSkill.departmentId);
+            const department = departmentMap.get(selectedSkill.departmentId as any);
             return department ? department.name : undefined;
           })()}
           onClose={() => setSelectedSkill(null)}

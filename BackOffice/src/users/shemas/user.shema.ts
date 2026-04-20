@@ -53,3 +53,11 @@ export class User {
 }
 
 export const UserSchema = SchemaFactory.createForClass(User);
+
+// ── Performance indexes ────────────────────────────────────────────────────
+// role: used in every getTop100() call — find({ role: 'EMPLOYEE' })
+UserSchema.index({ role: 1 });
+// departmentId: used in findAllForEmployee to get employee's department
+UserSchema.index({ departmentId: 1 });
+// Compound: role + departmentId — covers the most common combined query
+UserSchema.index({ role: 1, departmentId: 1 });

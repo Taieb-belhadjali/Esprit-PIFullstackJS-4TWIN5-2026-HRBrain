@@ -8,7 +8,7 @@ import { DepartmentsStats } from '../departments/DepartmentsStats';
 import type { DepartmentSortBy } from '../departments/types';
 import { useVoiceCommand } from '../voice/VoiceCommandContext';
 import Pagination from '../ui/pagination';
-import API from '../../../api/api';
+import API, { apiGet } from '../../../api/api';
 
 type UserRole = 'HR' | 'Manager' | 'Employee' | 'SUPERADMIN';
 interface Manager { _id: string; name: string; email: string; }
@@ -39,15 +39,23 @@ export function Departments({ userRole }: { userRole: UserRole }) {
 
   const loadManagers = async () => {
     try {
-      const res = await API.get('/users');
-      setManagers((res.data as any[]).filter(u => u.role === 'MANAGER'));
+      const res = await apiGet('/users');
+      setManagers((res.data as any[]).filter((u: any) => u.role === 'MANAGER'));
     } catch { setManagers([]); }
   };
 
   useEffect(() => {
     if (userRole === 'HR' || userRole === 'SUPERADMIN') {
-      loadDepartments();
-      loadManagers();
+      // Fire both requests in parallel — apiGet deduplicates /departments
+      // if another view already has a pending call for the same URL.
+      setLoading(true);
+      Promise.all([
+        getDepartments().catch(() => []),
+        apiGet('/users').catch(() => ({ data: [] })),
+      ]).then(([depts, usersRes]) => {
+        setDepartments(depts);
+        setManagers((usersRes.data as any[]).filter((u: any) => u.role === 'MANAGER'));
+      }).finally(() => setLoading(false));
     }
   }, [userRole]);
 

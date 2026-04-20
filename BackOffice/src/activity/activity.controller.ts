@@ -10,6 +10,7 @@ import {
   UseGuards,
   Request,
   ForbiddenException,
+  Header,
 } from '@nestjs/common';
 import { ActivityService } from './activity.service';
 import { CreateActivityDto } from './dto-activity/create-activity.dto';
@@ -42,6 +43,8 @@ export class ActivityController {
 
   @Get()
   @UseGuards(JwtAuthGuard)
+  // Activities are user-specific (role-filtered) — private cache, 1 minute
+  @Header('Cache-Control', 'private, max-age=60, stale-while-revalidate=30')
   findAll(@Query('departmentId') departmentId?: string, @Request() req?: any) {
     if (req?.user?.role === 'MANAGER') {
       return this.activityService.findAllForManager(req.user.sub, departmentId);

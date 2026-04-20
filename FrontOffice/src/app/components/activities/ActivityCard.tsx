@@ -175,3 +175,7 @@ const ActivityCard: React.FC<ActivityCardProps> = ({
 };
 
 export { ActivityCard };
+
+// React.memo: ActivityCard only re-renders when its activity prop or callbacks change.
+// Without this, all visible cards re-render when the search input changes or a modal opens.
+export const MemoActivityCard = React.memo(ActivityCard);
