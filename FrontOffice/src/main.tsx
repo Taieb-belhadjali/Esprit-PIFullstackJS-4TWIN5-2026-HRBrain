@@ -9,10 +9,9 @@ import { ReadingMask } from "./app/components/accessibility/ReadingMask.tsx";
 
 const THEME_KEY = 'hrbrain_theme';
 const savedTheme = localStorage.getItem(THEME_KEY) as 'light' | 'dark' | null;
-const theme = savedTheme || 'light';
-if (theme === 'dark') {
-  document.documentElement.classList.add('dark');
-}
+const theme = savedTheme === 'dark' ? 'dark' : 'light';
+// Appliquer le thème immédiatement avant le rendu React
+document.documentElement.classList.toggle('dark', theme === 'dark');
 
 createRoot(document.getElementById("root")!).render(
   <BrowserRouter>
