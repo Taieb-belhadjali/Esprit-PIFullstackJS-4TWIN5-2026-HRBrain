@@ -55,16 +55,29 @@ export function FontSizeProvider({ children }: { children: React.ReactNode }) {
     setSizeIndex(DEFAULT_INDEX);
   }, []);
 
-  // Keyboard shortcuts: Ctrl+↑ increase, Ctrl+↓ decrease, Ctrl+← reset
+  // Keyboard shortcuts: Ctrl++ increase, Ctrl+- decrease, Ctrl+0 reset
   useEffect(() => {
     const handleKey = (e: KeyboardEvent) => {
       if (!e.ctrlKey) return;
-      if (e.code === 'ArrowUp')    { e.preventDefault(); increase(); }
-      else if (e.code === 'ArrowDown')  { e.preventDefault(); decrease(); }
-      else if (e.code === 'ArrowLeft')  { e.preventDefault(); reset(); }
+      // Ctrl+= ou Ctrl++ → augmenter
+      if (e.code === 'Equal' || e.code === 'NumpadAdd') {
+        e.preventDefault(); increase();
+      }
+      // Ctrl+- → diminuer
+      else if (e.code === 'Minus' || e.code === 'NumpadSubtract') {
+        e.preventDefault(); decrease();
+      }
+      // Ctrl+0 → reset
+      else if (e.code === 'Digit0' || e.code === 'Numpad0') {
+        e.preventDefault(); reset();
+      }
+      // Garder aussi les flèches
+      else if (e.code === 'ArrowUp')   { e.preventDefault(); increase(); }
+      else if (e.code === 'ArrowDown') { e.preventDefault(); decrease(); }
+      else if (e.code === 'ArrowLeft') { e.preventDefault(); reset(); }
     };
-    window.addEventListener('keydown', handleKey);
-    return () => window.removeEventListener('keydown', handleKey);
+    window.addEventListener('keydown', handleKey, { capture: true });
+    return () => window.removeEventListener('keydown', handleKey, { capture: true });
   }, [increase, decrease, reset]);
 
   return (
