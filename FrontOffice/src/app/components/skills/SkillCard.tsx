@@ -119,3 +119,8 @@ const SkillCard: React.FC<SkillCardProps> = ({
 };
 
 export { SkillCard };
+
+// React.memo: prevents re-render when parent Skills re-renders due to unrelated
+// state changes (modal open/close, search input, page change).
+// SkillCard only re-renders when its own props actually change.
+export const MemoSkillCard = React.memo(SkillCard);

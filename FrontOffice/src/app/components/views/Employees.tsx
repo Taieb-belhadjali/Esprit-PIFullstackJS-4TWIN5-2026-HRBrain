@@ -1,4 +1,4 @@
-﻿import { useEffect, useState } from 'react';
+﻿import { useEffect, useState, useMemo, useCallback } from 'react';
 import { Search, Filter, Plus, Edit, Trash2, Eye } from 'lucide-react';
 import { EmployeeProfile } from '../employees/EmployeeProfile';
 import AddEmployeeModal from "../employees/AddEmployeeModel";
@@ -47,9 +47,10 @@ export function Employees({ userRole }: EmployeesProps) {
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 5;
 
-  const departments = ['All', 'Engineering', 'Marketing', 'Sales', 'HR', 'Finance'];
+  // Stable reference — avoids recreating the array on every render
+  const departments = useMemo(() => ['All', 'Engineering', 'Marketing', 'Sales', 'HR', 'Finance'], []);
 
-  const fetchEmployees = async () => {
+  const fetchEmployees = useCallback(async () => {
     try {
       const res = await getEmployees();
       const mappedEmployees = res.data.map((emp: any) => ({
@@ -62,7 +63,7 @@ export function Employees({ userRole }: EmployeesProps) {
     } catch (error) {
       console.error('Failed to fetch employees:', error);
     }
-  };
+  }, []);
 
   useEffect(() => { fetchEmployees(); }, []);
 
@@ -100,19 +101,28 @@ export function Employees({ userRole }: EmployeesProps) {
     }
   }, [pendingCommand, commandData, clearPendingCommand, employees]);
 
-  const filteredEmployees = employees.filter((emp) => {
-    const matchesSearch =
-      emp.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      emp.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      emp.position?.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesDepartment = selectedDepartment === 'All' || emp.department === selectedDepartment;
-    return matchesSearch && matchesDepartment;
-  });
+  // ── Memoized derived state ─────────────────────────────────────────────────
+  // Without useMemo, filter + slice run on EVERY render (modal open/close,
+  // hover states, etc.) — wasted CPU for 0 visual change.
+  const filteredEmployees = useMemo(() => {
+    const search = searchTerm.toLowerCase();
+    return employees.filter((emp) => {
+      const matchesSearch =
+        emp.name?.toLowerCase().includes(search) ||
+        emp.email?.toLowerCase().includes(search) ||
+        emp.position?.toLowerCase().includes(search);
+      const matchesDepartment = selectedDepartment === 'All' || emp.department === selectedDepartment;
+      return matchesSearch && matchesDepartment;
+    });
+  }, [employees, searchTerm, selectedDepartment]);
 
-  const indexOfLast = currentPage * itemsPerPage;
-  const indexOfFirst = indexOfLast - itemsPerPage;
-  const paginatedEmployees = filteredEmployees.slice(indexOfFirst, indexOfLast);
-  const totalPages = Math.ceil(filteredEmployees.length / itemsPerPage);
+  const { paginatedEmployees, totalPages } = useMemo(() => {
+    const indexOfFirst = (currentPage - 1) * itemsPerPage;
+    return {
+      paginatedEmployees: filteredEmployees.slice(indexOfFirst, indexOfFirst + itemsPerPage),
+      totalPages: Math.ceil(filteredEmployees.length / itemsPerPage),
+    };
+  }, [filteredEmployees, currentPage]);
 
   useEffect(() => { setCurrentPage(1); }, [searchTerm, selectedDepartment]);
 

@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import React, { useEffect, useState, useMemo, useCallback } from 'react';
 import { Bell, CheckCircle, AlertCircle, Info, Trash2, Filter } from 'lucide-react';
 import API from '../../../api/api';
 
@@ -13,75 +13,78 @@ interface Notification {
   link?: string;
 }
 
+// Static maps — defined outside component, never recreated on render
+const ICON_MAP: Record<string, React.ReactNode> = {
+  success: <CheckCircle className="w-5 h-5 text-green-600" />,
+  warning: <AlertCircle className="w-5 h-5 text-yellow-600" />,
+  alert:   <AlertCircle className="w-5 h-5 text-red-600"   />,
+  info:    <Info         className="w-5 h-5 text-blue-600"  />,
+};
+const BG_MAP: Record<string, string> = {
+  success: 'bg-green-100',
+  warning: 'bg-yellow-100',
+  alert:   'bg-red-100',
+  info:    'bg-blue-100',
+};
+
+function formatTime(ts: string): string {
+  const diff  = Date.now() - new Date(ts).getTime();
+  const mins  = Math.floor(diff / 60000);
+  const hours = Math.floor(mins / 60);
+  const days  = Math.floor(hours / 24);
+  if (days  > 0) return `il y a ${days} jour${days > 1 ? 's' : ''}`;
+  if (hours > 0) return `il y a ${hours} heure${hours > 1 ? 's' : ''}`;
+  if (mins  > 0) return `il y a ${mins} min`;
+  return "à l'instant";
+}
+
 export function Notifications({ language: _language }: { language?: string } = {}) {
   const [notifications, setNotifications] = useState<Notification[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [filter, setFilter] = useState<'all' | 'unread'>('all');
+  const [loading, setLoading]             = useState(true);
+  const [filter, setFilter]               = useState<'all' | 'unread'>('all');
   const [categoryFilter, setCategoryFilter] = useState<string>('All');
 
   const categories = ['All', 'Recommendation', 'Activity', 'System'];
 
-  const fetchNotifications = async () => {
+  const fetchNotifications = useCallback(async () => {
     try {
       const res = await API.get('/notifications');
       setNotifications(res.data || []);
     } catch { setNotifications([]); }
     finally { setLoading(false); }
-  };
+  }, []);
 
-  useEffect(() => { fetchNotifications(); }, []);
+  useEffect(() => { fetchNotifications(); }, [fetchNotifications]);
 
-  const filteredNotifications = notifications.filter((n) => {
-    const matchesRead = filter === 'all' || !n.read;
-    const matchesCat = categoryFilter === 'All' || n.category === categoryFilter;
-    return matchesRead && matchesCat;
-  });
+  // Memoized derived state — only recomputes when deps change
+  const filteredNotifications = useMemo(() =>
+    notifications.filter((n) => {
+      const matchesRead = filter === 'all' || !n.read;
+      const matchesCat  = categoryFilter === 'All' || n.category === categoryFilter;
+      return matchesRead && matchesCat;
+    }),
+  [notifications, filter, categoryFilter]);
 
-  const unreadCount = notifications.filter((n) => !n.read).length;
+  const unreadCount = useMemo(
+    () => notifications.filter((n) => !n.read).length,
+    [notifications],
+  );
 
-  const markAsRead = async (id: string) => {
+  // Stable callbacks
+  const markAsRead = useCallback(async (id: string) => {
     await API.patch(`/notifications/${id}/read`);
     setNotifications(prev => prev.map(n => n._id === id ? { ...n, read: true } : n));
-  };
+  }, []);
 
-  const markAllAsRead = async () => {
+  const markAllAsRead = useCallback(async () => {
     await API.patch('/notifications/read-all');
     setNotifications(prev => prev.map(n => ({ ...n, read: true })));
-  };
+  }, []);
 
-  const deleteNotification = async (id: string) => {
+  const deleteNotification = useCallback(async (id: string) => {
     await API.delete(`/notifications/${id}`);
     setNotifications(prev => prev.filter(n => n._id !== id));
-  };
-
-  const getIcon = (type: string) => {
-    switch (type) {
-      case 'success': return <CheckCircle className="w-5 h-5 text-green-600" />;
-      case 'warning': return <AlertCircle className="w-5 h-5 text-yellow-600" />;
-      case 'alert':   return <AlertCircle className="w-5 h-5 text-red-600" />;
-      default:        return <Info className="w-5 h-5 text-blue-600" />;
-    }
-  };
-
-  const getBg = (type: string) => {
-    switch (type) {
-      case 'success': return 'bg-green-100';
-      case 'warning': return 'bg-yellow-100';
-      case 'alert':   return 'bg-red-100';
-      default:        return 'bg-blue-100';
-    }
-  };
-
-  const formatTime = (ts: string) => {
-    const diff = Date.now() - new Date(ts).getTime();
-    const mins  = Math.floor(diff / 60000);
-    const hours = Math.floor(mins / 60);
-    const days  = Math.floor(hours / 24);
-    if (days > 0)  return `il y a ${days} jour${days > 1 ? 's' : ''}`;
-    if (hours > 0) return `il y a ${hours} heure${hours > 1 ? 's' : ''}`;
-    if (mins > 0)  return `il y a ${mins} min`;
-    return "à l'instant";
-  };
+  }, []);
 
   return (
     <div className="p-6 space-y-6">
@@ -150,8 +153,8 @@ export function Notifications({ language: _language }: { language?: string } = {
             <div key={n._id}
               className={`bg-card rounded-lg shadow-sm p-5 border transition-all ${n.read ? 'border-border' : 'border-primary/30 shadow-md'}`}>
               <div className="flex items-start gap-4">
-                <div className={`${getBg(n.type)} p-3 rounded-lg flex-shrink-0`}>
-                  {getIcon(n.type)}
+                <div className={`${BG_MAP[n.type] ?? BG_MAP.info} p-3 rounded-lg flex-shrink-0`}>
+                  {ICON_MAP[n.type] ?? ICON_MAP.info}
                 </div>
                 <div className="flex-1 min-w-0">
                   <div className="flex items-start justify-between mb-1">

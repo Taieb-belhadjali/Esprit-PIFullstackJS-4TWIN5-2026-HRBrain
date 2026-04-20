@@ -13,3 +13,9 @@ export class Recommendation {
 }
 
 export const RecommendationSchema = SchemaFactory.createForClass(Recommendation);
+
+// ── Performance indexes ────────────────────────────────────────────────────
+// activityId: used in findByActivity() and findAllByActivity()
+RecommendationSchema.index({ activityId: 1 });
+// activityId + createdAt: covers the sort({ createdAt: -1 }) in findByActivity
+RecommendationSchema.index({ activityId: 1, createdAt: -1 });

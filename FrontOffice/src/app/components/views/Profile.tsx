@@ -16,27 +16,33 @@ const LEVEL_COLORS: Record<string, string> = {
 };
 
 export function Profile({ user }: ProfileProps) {
-  const [profile, setProfile]       = useState<any>(null);
-  const [departments, setDepartments] = useState<any[]>([]);
+  const [profile, setProfile]               = useState<any>(null);
+  const [departments, setDepartments]       = useState<any[]>([]);
   const [approvedActivities, setApprovedActivities] = useState<any[]>([]);
-  const [loading, setLoading]       = useState(true);
+  const [loading, setLoading]               = useState(true);
 
   useEffect(() => {
     const load = async () => {
       setLoading(true);
       try {
+        // ── Step 1: fetch /users/me (always needed) ──────────────────────────
         const meRes = await API.get('/users/me');
-        setProfile(meRes.data);
+        const me = meRes.data;
+        setProfile(me);
 
+        // ── Step 2: fire role-specific requests in parallel ──────────────────
+        // Manager needs departments, Employee needs approved activities.
+        // Both are independent of each other — run simultaneously.
         if (user.role === 'Manager') {
           const deptRes = await API.get('/departments/my');
           setDepartments(deptRes.data || []);
-        }
-
-        if (user.role === 'Employee') {
-          const approvedRes = await API.get(`/recommendations/employee/${meRes.data._id}/approved`);
+        } else if (user.role === 'Employee') {
+          // /users/me already returned the profile id — no need to wait for a
+          // second sequential call; fire immediately with the id we just got.
+          const approvedRes = await API.get(`/recommendations/employee/${me._id}/approved`);
           setApprovedActivities(approvedRes.data || []);
         }
+        // HR / SUPERADMIN: no extra requests needed
       } catch (err) {
         console.error(err);
       } finally {

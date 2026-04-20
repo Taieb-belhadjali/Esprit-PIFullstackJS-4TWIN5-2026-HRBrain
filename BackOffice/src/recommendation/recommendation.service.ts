@@ -161,10 +161,20 @@ export class RecommendationService {
     return { activity, candidates: results.slice(0, 100) };
   }
 
-  // ── 2. Load prompt template from /prompts/<name>.txt ─────────────────────
+  // ── 2. Load prompt template — cached in memory after first read ──────────
+  // readFileSync on every call blocks the Node.js thread.
+  // We cache the result in a Map so disk is only read once per process lifetime.
+  private readonly promptCache = new Map<string, string>();
+
   private loadPrompt(name: string): string {
+    if (this.promptCache.has(name)) {
+      return this.promptCache.get(name)!;
+    }
     const promptPath = path.join(process.cwd(), 'prompts', `${name}.txt`);
-    return fs.readFileSync(promptPath, 'utf-8');
+    const content = fs.readFileSync(promptPath, 'utf-8');
+    this.promptCache.set(name, content);
+    this.logger.log(`[Prompt] Loaded and cached: ${name}.txt (${content.length} chars)`);
+    return content;
   }
 
   // ── 3. Build prompt + call Ollama + save to DB ────────────────────────────
@@ -460,28 +470,30 @@ export class RecommendationService {
     weights = { skillMatch: 0.40, progression: 0.30, context: 0.30 },
   ) {
     const activities = await this.activityModel.find({}).lean();
-    const results: { activityId: string; title: string; elapsedMs: number; rankings: number; error?: string }[] = [];
 
-    for (const activity of activities) {
-      try {
-        const doc = await this.generateAndSave(String(activity._id), top_k, weights);
-        results.push({
+    // Run all generations concurrently instead of sequentially.
+    // Promise.allSettled ensures one failure doesn't abort the others.
+    const settled = await Promise.allSettled(
+      activities.map((activity) =>
+        this.generateAndSave(String(activity._id), top_k, weights).then((doc) => ({
           activityId: String(activity._id),
           title: (activity as any).title,
           elapsedMs: doc.jsonOllama?.elapsedMs ?? 0,
           rankings: doc.jsonOllama?.rankings?.length ?? 0,
-        });
-      } catch (err: any) {
-        results.push({
-          activityId: String(activity._id),
-          title: (activity as any).title,
-          elapsedMs: 0,
-          rankings: 0,
-          error: err.message,
-        });
-      }
-    }
-    return results;
+        })),
+      ),
+    );
+
+    return settled.map((result, i) => {
+      if (result.status === 'fulfilled') return result.value;
+      return {
+        activityId: String(activities[i]._id),
+        title: (activities[i] as any).title,
+        elapsedMs: 0,
+        rankings: 0,
+        error: (result.reason as Error).message,
+      };
+    });
   }
 
   // ── 4. Retrieve saved recommendation for an activity ─────────────────────

@@ -20,7 +20,7 @@ interface SkillsFiltersProps {
   t?: (key: string) => string | undefined;
 }
 
-export const SkillsFilters: React.FC<SkillsFiltersProps> = ({
+const SkillsFiltersComponent: React.FC<SkillsFiltersProps> = ({
   searchTerm,
   sortBy,
   selectedDepartment,
@@ -36,9 +36,7 @@ export const SkillsFilters: React.FC<SkillsFiltersProps> = ({
 
   return (
     <div className="rounded-xl border border-border bg-card shadow-sm">
-      {/* Main filter bar */}
       <div className="flex flex-col gap-3 p-4 lg:flex-row lg:items-center lg:gap-4">
-        {/* Department filter */}
         <div className="flex items-center gap-2 lg:min-w-[200px]">
           <Building2 size={16} className="flex-shrink-0 text-muted-foreground" />
           <select
@@ -48,19 +46,13 @@ export const SkillsFilters: React.FC<SkillsFiltersProps> = ({
           >
             <option value="">{translate('skills_all_departments')}</option>
             {departments.map((dep) => (
-              <option key={dep._id} value={dep._id}>
-                {dep.name}
-              </option>
+              <option key={dep._id} value={dep._id}>{dep.name}</option>
             ))}
           </select>
         </div>
 
-        {/* Search input */}
         <div className="relative flex-1">
-          <Search
-            size={16}
-            className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground"
-          />
+          <Search size={16} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
           <input
             type="text"
             value={searchTerm}
@@ -70,7 +62,6 @@ export const SkillsFilters: React.FC<SkillsFiltersProps> = ({
           />
         </div>
 
-        {/* Sort dropdown */}
         <div className="flex items-center gap-2 lg:min-w-[180px]">
           <SlidersHorizontal size={16} className="flex-shrink-0 text-muted-foreground" />
           <select
@@ -84,8 +75,6 @@ export const SkillsFilters: React.FC<SkillsFiltersProps> = ({
           </select>
         </div>
 
-
-        {/* Reset button */}
         {hasActiveFilters && (
           <button
             onClick={onReset}
@@ -99,3 +88,7 @@ export const SkillsFilters: React.FC<SkillsFiltersProps> = ({
     </div>
   );
 };
+
+// React.memo: SkillsFilters only re-renders when filter values or departments change.
+// Prevents re-render when skills list updates (pagination, data fetch).
+export const SkillsFilters = React.memo(SkillsFiltersComponent);

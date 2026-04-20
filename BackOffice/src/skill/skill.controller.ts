@@ -1,5 +1,5 @@
 // Contrôleur REST des skills : expose les routes GET, POST, PATCH, DELETE
-import { Controller, Get, Post, Patch, Delete, Param, Body, Logger, Query } from '@nestjs/common';
+import { Controller, Get, Post, Patch, Delete, Param, Body, Logger, Query, Header } from '@nestjs/common';
 import { SkillService } from './skill.service';
 import { CreateSkillDto } from './dto-skill/create-skill.dto';
 import { UpdateSkillDto } from './dto-skill/update-skill.dto';
@@ -21,12 +21,15 @@ export class SkillController {
     }
   }
 
+  // Skills change rarely — cache for 5 minutes in browser, 1 minute shared
   @Get()
+  @Header('Cache-Control', 'private, max-age=300, stale-while-revalidate=60')
   findAll(@Query('departmentId') departmentId?: string) {
     return this.skillService.findAll(departmentId);
   }
 
   @Get(':id')
+  @Header('Cache-Control', 'private, max-age=300')
   findOne(@Param('id') id: string) {
     return this.skillService.findOne(id);
   }

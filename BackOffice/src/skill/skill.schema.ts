@@ -19,3 +19,10 @@ export class Skill {
 }
 
 export const SkillSchema = SchemaFactory.createForClass(Skill);
+
+// ── Performance indexes ────────────────────────────────────────────────────
+// name: used in detectSkillIdsFromText() — find({}, { _id, name }) + skillMap lookup
+// sparse: true because name is required but we want case-insensitive lookups
+SkillSchema.index({ name: 1 }, { unique: true, collation: { locale: 'en', strength: 2 } });
+// departmentId: used to filter skills by department
+SkillSchema.index({ departmentId: 1 });

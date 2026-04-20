@@ -1,16 +1,29 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="google" content="notranslate" />
+    <meta name="description" content="HRBrain AI — Plateforme RH intelligente avec recommandation IA" />
 
-  <!DOCTYPE html>
-  <html lang="en">
-    <head>
-      <meta charset="UTF-8" />
-      <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-      <meta name="google" content="notranslate" />
-      <title>HRBrain Web Application Design</title>
-    </head>
+    <!-- Preconnect to backend API to reduce DNS + TCP latency (improves LCP) -->
+    <link rel="preconnect" href="http://localhost:3000" />
 
-    <body>
-      <div id="root"></div>
-      <script type="module" src="/src/main.tsx"></script>
-    </body>
-  </html>
-  
+    <!-- Prevent FOUC: theme applied before React hydrates (avoids CLS) -->
+    <script>
+      (function () {
+        try {
+          var t = localStorage.getItem('hrbrain_theme');
+          if (t === 'dark') document.documentElement.classList.add('dark');
+        } catch (e) {}
+      })();
+    </script>
+
+    <title>HRBrain AI</title>
+  </head>
+
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>

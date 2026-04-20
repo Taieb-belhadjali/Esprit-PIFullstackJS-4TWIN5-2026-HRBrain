@@ -54,3 +54,13 @@ export class Activity {
 }
 
 export const ActivitySchema = SchemaFactory.createForClass(Activity);
+
+// ── Performance indexes ────────────────────────────────────────────────────
+// targetedDepartmentId: most queried field — findAllForManager, findAllForEmployee
+ActivitySchema.index({ targetedDepartmentId: 1 });
+// createdById: used to filter activities by manager
+ActivitySchema.index({ createdById: 1 });
+// status: used in filters (Draft, Active, etc.)
+ActivitySchema.index({ status: 1 });
+// Compound: department + status — covers the most common combined query
+ActivitySchema.index({ targetedDepartmentId: 1, status: 1 });

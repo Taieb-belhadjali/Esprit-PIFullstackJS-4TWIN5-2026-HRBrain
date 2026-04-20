@@ -1,6 +1,6 @@
 ﻿import { useState, useEffect } from 'react';
 import { Search, Plus, X, Sparkles } from 'lucide-react';
-import API from '../../../api/api';
+import API, { apiGet } from '../../../api/api';
 import { ActivityCard } from '../activities/ActivityCard';
 import { extractSkills } from '../../../api/nlpApi';
 import { Activity } from '../activities/types';
@@ -56,7 +56,21 @@ export function Activities({ userRole }: ActivitiesProps) {
 
   const { pendingCommand, commandData, clearPendingCommand } = useVoiceCommand();
 
-  useEffect(() => { fetchDepartments(); fetchActivities(); fetchSkills(); }, [userRole]);
+  useEffect(() => {
+    // Fire all 3 independent requests in parallel — total time = slowest one,
+    // not the sum of all 3 (was ~3× slower with sequential awaits).
+    // apiGet deduplicates /departments and /skills if Skills view is also mounted.
+    Promise.all([
+      apiGet(userRole === 'Manager' ? '/departments/my' : '/departments').catch(() => ({ data: [] })),
+      API.get('/activities').catch(() => ({ data: [] })),
+      apiGet('/skills').catch(() => ({ data: [] })),
+    ]).then(([deptRes, actRes, skillRes]) => {
+      setDepartments(deptRes.data);
+      setActivities(actRes.data);
+      setSkills(skillRes.data);
+      setLoading(false);
+    });
+  }, [userRole]);
 
   useEffect(() => {
     if (pendingCommand === 'create-activity') {
@@ -68,7 +82,6 @@ export function Activities({ userRole }: ActivitiesProps) {
 
   const fetchDepartments = async () => {
     try {
-      // Manager → seulement ses départements, sinon tous
       const url = userRole === 'Manager' ? '/departments/my' : '/departments';
       const res = await API.get(url);
       setDepartments(res.data);
@@ -81,6 +94,7 @@ export function Activities({ userRole }: ActivitiesProps) {
     catch { setSkills([]); }
   };
 
+  // Used after mutations (create/update/delete) to refresh only activities
   const fetchActivities = async () => {
     setLoading(true);
     try { const res = await API.get('/activities'); setActivities(res.data); }

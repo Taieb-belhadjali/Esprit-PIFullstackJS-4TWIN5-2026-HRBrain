@@ -11,7 +11,10 @@ interface SkillsHeaderProps {
   t?: (key: string) => string | undefined;
 }
 
-export const SkillsHeader: React.FC<SkillsHeaderProps> = ({ onAddSkill, onExportCsv, userRole, t }) => {
+// React.memo: SkillsHeader never changes unless userRole or callbacks change.
+export const SkillsHeader = React.memo(SkillsHeaderComponent);
+
+function SkillsHeaderComponent({ onAddSkill, onExportCsv, userRole, t }: SkillsHeaderProps) {
   const translate = t || ((key: string) => key);
   return (
     <div className="rounded-2xl border border-slate-200 bg-gradient-to-r from-blue-50 via-white to-indigo-50 p-6 shadow-sm">

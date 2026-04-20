@@ -2,7 +2,7 @@ import { createRoot } from "react-dom/client";
 import { BrowserRouter } from "react-router-dom";
 import App from "./app/App.tsx";
 import "./styles/index.css";
-import "bootstrap/dist/css/bootstrap.min.css";
+// Bootstrap removed — all styles use Tailwind CSS
 import { CursorProvider } from "./app/context/CursorContext.tsx";
 import { ReadingMaskProvider } from "./app/context/ReadingMaskContext.tsx";
 import { ReadingMask } from "./app/components/accessibility/ReadingMask.tsx";
