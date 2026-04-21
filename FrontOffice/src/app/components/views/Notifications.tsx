@@ -99,8 +99,12 @@ export function Notifications({ language: _language }: { language?: string } = {
           </p>
         </div>
         {unreadCount > 0 && (
-          <button onClick={markAllAsRead} className="flex items-center gap-2 text-primary hover:underline">
-            <CheckCircle className="w-4 h-4" /> Tout marquer comme lu
+          <button
+            onClick={markAllAsRead}
+            className="flex items-center gap-2 text-primary hover:underline focus:outline-none focus:ring-2 focus:ring-primary rounded"
+            aria-label={`Marquer toutes les ${unreadCount} notifications comme lues`}
+          >
+            <CheckCircle className="w-4 h-4" aria-hidden="true" /> Tout marquer comme lu
           </button>
         )}
       </div>
@@ -117,8 +121,13 @@ export function Notifications({ language: _language }: { language?: string } = {
             ))}
           </div>
           <div className="flex items-center gap-2 md:ml-auto">
-            <Filter className="w-5 h-5 text-muted-foreground" />
-            <select value={categoryFilter} onChange={e => setCategoryFilter(e.target.value)}
+            <Filter className="w-5 h-5 text-muted-foreground" aria-hidden="true" />
+            {/* WCAG 1.3.1 — label associé au select de catégorie */}
+            <label htmlFor="notif-category" className="sr-only">Filtrer par catégorie</label>
+            <select
+              id="notif-category"
+              value={categoryFilter}
+              onChange={e => setCategoryFilter(e.target.value)}
               className="px-4 py-2 border border-input rounded-lg focus:outline-none focus:ring-2 focus:ring-primary">
               {categories.map(c => <option key={c} value={c}>{c}</option>)}
             </select>
@@ -126,8 +135,8 @@ export function Notifications({ language: _language }: { language?: string } = {
         </div>
       </div>
 
-      {/* List */}
-      <div className="space-y-3">
+      {/* WCAG 4.1.3 — aria-live annonce les changements de liste aux lecteurs d'écran */}
+      <div className="space-y-3" aria-live="polite" aria-label="Liste des notifications">
         {loading ? (
           <div className="space-y-3">
             {[1, 2, 3].map(i => (

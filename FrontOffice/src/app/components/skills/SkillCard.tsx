@@ -80,19 +80,17 @@ const SkillCard: React.FC<SkillCardProps> = ({
             >
               <button
                 onClick={(e) => { e.stopPropagation(); onEdit(id); }}
-                className="p-2 rounded-lg bg-blue-50 hover:bg-blue-100 text-blue-600 hover:text-blue-700 transition-all hover:scale-110 active:scale-95"
-                title="Modifier"
+                className="p-2 rounded-lg bg-blue-50 hover:bg-blue-100 text-blue-600 hover:text-blue-700 transition-all hover:scale-110 active:scale-95 focus:outline-none focus:ring-2 focus:ring-blue-400"
                 aria-label={`Modifier ${name}`}
               >
-                <Edit2 size={14} />
+                <Edit2 size={14} aria-hidden="true" />
               </button>
               <button
                 onClick={(e) => { e.stopPropagation(); onDelete(id); }}
-                className="p-2 rounded-lg bg-red-50 hover:bg-red-100 text-red-600 hover:text-red-700 transition-all hover:scale-110 active:scale-95"
-                title="Supprimer"
+                className="p-2 rounded-lg bg-red-50 hover:bg-red-100 text-red-600 hover:text-red-700 transition-all hover:scale-110 active:scale-95 focus:outline-none focus:ring-2 focus:ring-red-400"
                 aria-label={`Supprimer ${name}`}
               >
-                <Trash2 size={14} />
+                <Trash2 size={14} aria-hidden="true" />
               </button>
             </div>
           )}

@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { Building2, Plus, Sparkles, Edit2, Trash2 } from 'lucide-react';
 import {
   getDepartments, createDepartment, updateDepartment, deleteDepartment, type Department,
@@ -9,6 +9,8 @@ import type { DepartmentSortBy } from '../departments/types';
 import { useVoiceCommand } from '../voice/VoiceCommandContext';
 import Pagination from '../ui/pagination';
 import API, { apiGet } from '../../../api/api';
+import { ConfirmDialog } from '../ui/ConfirmDialog';
+import { useFocusTrap } from '../../hooks/useFocusTrap';
 
 type UserRole = 'HR' | 'Manager' | 'Employee' | 'SUPERADMIN';
 interface Manager { _id: string; name: string; email: string; }
@@ -26,7 +28,11 @@ export function Departments({ userRole }: { userRole: UserRole }) {
   const [searchTerm, setSearchTerm] = useState('');
   const [sortBy, setSortBy] = useState<DepartmentSortBy>('name-asc');
   const [viewDept, setViewDept] = useState<Department | null>(null);
+  const [confirmDeleteDept, setConfirmDeleteDept] = useState<Department | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
+
+  // WCAG 2.1.1 — focus trap sur la modal de détail département
+  const viewModalRef = useFocusTrap(!!viewDept, () => setViewDept(null));
   const itemsPerPage = 9;
   const { pendingCommand, commandData, clearPendingCommand } = useVoiceCommand();
 
@@ -104,7 +110,12 @@ export function Departments({ userRole }: { userRole: UserRole }) {
   };
 
   const handleDelete = async (id: string) => {
-    if (!window.confirm('Supprimer ce département ?')) return;
+    // WCAG 2.1.1 — window.confirm() non accessible → ConfirmDialog
+    const dept = departments.find(d => d._id === id);
+    if (dept) setConfirmDeleteDept(dept);
+  };
+
+  const doDelete = async (id: string) => {
     try { await deleteDepartment(id); await loadDepartments(); }
     catch { alert('Erreur lors de la suppression'); }
   };
@@ -159,7 +170,7 @@ export function Departments({ userRole }: { userRole: UserRole }) {
         <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
           <div>
             <div className="inline-flex items-center gap-2 rounded-full bg-white px-3 py-1 text-xs font-medium text-blue-600 shadow-sm">
-              <Sparkles size={14} /> Structure organisationnelle
+              <Sparkles size={14} aria-hidden="true" /> Structure organisationnelle
             </div>
             <h1 className="mt-3 text-2xl font-bold text-slate-900">Départements</h1>
           </div>
@@ -178,10 +189,17 @@ export function Departments({ userRole }: { userRole: UserRole }) {
         <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm space-y-4">
           <h2 className="text-lg font-semibold text-slate-900">Nouveau département</h2>
           <div>
-            <label className="block text-sm font-medium text-slate-700 mb-1">Nom du département *</label>
-            <input type="text" value={newName} onChange={e => setNewName(e.target.value)}
+            {/* WCAG 1.3.1 — label explicite associé à l'input */}
+            <label htmlFor="dept-name-input" className="block text-sm font-medium text-slate-700 mb-1">Nom du département *</label>
+            <input
+              id="dept-name-input"
+              type="text"
+              value={newName}
+              onChange={e => setNewName(e.target.value)}
               className="w-full rounded-lg border border-slate-300 px-3 py-2 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
-              placeholder="ex. IT, RH, Marketing" />
+              placeholder="ex. IT, RH, Marketing"
+              aria-required="true"
+            />
           </div>
           <p className="text-xs text-slate-400">Les managers seront affectés à ce département lors de la création de leurs comptes.</p>
           <div className="flex gap-2">
@@ -204,9 +222,14 @@ export function Departments({ userRole }: { userRole: UserRole }) {
                 {editId === dept._id ? (
                   <div className="p-5 space-y-3">
                     <div>
-                      <label className="block text-xs font-medium text-slate-600 mb-1">Nom</label>
-                      <input value={editName} onChange={e => setEditName(e.target.value)}
-                        className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                      <label htmlFor={`edit-dept-${dept._id}`} className="block text-xs font-medium text-slate-600 mb-1">Nom</label>
+                      <input
+                        id={`edit-dept-${dept._id}`}
+                        value={editName}
+                        onChange={e => setEditName(e.target.value)}
+                        className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        aria-label={`Nouveau nom pour le département ${dept.name}`}
+                      />
                     </div>
                     <div className="flex gap-2">
                       <button onClick={handleUpdate} className="flex-1 rounded-lg bg-emerald-600 py-2 text-sm font-medium text-white hover:bg-emerald-700">Sauver</button>
@@ -223,13 +246,19 @@ export function Departments({ userRole }: { userRole: UserRole }) {
                       <p className="text-gray-400 font-mono text-xs mt-2 truncate">{dept._id}</p>
                     </div>
                     <div className="flex gap-2 ml-4 opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity">
-                      <button onClick={() => { setEditId(dept._id); setEditName(dept.name); }}
-                        className="p-2 rounded-lg bg-blue-50 hover:bg-blue-100 text-blue-600 transition-all hover:scale-110" title="Modifier">
-                        <Edit2 size={18} />
+                      <button
+                        onClick={() => { setEditId(dept._id); setEditName(dept.name); }}
+                        className="p-2 rounded-lg bg-blue-50 hover:bg-blue-100 text-blue-600 transition-all hover:scale-110 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        aria-label={`Modifier le département ${dept.name}`}
+                      >
+                        <Edit2 size={18} aria-hidden="true" />
                       </button>
-                      <button onClick={() => handleDelete(dept._id)}
-                        className="p-2 rounded-lg bg-red-50 hover:bg-red-100 text-red-600 transition-all hover:scale-110" title="Supprimer">
-                        <Trash2 size={18} />
+                      <button
+                        onClick={() => handleDelete(dept._id)}
+                        className="p-2 rounded-lg bg-red-50 hover:bg-red-100 text-red-600 transition-all hover:scale-110 focus:outline-none focus:ring-2 focus:ring-red-500"
+                        aria-label={`Supprimer le département ${dept.name}`}
+                      >
+                        <Trash2 size={18} aria-hidden="true" />
                       </button>
                     </div>
                   </div>
@@ -250,35 +279,78 @@ export function Departments({ userRole }: { userRole: UserRole }) {
         </div>
       )}
 
-      {/* Modal détail */}
+      {/* WCAG 2.1.1 — focus trap + 4.1.2 role/aria sur modal détail */}
       {viewDept && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4" onClick={() => setViewDept(null)}>
-          <div className="w-full max-w-md overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-2xl" onClick={e => e.stopPropagation()}>
-            <div className="h-1.5 bg-gradient-to-r from-blue-500 to-indigo-600" />
-            <div className="flex items-start justify-between p-6 pb-4">
-              <div className="flex items-center gap-3">
-                <div className="rounded-lg bg-blue-100 p-2 text-blue-700"><Building2 className="h-6 w-6" /></div>
-                <div>
-                  <p className="text-xs font-semibold uppercase tracking-wide text-blue-600">Département</p>
-                  <h2 className="mt-0.5 text-2xl font-bold text-slate-900">{viewDept.name}</h2>
+        <>
+          <div className="fixed inset-0 z-40 bg-black/60" aria-hidden="true" onClick={() => setViewDept(null)} />
+          <div
+            ref={viewModalRef}
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="view-dept-title"
+            className="fixed inset-0 z-50 flex items-center justify-center p-4"
+          >
+            <div className="w-full max-w-md overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-2xl">
+              <div className="h-1.5 bg-gradient-to-r from-blue-500 to-indigo-600" />
+              <div className="flex items-start justify-between p-6 pb-4">
+                <div className="flex items-center gap-3">
+                  <div className="rounded-lg bg-blue-100 p-2 text-blue-700" aria-hidden="true">
+                    <Building2 className="h-6 w-6" aria-hidden="true" />
+                  </div>
+                  <div>
+                    <p className="text-xs font-semibold uppercase tracking-wide text-blue-600">Département</p>
+                    <h2 id="view-dept-title" className="mt-0.5 text-2xl font-bold text-slate-900">{viewDept.name}</h2>
+                  </div>
                 </div>
+                {/* WCAG 4.1.2 — aria-label sur bouton fermer */}
+                <button
+                  onClick={() => setViewDept(null)}
+                  className="rounded-lg p-2 text-slate-500 hover:bg-slate-100 focus:outline-none focus:ring-2 focus:ring-primary"
+                  aria-label="Fermer la fenêtre"
+                >
+                  ✕
+                </button>
               </div>
-              <button onClick={() => setViewDept(null)} className="rounded-lg p-2 text-slate-500 hover:bg-slate-100">✕</button>
-            </div>
-            <div className="px-6 pb-6 space-y-3">
-              <div className="rounded-xl border border-slate-200 bg-slate-50 p-4">
-                <p className="text-sm font-medium text-slate-700">Managers</p>
-                <p className="mt-1 text-slate-800">{getManagerNames(viewDept)}</p>
-              </div>
-              <div className="flex justify-end gap-2 pt-2">
-                <button onClick={() => { setViewDept(null); setEditId(viewDept._id); setEditName(viewDept.name); }}
-                  className="rounded-lg border border-slate-300 px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-100">Modifier</button>
-                <button onClick={() => setViewDept(null)} className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700">Fermer</button>
+              <div className="px-6 pb-6 space-y-3">
+                <div className="rounded-xl border border-slate-200 bg-slate-50 p-4">
+                  <p className="text-sm font-medium text-slate-700">Managers</p>
+                  <p className="mt-1 text-slate-800">{getManagerNames(viewDept)}</p>
+                </div>
+                <div className="flex justify-end gap-2 pt-2">
+                  <button
+                    onClick={() => { setViewDept(null); setEditId(viewDept._id); setEditName(viewDept.name); }}
+                    className="rounded-lg border border-slate-300 px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-100 focus:outline-none focus:ring-2 focus:ring-primary"
+                  >
+                    Modifier
+                  </button>
+                  <button
+                    onClick={() => setViewDept(null)}
+                    className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  >
+                    Fermer
+                  </button>
+                </div>
               </div>
             </div>
           </div>
-        </div>
+        </>
       )}
+
+      {/* WCAG 2.1.1 — ConfirmDialog remplace window.confirm() */}
+      <ConfirmDialog
+        open={!!confirmDeleteDept}
+        title="Supprimer le département"
+        message={`Voulez-vous vraiment supprimer "${confirmDeleteDept?.name}" ? Cette action est irréversible.`}
+        confirmLabel="Supprimer"
+        cancelLabel="Annuler"
+        onConfirm={async () => {
+          if (confirmDeleteDept) {
+            await doDelete(confirmDeleteDept._id);
+            setConfirmDeleteDept(null);
+          }
+        }}
+        onCancel={() => setConfirmDeleteDept(null)}
+      />
     </div>
   );
 }

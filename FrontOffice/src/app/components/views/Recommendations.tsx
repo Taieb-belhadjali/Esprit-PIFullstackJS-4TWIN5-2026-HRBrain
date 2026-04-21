@@ -109,13 +109,21 @@ function RecommendationCard({ rec, index, activityId, expandedId, setExpandedId,
               </span>
             ) : (
               <>
-                <button onClick={() => handleDecision('approved')} disabled={saving}
-                  className="flex items-center gap-2 px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors text-sm disabled:opacity-50">
-                  <CheckCircle className="w-4 h-4" /> Approuver
+                <button
+                  onClick={() => handleDecision('approved')}
+                  disabled={saving}
+                  aria-label={`Approuver ${rec.employee.name}`}
+                  className="flex items-center gap-2 px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors text-sm disabled:opacity-50 focus:outline-none focus:ring-2 focus:ring-green-500"
+                >
+                  <CheckCircle className="w-4 h-4" aria-hidden="true" /> Approuver
                 </button>
-                <button onClick={() => handleDecision('rejected')} disabled={saving}
-                  className="flex items-center gap-2 px-4 py-2 border border-input rounded-lg hover:bg-secondary transition-colors text-sm disabled:opacity-50">
-                  <XCircle className="w-4 h-4" /> Rejeter
+                <button
+                  onClick={() => handleDecision('rejected')}
+                  disabled={saving}
+                  aria-label={`Rejeter ${rec.employee.name}`}
+                  className="flex items-center gap-2 px-4 py-2 border border-input rounded-lg hover:bg-secondary transition-colors text-sm disabled:opacity-50 focus:outline-none focus:ring-2 focus:ring-primary"
+                >
+                  <XCircle className="w-4 h-4" aria-hidden="true" /> Rejeter
                 </button>
               </>
             )}
@@ -607,10 +615,11 @@ export function Recommendations({ userRole }: RecommendationsProps) {
         </div>
       )}
 
+      {/* WCAG 4.1.3 — aria-live annonce les résultats aux lecteurs d'écran */}
       {/* Loading last recommendation */}
       {loadingLast && (
-        <div className="flex items-center justify-center py-12 gap-3 text-gray-400">
-          <span className="w-5 h-5 border-2 border-primary/30 border-t-primary rounded-full animate-spin" />
+        <div className="flex items-center justify-center py-12 gap-3 text-gray-400" aria-live="polite" aria-label="Chargement de la dernière recommandation…">
+          <span className="w-5 h-5 border-2 border-primary/30 border-t-primary rounded-full animate-spin" aria-hidden="true" />
           <span className="text-sm">Chargement de la dernière recommandation…</span>
         </div>
       )}
@@ -648,9 +657,10 @@ export function Recommendations({ userRole }: RecommendationsProps) {
         )
       )}
 
+      {/* WCAG 4.1.3 — aria-live sur les résultats */}
       {/* Results */}
       {apiResults.length > 0 && (
-        <div className="space-y-4">
+        <div className="space-y-4" aria-live="polite" aria-label={`${apiResults.length} recommandations chargées`}>
           <div className="flex items-center justify-between">
             <h2 className="text-xl text-gray-900">
               Top {apiResults.length} employés recommandés

@@ -230,7 +230,12 @@ export function Dashboard({ user, onLogout, theme, setTheme, language, setLangua
                 onToggleCollapse={() => setIsSidebarCollapsed(!isSidebarCollapsed)}
                 language={language}
               />
-              <main className={`flex-1 overflow-auto transition-all duration-300 ${isSidebarCollapsed ? 'ml-16' : 'ml-64'}`}>
+              {/* WCAG 1.3.1 — <main> landmark identifie le contenu principal pour les lecteurs d'écran */}
+              <main
+                id="main-content"
+                className={`flex-1 overflow-auto transition-all duration-300 ${isSidebarCollapsed ? 'ml-16' : 'ml-64'}`}
+                aria-label={`Vue ${currentView}`}
+              >
                 <Suspense fallback={<ViewSkeleton />}>
                   {renderView()}
                 </Suspense>

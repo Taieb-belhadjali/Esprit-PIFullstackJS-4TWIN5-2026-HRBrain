@@ -1,5 +1,4 @@
-﻿// Vue principale Skills : liste, filtres, pagination, export CSV, graphique départements
-import React, { useState, useEffect, useMemo } from 'react';
+﻿import React, { useState, useEffect, useMemo } from 'react';
 import API, { apiGet } from '../../../api/api';
 import { SkillCard } from '../skills/SkillCard';
 import { SkillForm } from '../skills/SkillForm';
@@ -12,6 +11,7 @@ import { useVoiceCommand } from '../voice/VoiceCommandContext';
 import Pagination from '../ui/pagination';
 import { SkillsDepartmentChart } from '../skills/SkillsDepartmentChart';
 import { useAppTranslation } from '../../hooks/useAppTranslation';
+import { ConfirmDialog } from '../ui/ConfirmDialog';
 
 
 type UserRole = 'HR' | 'Manager' | 'Employee' | 'SUPERADMIN';
@@ -29,6 +29,7 @@ export const Skills: React.FC<SkillsProps> = ({ userRole }) => {
   const [showForm, setShowForm] = useState(false);
   const [editingSkill, setEditingSkill] = useState<Skill | null>(null);
   const [selectedSkill, setSelectedSkill] = useState<Skill | null>(null);
+  const [confirmDeleteSkill, setConfirmDeleteSkill] = useState<Skill | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [sortBy, setSortBy] = useState<SkillSortBy>('name-asc');
   const [departments, setDepartments] = useState<any[]>([]);
@@ -150,13 +151,17 @@ export const Skills: React.FC<SkillsProps> = ({ userRole }) => {
     setShowForm(true);
   };
 
-  // Supprime un skill après confirmation
-  const handleDelete = async (id: string) => {
-    if (!window.confirm('Voulez-vous vraiment supprimer ce skill ?')) return;
+  // Supprime un skill après confirmation — WCAG 2.1.1 : ConfirmDialog remplace window.confirm()
+  const handleDelete = (id: string) => {
+    const skill = skills.find(s => s._id === id);
+    if (skill) setConfirmDeleteSkill(skill);
+  };
+
+  const doDeleteSkill = async (id: string) => {
     try {
       await API.delete(`/skills/${id}`);
       fetchSkills();
-    } catch (err) {
+    } catch {
       alert('Erreur lors de la suppression');
     }
   };
@@ -272,12 +277,15 @@ export const Skills: React.FC<SkillsProps> = ({ userRole }) => {
         t={t}
       />
 
+      {/* WCAG 4.1.3 — aria-live annonce le changement d'état aux lecteurs d'écran */}
+      <div aria-live="polite" aria-atomic="true">
       {loading ? (
-        <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
+        <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3" aria-label="Chargement des skills…">
           {Array.from({ length: 6 }).map((_, index) => (
             <div
               key={index}
               className="h-36 animate-pulse rounded-xl border-2 border-slate-100 bg-slate-50"
+              aria-hidden="true"
             />
           ))}
         </div>
@@ -322,6 +330,7 @@ export const Skills: React.FC<SkillsProps> = ({ userRole }) => {
           />
         </>
       )}
+      </div>{/* end aria-live */}
 
       {/* Formulaire Create / Update */}
       {showForm && (
@@ -337,7 +346,7 @@ export const Skills: React.FC<SkillsProps> = ({ userRole }) => {
         </div>
       )}
 
-      {/* Aperçu détaillé d'un skill (commande vocale "afficher skill X") */}
+      {/* Aperçu détaillé d'un skill */}
       {selectedSkill && (
         <SkillGrandFormatCard
           skill={selectedSkill}
@@ -352,6 +361,22 @@ export const Skills: React.FC<SkillsProps> = ({ userRole }) => {
           }}
         />
       )}
+
+      {/* WCAG 2.1.1 — ConfirmDialog remplace window.confirm() */}
+      <ConfirmDialog
+        open={!!confirmDeleteSkill}
+        title="Supprimer le skill"
+        message={`Voulez-vous vraiment supprimer "${confirmDeleteSkill?.name}" ? Cette action est irréversible.`}
+        confirmLabel="Supprimer"
+        cancelLabel="Annuler"
+        onConfirm={async () => {
+          if (confirmDeleteSkill) {
+            await doDeleteSkill(confirmDeleteSkill._id);
+            setConfirmDeleteSkill(null);
+          }
+        }}
+        onCancel={() => setConfirmDeleteSkill(null)}
+      />
 
     </div>
   );

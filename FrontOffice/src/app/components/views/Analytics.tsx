@@ -105,7 +105,10 @@ export function Analytics({ userRole }: AnalyticsProps) {
             Comprehensive insights into skills, activities, and recommendations
           </p>
         </div>
+        {/* WCAG 1.3.1 — label associé au select de période */}
+        <label htmlFor="analytics-timerange" className="sr-only">Période d'analyse</label>
         <select
+          id="analytics-timerange"
           value={timeRange}
           onChange={(e) => setTimeRange(e.target.value)}
           className="px-4 py-2 border border-input rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"

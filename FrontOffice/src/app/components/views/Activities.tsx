@@ -9,6 +9,8 @@ import { ActivityRecommendationHistory } from '../activities/ActivityRecommendat
 import { useVoiceCommand } from '../voice/VoiceCommandContext';
 import Pagination from '../ui/pagination';
 import { useAppTranslation } from '../../hooks/useAppTranslation';
+import { ConfirmDialog } from '../ui/ConfirmDialog';
+import { useFocusTrap } from '../../hooks/useFocusTrap';
 
 type UserRole = 'HR' | 'Manager' | 'Employee' | 'SUPERADMIN';
 
@@ -52,7 +54,11 @@ export function Activities({ userRole }: ActivitiesProps) {
   const [recommendActivity, setRecommendActivity] = useState<Activity | null>(null);
   const [historyActivity, setHistoryActivity] = useState<Activity | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
+  const [confirmDeleteActivity, setConfirmDeleteActivity] = useState<Activity | null>(null);
   const itemsPerPage = 9;
+
+  // WCAG 2.1.1 — focus trap sur la modal de création/édition
+  const modalRef = useFocusTrap(showModal, () => setShowModal(false));
 
   const { pendingCommand, commandData, clearPendingCommand } = useVoiceCommand();
 
@@ -221,7 +227,13 @@ export function Activities({ userRole }: ActivitiesProps) {
   };
 
   const handleDelete = async (id: string) => {
-    if (!window.confirm('Supprimer cette activité ?')) return;
+    // WCAG 2.1.1 — window.confirm() est bloquant et non accessible
+    // Remplacé par ConfirmDialog (voir state confirmDeleteActivity)
+    const activity = activities.find(a => a._id === id);
+    if (activity) setConfirmDeleteActivity(activity);
+  };
+
+  const doDelete = async (id: string) => {
     try { await API.delete(`/activities/${id}`); fetchActivities(); }
     catch { alert('Erreur lors de la suppression'); }
   };
@@ -276,11 +288,13 @@ export function Activities({ userRole }: ActivitiesProps) {
         <p className="mt-2 text-sm text-muted-foreground">{t('showingActivities', { count: filtered.length, total: activities.length })}</p>
       </div>
 
+      {/* WCAG 4.1.3 — aria-live annonce les changements de liste aux lecteurs d'écran */}
+      <div aria-live="polite" aria-atomic="false">
       {/* Cards */}
       {loading ? (
-        <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3" aria-label="Chargement des activités…">
           {Array.from({ length: 6 }).map((_, i) => (
-            <div key={i} className="h-40 animate-pulse rounded-xl bg-slate-100 border border-slate-200" />
+            <div key={i} className="h-40 animate-pulse rounded-xl bg-slate-100 border border-slate-200" aria-hidden="true" />
           ))}
         </div>
       ) : filtered.length === 0 ? (
@@ -320,49 +334,83 @@ export function Activities({ userRole }: ActivitiesProps) {
           />
         </>
       )}
+      </div>{/* end aria-live */}
 
-      {/* Modal */}
+      {/* Modal — WCAG 2.1.1 focus trap + 4.1.2 role/aria */}
       {showModal && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4" aria-hidden="true" />
+      )}
+      {showModal && (
+        <div
+          ref={modalRef}
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="activity-modal-title"
+          className="fixed inset-0 z-50 flex items-center justify-center p-4"
+        >
           <div className="bg-card rounded-xl shadow-lg w-full max-w-lg p-6 max-h-[90vh] overflow-y-auto">
-            <h2 className="text-xl font-semibold text-foreground mb-5">
+            <h2 id="activity-modal-title" className="text-xl font-semibold text-foreground mb-5">
               {editingActivity ? "Modifier l'activité" : 'Nouvelle activité'}
             </h2>
 
             <div className="space-y-4">
               <div>
-                <label className="block text-sm text-foreground mb-1">Titre *</label>
-                <input type="text" value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })}
+                {/* WCAG 1.3.1 — htmlFor associe le label à l'input */}
+                <label htmlFor="act-title" className="block text-sm text-foreground mb-1">
+                  Titre <span aria-hidden="true" className="text-destructive">*</span>
+                  <span className="sr-only">(obligatoire)</span>
+                </label>
+                <input
+                  id="act-title"
+                  type="text"
+                  value={form.title}
+                  onChange={(e) => setForm({ ...form, title: e.target.value })}
                   className="w-full px-3 py-2 border border-input rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
-                  placeholder="Titre de l'activité" />
+                  placeholder="Titre de l'activité"
+                  aria-required="true"
+                />
               </div>
 
               <div>
-                <label className="block text-sm text-foreground mb-1">
+                <label htmlFor="act-description" className="block text-sm text-foreground mb-1">
                   Description
                   <button type="button" onClick={handleExtractSkills}
-                    className="ml-2 inline-flex items-center px-2 py-1 text-xs font-medium text-blue-600 hover:text-blue-800 hover:bg-blue-50 rounded transition"
-                    title="Extraire automatiquement les compétences">
-                    <Sparkles className="w-3 h-3 mr-1" />
+                    className="ml-2 inline-flex items-center px-2 py-1 text-xs font-medium text-blue-600 hover:text-blue-800 hover:bg-blue-50 rounded transition focus:outline-none focus:ring-2 focus:ring-primary"
+                    aria-label="Extraire automatiquement les compétences depuis la description">
+                    <Sparkles className="w-3 h-3 mr-1" aria-hidden="true" />
                     Extraire
                   </button>
                 </label>
-                <textarea value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })}
-                  className="w-full px-3 py-2 border border-input rounded-lg focus:outline-none focus:ring-2 focus:ring-primary" rows={3}
-                  placeholder="Décrivez l'activité... (ex: Formation React et Node.js pour équipe frontend)" />
+                <textarea
+                  id="act-description"
+                  value={form.description}
+                  onChange={(e) => setForm({ ...form, description: e.target.value })}
+                  className="w-full px-3 py-2 border border-input rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
+                  rows={3}
+                  placeholder="Décrivez l'activité…"
+                />
               </div>
 
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-sm text-foreground mb-1">Type</label>
-                  <input type="text" value={form.type} onChange={(e) => setForm({ ...form, type: e.target.value })}
+                  <label htmlFor="act-type" className="block text-sm text-foreground mb-1">Type</label>
+                  <input
+                    id="act-type"
+                    type="text"
+                    value={form.type}
+                    onChange={(e) => setForm({ ...form, type: e.target.value })}
                     className="w-full px-3 py-2 border border-input rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
-                    placeholder="ex: Workshop" />
+                    placeholder="ex: Workshop"
+                  />
                 </div>
                 <div>
-                  <label className="block text-sm text-foreground mb-1">Contexte</label>
-                  <select value={form.context} onChange={(e) => setForm({ ...form, context: e.target.value })}
-                    className="w-full px-3 py-2 border border-input rounded-lg focus:outline-none focus:ring-2 focus:ring-primary">
+                  <label htmlFor="act-context" className="block text-sm text-foreground mb-1">Contexte</label>
+                  <select
+                    id="act-context"
+                    value={form.context}
+                    onChange={(e) => setForm({ ...form, context: e.target.value })}
+                    className="w-full px-3 py-2 border border-input rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
+                  >
                     <option value="">-- Choisir --</option>
                     <option value="Upskilling">Upskilling</option>
                     <option value="Expertise">Expertise</option>
@@ -373,9 +421,13 @@ export function Activities({ userRole }: ActivitiesProps) {
 
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-sm text-foreground mb-1">Statut</label>
-                  <select value={form.status} onChange={(e) => setForm({ ...form, status: e.target.value })}
-                    className="w-full px-3 py-2 border border-input rounded-lg focus:outline-none focus:ring-2 focus:ring-primary">
+                  <label htmlFor="act-status" className="block text-sm text-foreground mb-1">Statut</label>
+                  <select
+                    id="act-status"
+                    value={form.status}
+                    onChange={(e) => setForm({ ...form, status: e.target.value })}
+                    className="w-full px-3 py-2 border border-input rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
+                  >
                     <option value="Draft">Draft</option>
                     <option value="Validated">Validated</option>
                     <option value="In Progress">In Progress</option>
@@ -383,30 +435,49 @@ export function Activities({ userRole }: ActivitiesProps) {
                   </select>
                 </div>
                 <div>
-                  <label className="block text-sm text-foreground mb-1">Nombre de places</label>
-                  <input type="number" min={0} value={form.nombreDePlaces}
+                  <label htmlFor="act-places" className="block text-sm text-foreground mb-1">Nombre de places</label>
+                  <input
+                    id="act-places"
+                    type="number"
+                    min={0}
+                    value={form.nombreDePlaces}
                     onChange={(e) => setForm({ ...form, nombreDePlaces: parseInt(e.target.value) || 0 })}
-                    className="w-full px-3 py-2 border border-input rounded-lg focus:outline-none focus:ring-2 focus:ring-primary" />
+                    className="w-full px-3 py-2 border border-input rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
+                  />
                 </div>
               </div>
 
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-sm text-foreground mb-1">Date début</label>
-                  <input type="date" value={form.startDate} onChange={(e) => setForm({ ...form, startDate: e.target.value })}
-                    className="w-full px-3 py-2 border border-input rounded-lg focus:outline-none focus:ring-2 focus:ring-primary" />
+                  <label htmlFor="act-start" className="block text-sm text-foreground mb-1">Date début</label>
+                  <input
+                    id="act-start"
+                    type="date"
+                    value={form.startDate}
+                    onChange={(e) => setForm({ ...form, startDate: e.target.value })}
+                    className="w-full px-3 py-2 border border-input rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
+                  />
                 </div>
                 <div>
-                  <label className="block text-sm text-foreground mb-1">Date fin</label>
-                  <input type="date" value={form.endDate} onChange={(e) => setForm({ ...form, endDate: e.target.value })}
-                    className="w-full px-3 py-2 border border-input rounded-lg focus:outline-none focus:ring-2 focus:ring-primary" />
+                  <label htmlFor="act-end" className="block text-sm text-foreground mb-1">Date fin</label>
+                  <input
+                    id="act-end"
+                    type="date"
+                    value={form.endDate}
+                    onChange={(e) => setForm({ ...form, endDate: e.target.value })}
+                    className="w-full px-3 py-2 border border-input rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
+                  />
                 </div>
               </div>
 
               <div>
-                <label className="block text-sm text-foreground mb-1">Département cible</label>
-                <select value={form.targetedDepartmentId} onChange={(e) => setForm({ ...form, targetedDepartmentId: e.target.value })}
-                  className="w-full px-3 py-2 border border-input rounded-lg focus:outline-none focus:ring-2 focus:ring-primary">
+                <label htmlFor="act-dept" className="block text-sm text-foreground mb-1">Département cible</label>
+                <select
+                  id="act-dept"
+                  value={form.targetedDepartmentId}
+                  onChange={(e) => setForm({ ...form, targetedDepartmentId: e.target.value })}
+                  className="w-full px-3 py-2 border border-input rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
+                >
                   <option value="">-- Aucun --</option>
                   {departments.map((d) => <option key={d._id} value={d._id}>{d.name}</option>)}
                 </select>
@@ -513,12 +584,17 @@ export function Activities({ userRole }: ActivitiesProps) {
             </div>
 
             <div className="flex gap-3 mt-6">
-              <button onClick={() => setShowModal(false)}
-                className="flex-1 px-4 py-2 border border-input rounded-lg hover:bg-secondary transition-colors">
+              <button
+                onClick={() => setShowModal(false)}
+                className="flex-1 px-4 py-2 border border-input rounded-lg hover:bg-secondary transition-colors focus:outline-none focus:ring-2 focus:ring-primary"
+              >
                 Annuler
               </button>
-              <button onClick={handleSubmit} disabled={!form.title.trim()}
-                className="flex-1 px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary/90 transition-colors disabled:opacity-50">
+              <button
+                onClick={handleSubmit}
+                disabled={!form.title.trim()}
+                className="flex-1 px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary/90 transition-colors disabled:opacity-50 focus:outline-none focus:ring-2 focus:ring-primary"
+              >
                 {editingActivity ? 'Enregistrer' : 'Créer'}
               </button>
             </div>
@@ -542,6 +618,22 @@ export function Activities({ userRole }: ActivitiesProps) {
           onClose={() => setHistoryActivity(null)}
         />
       )}
+
+      {/* WCAG 2.1.1 — ConfirmDialog remplace window.confirm() non accessible */}
+      <ConfirmDialog
+        open={!!confirmDeleteActivity}
+        title="Supprimer l'activité"
+        message={`Voulez-vous vraiment supprimer "${confirmDeleteActivity?.title}" ? Cette action est irréversible.`}
+        confirmLabel="Supprimer"
+        cancelLabel="Annuler"
+        onConfirm={async () => {
+          if (confirmDeleteActivity) {
+            await doDelete(confirmDeleteActivity._id);
+            setConfirmDeleteActivity(null);
+          }
+        }}
+        onCancel={() => setConfirmDeleteActivity(null)}
+      />
     </div>
   );
 }

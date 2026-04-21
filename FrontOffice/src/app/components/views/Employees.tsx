@@ -154,8 +154,11 @@ export function Employees({ userRole }: EmployeesProps) {
       <div className="bg-card rounded-lg shadow-sm p-4 border border-border">
         <div className="flex flex-col md:flex-row gap-3">
           <div className="relative flex-1">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" aria-hidden="true" />
+            {/* WCAG 1.3.1 — label explicite associé à l'input via htmlFor */}
+            <label htmlFor="employee-search" className="sr-only">{t('searchEmployees')}</label>
             <input
+              id="employee-search"
               type="text"
               placeholder={t('searchEmployees')}
               value={searchTerm}
@@ -164,8 +167,11 @@ export function Employees({ userRole }: EmployeesProps) {
             />
           </div>
           <div className="flex items-center gap-2">
-            <Filter className="w-4 h-4 text-muted-foreground shrink-0" />
+            <Filter className="w-4 h-4 text-muted-foreground shrink-0" aria-hidden="true" />
+            {/* WCAG 1.3.1 — label associé au select */}
+            <label htmlFor="employee-dept-filter" className="sr-only">Filtrer par département</label>
             <select
+              id="employee-dept-filter"
               value={selectedDepartment}
               onChange={(e) => setSelectedDepartment(e.target.value)}
               className="px-3 py-2 border border-input rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary"
@@ -174,20 +180,22 @@ export function Employees({ userRole }: EmployeesProps) {
             </select>
           </div>
         </div>
-        <p className="mt-3 text-sm text-muted-foreground">
+        <p className="mt-3 text-sm text-muted-foreground" aria-live="polite">
           {t('showingEmployees').replace('{filteredEmployees.length}', String(filteredEmployees.length)).replace('{employees.length}', String(employees.length))}
         </p>
       </div>
 
       {/* TABLE */}
       <div className="bg-card rounded-lg shadow-sm border border-border overflow-hidden">
-        <table className="w-full">
+        {/* WCAG 1.3.1 — caption décrit le tableau pour les lecteurs d'écran */}
+        <table className="w-full" aria-label={t('employees')}>
           <thead className="bg-secondary border-b border-border">
             <tr>
-              <th className="text-left px-6 py-4 text-sm font-medium text-foreground">{t('employeeName')}</th>
-              <th className="text-left px-6 py-4 text-sm font-medium text-foreground">{t('employeeRole')}</th>
-              <th className="text-center px-6 py-4 text-sm font-medium text-foreground">{t('employeeSkills')}</th>
-              <th className="text-right px-6 py-4 text-sm font-medium text-foreground">{t('actions')}</th>
+              {/* WCAG 1.3.1 — scope="col" associe chaque en-tête à sa colonne */}
+              <th scope="col" className="text-left px-6 py-4 text-sm font-medium text-foreground">{t('employeeName')}</th>
+              <th scope="col" className="text-left px-6 py-4 text-sm font-medium text-foreground">{t('employeeRole')}</th>
+              <th scope="col" className="text-center px-6 py-4 text-sm font-medium text-foreground">{t('employeeSkills')}</th>
+              <th scope="col" className="text-right px-6 py-4 text-sm font-medium text-foreground">{t('actions')}</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-border">
@@ -195,7 +203,10 @@ export function Employees({ userRole }: EmployeesProps) {
               <tr key={employee.id} className="hover:bg-secondary/50">
                 <td className="px-6 py-4">
                   <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center text-primary font-medium">
+                    <div
+                      className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center text-primary font-medium"
+                      aria-hidden="true"
+                    >
                       {employee.avatar || employee.name?.charAt(0)}
                     </div>
                     <div>
@@ -205,6 +216,7 @@ export function Employees({ userRole }: EmployeesProps) {
                   </div>
                 </td>
                 <td className="px-6 py-4">
+                  {/* WCAG 1.4.1 — la couleur seule ne suffit pas : le texte du rôle est aussi présent */}
                   <span className={`inline-flex px-3 py-1 rounded-full text-sm font-medium ${
                     employee.role === 'HR' ? 'bg-red-100 text-red-700' :
                     employee.role === 'MANAGER' ? 'bg-yellow-100 text-yellow-700' :
@@ -220,25 +232,29 @@ export function Employees({ userRole }: EmployeesProps) {
                 </td>
                 <td className="px-6 py-4">
                   <div className="flex items-center justify-end gap-2">
+                    {/* WCAG 4.1.2 — aria-label sur chaque bouton icône */}
                     <button
-                      className="p-2 hover:bg-secondary rounded-lg"
+                      className="p-2 hover:bg-secondary rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
                       onClick={() => { setViewEmployee(employee); setViewOpen(true); }}
+                      aria-label={`Voir le profil de ${employee.name}`}
                     >
-                      <Eye className="w-4 h-4 text-muted-foreground" />
+                      <Eye className="w-4 h-4 text-muted-foreground" aria-hidden="true" />
                     </button>
                     {(userRole === 'HR' || userRole === 'SUPERADMIN') && (
                       <>
                         <button
-                          className="p-2 hover:bg-secondary rounded-lg"
+                          className="p-2 hover:bg-secondary rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
                           onClick={() => setEditingEmployee(employee)}
+                          aria-label={`Modifier ${employee.name}`}
                         >
-                          <Edit className="w-4 h-4 text-muted-foreground" />
+                          <Edit className="w-4 h-4 text-muted-foreground" aria-hidden="true" />
                         </button>
                         <button
-                          className="p-2 hover:bg-secondary rounded-lg"
+                          className="p-2 hover:bg-secondary rounded-lg focus:outline-none focus:ring-2 focus:ring-destructive"
                           onClick={() => setConfirmDelete({ id: employee.id, name: employee.name })}
+                          aria-label={`Supprimer ${employee.name}`}
                         >
-                          <Trash2 className="w-4 h-4 text-destructive" />
+                          <Trash2 className="w-4 h-4 text-destructive" aria-hidden="true" />
                         </button>
                       </>
                     )}

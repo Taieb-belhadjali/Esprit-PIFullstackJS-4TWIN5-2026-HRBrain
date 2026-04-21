@@ -50,8 +50,25 @@ const ActivityCard: React.FC<ActivityCardProps> = ({
 }) => {
   const canManage = userRole === 'Manager' || userRole === 'SUPERADMIN';
 
+  // Construit le texte descriptif complet de la card pour le TTS
+  const cardDescription = [
+    `Activité : ${activity.title}`,
+    `Statut : ${activity.status}`,
+    activity.context ? `Contexte : ${activity.context}` : '',
+    activity.type ? `Type : ${activity.type}` : '',
+    departmentName ? `Département : ${departmentName}` : '',
+    activity.nombreDePlaces > 0 ? `${activity.nombreDePlaces} place(s)` : '',
+    activity.description ? `Description : ${activity.description}` : '',
+    activity.requiredSkills?.length > 0
+      ? `Skills requis : ${activity.requiredSkills.map(getSkillName).join(', ')}`
+      : '',
+  ].filter(Boolean).join('. ');
+
   return (
-    <div className="group bg-card rounded-xl shadow-md hover:shadow-xl transition-all duration-300 border border-gray-100 overflow-hidden hover:border-blue-200">
+    <article
+      className="group bg-card rounded-xl shadow-md hover:shadow-xl transition-all duration-300 border border-gray-100 overflow-hidden hover:border-blue-200 focus-within:ring-2 focus-within:ring-primary"
+      aria-label={cardDescription}
+    >
       <div className="h-1 bg-gradient-to-r from-indigo-500 to-purple-600" />
 
       <div className="p-5">
@@ -84,34 +101,34 @@ const ActivityCard: React.FC<ActivityCardProps> = ({
               {onHistory && (
                 <button
                   onClick={() => onHistory(activity)}
-                  className="p-2 rounded-lg bg-purple-50 hover:bg-purple-100 text-purple-600 transition-all hover:scale-110"
-                  title="Historique recommandations"
+                  className="p-2 rounded-lg bg-purple-50 hover:bg-purple-100 text-purple-600 transition-all hover:scale-110 focus:outline-none focus:ring-2 focus:ring-purple-400"
+                  aria-label={`Historique des recommandations pour ${activity.title}`}
                 >
-                  <History size={16} />
+                  <History size={16} aria-hidden="true" />
                 </button>
               )}
               {onRecommend && (
                 <button
                   onClick={() => onRecommend(activity)}
-                  className="p-2 rounded-lg bg-indigo-50 hover:bg-indigo-100 text-indigo-600 transition-all hover:scale-110"
-                  title="Recommandations"
+                  className="p-2 rounded-lg bg-indigo-50 hover:bg-indigo-100 text-indigo-600 transition-all hover:scale-110 focus:outline-none focus:ring-2 focus:ring-indigo-400"
+                  aria-label={`Recommandations IA pour ${activity.title}`}
                 >
-                  <Users size={16} />
+                  <Users size={16} aria-hidden="true" />
                 </button>
               )}
               <button
                 onClick={() => onEdit(activity)}
-                className="p-2 rounded-lg bg-blue-50 hover:bg-blue-100 text-blue-600 transition-all hover:scale-110"
-                title="Modifier"
+                className="p-2 rounded-lg bg-blue-50 hover:bg-blue-100 text-blue-600 transition-all hover:scale-110 focus:outline-none focus:ring-2 focus:ring-blue-400"
+                aria-label={`Modifier ${activity.title}`}
               >
-                <Edit size={16} />
+                <Edit size={16} aria-hidden="true" />
               </button>
               <button
                 onClick={() => onDelete(activity._id)}
-                className="p-2 rounded-lg bg-red-50 hover:bg-red-100 text-red-600 transition-all hover:scale-110"
-                title="Supprimer"
+                className="p-2 rounded-lg bg-red-50 hover:bg-red-100 text-red-600 transition-all hover:scale-110 focus:outline-none focus:ring-2 focus:ring-red-400"
+                aria-label={`Supprimer ${activity.title}`}
               >
-                <Trash2 size={16} />
+                <Trash2 size={16} aria-hidden="true" />
               </button>
             </div>
           )}
@@ -170,7 +187,7 @@ const ActivityCard: React.FC<ActivityCardProps> = ({
           </div>
         )}
       </div>
-    </div>
+    </article>
   );
 };
 
