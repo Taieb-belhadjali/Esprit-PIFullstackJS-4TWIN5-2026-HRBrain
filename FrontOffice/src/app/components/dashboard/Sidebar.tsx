@@ -119,6 +119,7 @@ export function Sidebar({
       className={`fixed top-0 left-0 h-screen bg-sidebar text-sidebar-foreground transition-all duration-300 z-50 ${
         isCollapsed ? 'w-16' : 'w-64'
       }`}
+      aria-label="Navigation principale"
     >
       <div className="flex flex-col h-full">
         {/* Header */}
@@ -126,24 +127,26 @@ export function Sidebar({
           <div className="flex items-center justify-between">
             {!isCollapsed && (
               <div className="flex items-center gap-2">
-                <div className="bg-card rounded-lg p-2">
-                  <Brain className="w-6 h-6 text-primary" />
+                <div className="bg-card rounded-lg p-2" aria-hidden="true">
+                  <Brain className="w-6 h-6 text-primary" aria-hidden="true" />
                 </div>
                 <div>
-                  <h1 className="font-semibold text-lg">HRBrain</h1>
+                  {/* WCAG 1.3.1 — h2 car h1 est réservé au contenu principal de chaque vue */}
+                  <span className="font-semibold text-lg" aria-label="HRBrain AI">HRBrain</span>
                   <p className="text-xs text-sidebar-foreground/70">{userRole}</p>
                 </div>
               </div>
             )}
             <button
               onClick={onToggleCollapse}
-              className="p-1.5 rounded-lg hover:bg-sidebar-accent transition-colors"
-              title={isCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+              className="p-1.5 rounded-lg hover:bg-sidebar-accent transition-colors focus:outline-none focus:ring-2 focus:ring-sidebar-ring"
+              aria-label={isCollapsed ? 'Développer la barre latérale' : 'Réduire la barre latérale'}
+              aria-expanded={!isCollapsed}
             >
               {isCollapsed ? (
-                <ChevronRight className="w-5 h-5" />
+                <ChevronRight className="w-5 h-5" aria-hidden="true" />
               ) : (
-                <ChevronLeft className="w-5 h-5" />
+                <ChevronLeft className="w-5 h-5" aria-hidden="true" />
               )}
             </button>
           </div>
@@ -151,9 +154,12 @@ export function Sidebar({
 
         {/* User Info */}
         {!isCollapsed && (
-          <div className="p-4 border-b border-sidebar-border">
+          <div className="p-4 border-b border-sidebar-border" aria-label={`Connecté en tant que ${userName}, rôle ${userRole}`}>
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-full bg-sidebar-accent flex items-center justify-center">
+              <div
+                className="w-10 h-10 rounded-full bg-sidebar-accent flex items-center justify-center"
+                aria-hidden="true"
+              >
                 <span className="text-sm font-semibold">
                   {userName.substring(0, 2).toUpperCase()}
                 </span>
@@ -168,21 +174,25 @@ export function Sidebar({
           </div>
         )}
 
-        {/* Navigation */}
-        <nav className="flex-1 overflow-y-auto py-4">
-          <ul className="space-y-1 px-2">
+        {/* Navigation — WCAG 1.3.1: nav landmark + aria-label */}
+        <nav className="flex-1 overflow-y-auto py-4" aria-label="Menu principal">
+          <ul className="space-y-1 px-2" role="list">
             {filteredMenuItems.map((item) => (
               <li key={item.id}>
                 <button
                   onClick={() => onViewChange(item.id)}
-                  className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all ${
+                  className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all focus:outline-none focus:ring-2 focus:ring-sidebar-ring ${
                     currentView === item.id
                       ? 'bg-sidebar-primary text-sidebar-primary-foreground'
                       : 'hover:bg-sidebar-accent text-sidebar-foreground'
                   }`}
-                  title={isCollapsed ? t(item.labelKey) : undefined}
+                  /* WCAG 4.1.2 — aria-label quand sidebar collapsed (icône seule visible) */
+                  aria-label={isCollapsed ? t(item.labelKey) : undefined}
+                  /* WCAG 4.1.2 — aria-current indique la page active aux lecteurs d'écran */
+                  aria-current={currentView === item.id ? 'page' : undefined}
                 >
-                  {item.icon}
+                  {/* WCAG 1.1.1 — icônes décoratives masquées aux lecteurs d'écran */}
+                  <span aria-hidden="true">{item.icon}</span>
                   {!isCollapsed && <span className="flex-1 text-left">{t(item.labelKey)}</span>}
                 </button>
               </li>

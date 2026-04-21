@@ -111,12 +111,13 @@ export function Home({ userRole }: HomeProps) {
             className="bg-card rounded-lg shadow-sm p-6 border border-border hover:shadow-md transition-shadow"
           >
             <div className="flex items-start justify-between mb-4">
-              <div className={`${metric.color} text-white p-3 rounded-lg`}>
+              {/* WCAG 1.1.1 — icône décorative masquée aux AT */}
+              <div className={`${metric.color} text-white p-3 rounded-lg`} aria-hidden="true">
                 {metric.icon}
               </div>
               <div className="flex items-center gap-1 text-sm">
-                <TrendingUp className="w-4 h-4 text-green-600" />
-                <span className="text-green-600">{metric.change}</span>
+                <TrendingUp className="w-4 h-4 text-green-600" aria-hidden="true" />
+                <span className="text-green-600" aria-label={`Variation : ${metric.change}`}>{metric.change}</span>
               </div>
             </div>
             <h3 className="text-2xl font-semibold mb-1 text-foreground">{metric.value}</h3>
@@ -177,7 +178,13 @@ export function Home({ userRole }: HomeProps) {
       <div className="bg-card rounded-lg shadow-sm p-6 border border-border">
         <div className="flex items-center justify-between mb-4">
           <h2 className="text-xl text-foreground">{t('recentAlerts')}</h2>
-          <button className="text-primary hover:underline text-sm">{t('viewAll')}</button>
+          {/* WCAG 2.4.6 — aria-label descriptif sur "View All" */}
+          <button
+            className="text-primary hover:underline text-sm focus:outline-none focus:ring-2 focus:ring-primary rounded"
+            aria-label="Voir toutes les alertes"
+          >
+            {t('viewAll')}
+          </button>
         </div>
         <div className="space-y-4">
           {alerts.map((alert, index) => (
@@ -187,21 +194,15 @@ export function Home({ userRole }: HomeProps) {
             >
               <div
                 className={`p-2 rounded-lg ${
-                  alert.type === 'critical'
-                    ? 'bg-red-100'
-                    : alert.type === 'warning'
-                    ? 'bg-yellow-100'
-                    : 'bg-blue-100'
+                  alert.type === 'critical' ? 'bg-red-100' : alert.type === 'warning' ? 'bg-yellow-100' : 'bg-blue-100'
                 }`}
+                aria-hidden="true"
               >
                 <AlertCircle
                   className={`w-5 h-5 ${
-                    alert.type === 'critical'
-                      ? 'text-red-600'
-                      : alert.type === 'warning'
-                      ? 'text-yellow-600'
-                      : 'text-blue-600'
+                    alert.type === 'critical' ? 'text-red-600' : alert.type === 'warning' ? 'text-yellow-600' : 'text-blue-600'
                   }`}
+                  aria-hidden="true"
                 />
               </div>
               <div className="flex-1">

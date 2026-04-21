@@ -70,10 +70,10 @@ export function Profile({ user }: ProfileProps) {
           <div className="flex-1">
             <h1 className="text-2xl font-bold text-gray-900 mb-1">{profile.name}</h1>
             <div className="space-y-1 text-sm text-muted-foreground">
-              <div className="flex items-center gap-2"><Mail className="w-4 h-4" />{profile.email}</div>
-              <div className="flex items-center gap-2"><Briefcase className="w-4 h-4" />{profile.role}</div>
+              <div className="flex items-center gap-2"><Mail className="w-4 h-4" aria-hidden="true" />{profile.email}</div>
+              <div className="flex items-center gap-2"><Briefcase className="w-4 h-4" aria-hidden="true" />{profile.role}</div>
               {profile.departmentId?.name && (
-                <div className="flex items-center gap-2"><Building2 className="w-4 h-4" />{profile.departmentId.name}</div>
+                <div className="flex items-center gap-2"><Building2 className="w-4 h-4" aria-hidden="true" />{profile.departmentId.name}</div>
               )}
             </div>
           </div>

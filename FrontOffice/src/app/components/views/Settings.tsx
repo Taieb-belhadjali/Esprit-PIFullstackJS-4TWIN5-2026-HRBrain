@@ -158,7 +158,7 @@ export function Settings({ onLogout, theme, setTheme, language: _langProp, setLa
         <div className="space-y-4">
           <div className="flex items-center justify-between p-4 border border-border rounded-lg">
             <div>
-              <p className="font-medium text-foreground">{t('emailNotifications')}</p>
+              <p className="font-medium text-foreground" id="email-notif-label">{t('emailNotifications')}</p>
               <p className="text-sm text-muted-foreground">{t('emailNotificationsDesc')}</p>
             </div>
             <label className="relative inline-flex items-center cursor-pointer">
@@ -167,6 +167,7 @@ export function Settings({ onLogout, theme, setTheme, language: _langProp, setLa
                 checked={emailNotifications}
                 onChange={(e) => setEmailNotifications(e.target.checked)}
                 className="sr-only peer"
+                aria-labelledby="email-notif-label"
               />
               <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-primary rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-card after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary"></div>
             </label>
@@ -174,7 +175,7 @@ export function Settings({ onLogout, theme, setTheme, language: _langProp, setLa
 
           <div className="flex items-center justify-between p-4 border border-border rounded-lg">
             <div>
-              <p className="font-medium text-foreground">{t('pushNotifications')}</p>
+              <p className="font-medium text-foreground" id="push-notif-label">{t('pushNotifications')}</p>
               <p className="text-sm text-muted-foreground">{t('pushNotificationsDesc')}</p>
             </div>
             <label className="relative inline-flex items-center cursor-pointer">
@@ -183,6 +184,7 @@ export function Settings({ onLogout, theme, setTheme, language: _langProp, setLa
                 checked={pushNotifications}
                 onChange={(e) => setPushNotifications(e.target.checked)}
                 className="sr-only peer"
+                aria-labelledby="push-notif-label"
               />
               <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-primary rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-card after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary"></div>
             </label>
