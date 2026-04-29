@@ -1,0 +1,38 @@
+pipeline {
+    agent any
+    tools { nodejs 'NodeJS' }
+
+    stages {
+        stage('Checkout') {
+            steps { checkout scm }
+        }
+        stage('Install Backend') {
+            steps {
+                dir('BackOffice') { sh 'npm ci' }
+            }
+        }
+        stage('Tests Backend') {
+            steps {
+                dir('BackOffice') {
+                    sh 'npm run test:cov -- --passWithNoTests --forceExit'
+                }
+            }
+        }
+        stage('Build Backend') {
+            steps {
+                dir('BackOffice') { sh 'npm run build' }
+            }
+        }
+    }
+    post {
+        always {
+            junit allowEmptyResults: true,
+                  testResults: 'BackOffice/coverage/junit.xml'
+        }
+        success {
+            echo '✅ CI Backend réussi'
+            build job: 'CD-Backend', wait: false
+        }
+        failure { echo '❌ CI Backend échoué' }
+    }
+}
