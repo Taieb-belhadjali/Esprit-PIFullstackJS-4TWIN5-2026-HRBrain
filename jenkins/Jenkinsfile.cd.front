@@ -1,0 +1,39 @@
+pipeline {
+    agent any
+
+    environment {
+        IMAGE_NAME = 'frontoffice'
+        CONTAINER_NAME = 'frontoffice-app'
+        PORT = '80'
+    }
+
+    stages {
+        stage('Checkout') {
+            steps { checkout scm }
+        }
+        stage('Build Image Docker') {
+            steps {
+                dir('FrontOffice') {
+                    sh "docker build -t ${IMAGE_NAME}:latest ."
+                }
+            }
+        }
+        stage('Deploy Frontend') {
+            steps {
+                sh """
+                    docker stop ${CONTAINER_NAME} || true
+                    docker rm ${CONTAINER_NAME} || true
+                    docker run -d \
+                        --name ${CONTAINER_NAME} \
+                        -p ${PORT}:80 \
+                        --restart unless-stopped \
+                        ${IMAGE_NAME}:latest
+                """
+            }
+        }
+    }
+    post {
+        success { echo '✅ CD Frontend déployé' }
+        failure { echo '❌ CD Frontend échoué' }
+    }
+}
