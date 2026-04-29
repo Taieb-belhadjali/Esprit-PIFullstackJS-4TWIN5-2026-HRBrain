@@ -1,0 +1,27 @@
+pipeline {
+    agent any
+    tools { nodejs 'NodeJS' }
+
+    stages {
+        stage('Checkout') {
+            steps { checkout scm }
+        }
+        stage('Install Frontend') {
+            steps {
+                dir('FrontOffice') { sh 'npm ci' }
+            }
+        }
+        stage('Build Frontend') {
+            steps {
+                dir('FrontOffice') { sh 'npm run build' }
+            }
+        }
+    }
+    post {
+        success {
+            echo '✅ CI Frontend réussi'
+            build job: 'CD-Frontend', wait: false
+        }
+        failure { echo '❌ CI Frontend échoué' }
+    }
+}
