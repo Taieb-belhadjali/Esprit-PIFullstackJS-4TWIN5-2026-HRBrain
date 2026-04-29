@@ -1,5 +1,5 @@
 # Use Node image
-FROM node:18
+FROM node:20
 
 # Create app directory
 WORKDIR /app
@@ -20,4 +20,4 @@ RUN npm run build
 EXPOSE 3000
 
 # Start the app
-CMD ["node", "dist/main"]
+CMD ["node", "dist/main.js"]
