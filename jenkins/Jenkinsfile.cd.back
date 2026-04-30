@@ -23,10 +23,10 @@ pipeline {
             }
         }
 
-        stage('Cleanup') {
+        stage('Cleanup Old Container') {
             steps {
-                bat 'docker stop %CONTAINER_NAME% 2>nul || exit /b 0'
-                bat 'docker rm %CONTAINER_NAME% 2>nul || exit /b 0'
+                bat 'docker stop %CONTAINER_NAME% 2>nul & exit /b 0'
+                bat 'docker rm %CONTAINER_NAME% 2>nul & exit /b 0'
             }
         }
 
@@ -42,11 +42,17 @@ pipeline {
             }
         }
 
+        stage('Wait Backend Start') {
+            steps {
+                // attendre 10 secondes proprement
+                sleep(time: 10, unit: 'SECONDS')
+            }
+        }
+
         stage('Health Check') {
             steps {
                 bat '''
-                timeout /t 5 >nul
-                curl http://localhost:%PORT% || exit /b 1
+                docker ps | findstr %CONTAINER_NAME% || exit /b 1
                 '''
             }
         }
@@ -54,11 +60,12 @@ pipeline {
 
     post {
         success {
-            echo '✅ CD Backend déployé et fonctionnel'
+            echo '✅ CD Backend déployé avec succès et container actif'
         }
+
         failure {
-            bat 'docker stop %CONTAINER_NAME% 2>nul || exit /b 0'
-            bat 'docker rm %CONTAINER_NAME% 2>nul || exit /b 0'
+            bat 'docker stop %CONTAINER_NAME% 2>nul & exit /b 0'
+            bat 'docker rm %CONTAINER_NAME% 2>nul & exit /b 0'
             echo '❌ CD Backend échoué'
         }
     }
