@@ -1,27 +1,42 @@
 pipeline {
     agent any
-    tools { nodejs 'NodeJS' }
+
+    tools {
+        nodejs 'NodeJS'
+    }
 
     stages {
         stage('Checkout') {
-            steps { checkout scm }
-        }
-        stage('Install Frontend') {
             steps {
-                dir('FrontOffice') { sh 'npm ci' }
+                checkout scm
             }
         }
+
+        stage('Install Frontend') {
+            steps {
+                dir('FrontOffice') {
+                    bat 'npm ci'
+                }
+            }
+        }
+
         stage('Build Frontend') {
             steps {
-                dir('FrontOffice') { sh 'npm run build' }
+                dir('FrontOffice') {
+                    bat 'npm run build'
+                }
             }
         }
     }
+
     post {
         success {
             echo '✅ CI Frontend réussi'
-            build job: 'CD-Frontend', wait: false
+            build job: 'Jenkinsfile.cd.front', wait: false
         }
-        failure { echo '❌ CI Frontend échoué' }
+
+        failure {
+            echo '❌ CI Frontend échoué'
+        }
     }
 }
