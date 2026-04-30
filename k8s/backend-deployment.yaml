@@ -1,0 +1,60 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: backend-deployment
+  labels:
+    app: backend
+spec:
+  replicas: 2
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app: backend
+  template:
+    metadata:
+      labels:
+        app: backend
+    spec:
+      # Helps the pod ignore local DNS search paths that cause ESERVFAIL
+      dnsConfig:
+        options:
+          - name: ndots
+            value: "1"
+      containers:
+      - name: backend
+        # IMPORTANT: Change 'latest' to 'v3' (or your latest tag) to force a fresh pull
+        image: ghostmomba/backend:v3 
+        imagePullPolicy: Always
+        ports:
+        - containerPort: 3000
+        resources:
+          requests:
+            memory: "256Mi"
+            cpu: "250m"
+          limits:
+            memory: "512Mi"
+            cpu: "500m"
+        # Probes give the app time to connect to Mongo before being killed
+        livenessProbe:
+          httpGet:
+            path: /
+            port: 3000
+          initialDelaySeconds: 60 
+          periodSeconds: 20
+          failureThreshold: 5
+          
+        readinessProbe:
+          httpGet:
+            path: /
+            port: 3000
+          initialDelaySeconds: 30
+          periodSeconds: 15
+        env:
+        - name: MONGO_URI
+          # Standard String Format: Bypasses the VM's DNS SRV limitations
+          value: "mongodb://taiebaminebelhadjali_db_user:[Complexatom88@ac-dcrdefw-shard-00-00.wczwpwn.mongodb.net:27017](mailto:Complexatom88@ac-dcrdefw-shard-00-00.wczwpwn.mongodb.net:27017),[ac-dcrdefw-shard-00-01.wczwpwn.mongodb.net:27017](http://ac-dcrdefw-shard-00-01.wczwpwn.mongodb.net:27017),[ac-dcrdefw-shard-00-02.wczwpwn.mongodb.net:27017/HRBrain_db?authSource=admin&tls=true](http://ac-dcrdefw-shard-00-02.wczwpwn.mongodb.net:27017/HRBrain_db?authSource=admin&tls=true)"
+        
+        # Ensures Node.js prioritizes IPv4 (Atlas prefers this)
+        - name: NODE_OPTIONS
+          value: "--dns-result-order=ipv4first"
