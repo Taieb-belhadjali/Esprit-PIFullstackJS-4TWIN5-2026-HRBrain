@@ -29,14 +29,12 @@ pipeline {
         }
     }
 
-    post {
-        success {
-            echo '✅ CI Frontend réussi'
-            build job: 'Jenkinsfile.cd.front', wait: false
-        }
-
-        failure {
-            echo '❌ CI Frontend échoué'
-        }
+   post {
+    success {
+        echo '✅ CI Frontend réussi'
     }
+    failure {
+        echo '❌ CI Frontend échoué'
+    }
+}
 }
