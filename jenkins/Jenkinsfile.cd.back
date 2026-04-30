@@ -24,6 +24,9 @@ pipeline {
                 docker stop %CONTAINER_NAME% || exit /b 0
                 docker rm %CONTAINER_NAME% || exit /b 0
                 docker container prune -f || exit /b 0
+                for /f "tokens=5" %%a in ('netstat -ano ^| findstr ":%PORT% "') do (
+                    taskkill /PID %%a /F || exit /b 0
+                )
                 '''
             }
         }
