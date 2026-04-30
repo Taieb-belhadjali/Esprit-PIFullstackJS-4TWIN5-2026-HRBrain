@@ -4,17 +4,18 @@ pipeline {
     environment {
         IMAGE_NAME = 'frontoffice'
         CONTAINER_NAME = 'frontoffice-app'
-        PORT = '80'
+        PORT = '8081'
     }
 
     stages {
+
         stage('Checkout') {
             steps {
                 checkout scm
             }
         }
 
-        stage('Build Image Docker') {
+        stage('Build Docker Image') {
             steps {
                 dir('FrontOffice') {
                     bat "docker build -t %IMAGE_NAME%:latest ."
@@ -22,12 +23,22 @@ pipeline {
             }
         }
 
-        stage('Deploy Frontend') {
+        stage('Stop Old Container') {
             steps {
                 bat '''
-                docker stop %CONTAINER_NAME% || exit 0
-                docker rm %CONTAINER_NAME% || exit 0
-                docker run -d -p %PORT%:80 --name %CONTAINER_NAME% %IMAGE_NAME%:latest
+                docker stop %CONTAINER_NAME% || exit /b 0
+                docker rm %CONTAINER_NAME% || exit /b 0
+                '''
+            }
+        }
+
+        stage('Run Container') {
+            steps {
+                bat '''
+                docker run -d ^
+                -p %PORT%:80 ^
+                --name %CONTAINER_NAME% ^
+                %IMAGE_NAME%:latest
                 '''
             }
         }
@@ -35,7 +46,7 @@ pipeline {
 
     post {
         success {
-            echo '✅ CD Frontend déployé'
+            echo '✅ CD Frontend déployé avec succès'
         }
         failure {
             echo '❌ CD Frontend échoué'
