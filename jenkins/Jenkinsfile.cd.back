@@ -9,31 +9,36 @@ pipeline {
 
     stages {
         stage('Checkout') {
-            steps { checkout scm }
+            steps {
+                checkout scm
+            }
         }
-        stage('Build Image Docker') {
+
+        stage('Build Docker Image') {
             steps {
                 dir('BackOffice') {
-                    sh "docker build -t ${IMAGE_NAME}:latest ."
+                    bat "docker build -t %IMAGE_NAME%:latest ."
                 }
             }
         }
+
         stage('Deploy Backend') {
             steps {
-                sh """
-                    docker stop ${CONTAINER_NAME} || true
-                    docker rm ${CONTAINER_NAME} || true
-                    docker run -d \
-                        --name ${CONTAINER_NAME} \
-                        -p ${PORT}:3000 \
-                        --restart unless-stopped \
-                        ${IMAGE_NAME}:latest
-                """
+                bat '''
+                docker stop %CONTAINER_NAME% || exit 0
+                docker rm %CONTAINER_NAME% || exit 0
+                docker run -d -p %PORT%:3000 --name %CONTAINER_NAME% %IMAGE_NAME%:latest
+                '''
             }
         }
     }
+
     post {
-        success { echo '✅ CD Backend déployé' }
-        failure { echo '❌ CD Backend échoué' }
+        success {
+            echo '✅ CD Backend déployé'
+        }
+        failure {
+            echo '❌ CD Backend échoué'
+        }
     }
 }
