@@ -4,6 +4,8 @@ import { getModelToken } from '@nestjs/mongoose';
 import { JwtService } from '@nestjs/jwt';
 import { UnauthorizedException, BadRequestException } from '@nestjs/common';
 import { User } from '../users/shemas/user.shema';
+
+jest.mock('bcrypt');
 import * as bcrypt from 'bcrypt';
 
 describe('AuthService', () => {
@@ -50,7 +52,7 @@ describe('AuthService', () => {
   describe('login', () => {
     it('should return token and user info on valid credentials', async () => {
       mockUserModel.findOne.mockResolvedValue(mockUser);
-      jest.spyOn(bcrypt, 'compare').mockResolvedValue(true as never);
+      bcrypt.compare.mockResolvedValue(true);
 
       const result = await service.login('john@example.com', 'password123');
 
@@ -73,8 +75,8 @@ describe('AuthService', () => {
     });
 
     it('should throw UnauthorizedException when password is wrong', async () => {
-      mockUserModel.findOne.mockResolvedValue(mockUser);
-      jest.spyOn(bcrypt, 'compare').mockResolvedValue(false as never);
+       mockUserModel.findOne.mockResolvedValue(mockUser);
+       bcrypt.compare.mockResolvedValue(false);
 
       await expect(service.login('john@example.com', 'wrongpassword')).rejects.toThrow(
         UnauthorizedException,
@@ -82,9 +84,9 @@ describe('AuthService', () => {
     });
 
     it('should return mustChangePassword true when user must change password', async () => {
-      const userMustChange = { ...mockUser, mustChangePassword: true };
-      mockUserModel.findOne.mockResolvedValue(userMustChange);
-      jest.spyOn(bcrypt, 'compare').mockResolvedValue(true as never);
+       const userMustChange = { ...mockUser, mustChangePassword: true };
+       mockUserModel.findOne.mockResolvedValue(userMustChange);
+       bcrypt.compare.mockResolvedValue(true);
 
       const result = await service.login('john@example.com', 'password123');
 
@@ -113,8 +115,8 @@ describe('AuthService', () => {
 
   describe('changePassword', () => {
     it('should update password and return success message', async () => {
-      mockUserModel.findByIdAndUpdate.mockResolvedValue({});
-      jest.spyOn(bcrypt, 'hash').mockResolvedValue('newHashedPassword' as never);
+       mockUserModel.findByIdAndUpdate.mockResolvedValue({});
+       bcrypt.hash.mockResolvedValue('newHashedPassword');
 
       const result = await service.changePassword('user123', 'newPassword123');
 
