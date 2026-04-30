@@ -1,38 +1,54 @@
 pipeline {
     agent any
-    tools { nodejs 'NodeJS' }
+
+    tools {
+        nodejs 'NodeJS'
+    }
 
     stages {
         stage('Checkout') {
-            steps { checkout scm }
-        }
-        stage('Install Backend') {
             steps {
-                dir('BackOffice') { sh 'npm ci' }
+                checkout scm
             }
         }
-        stage('Tests Backend') {
+
+        stage('Install Backend') {
             steps {
                 dir('BackOffice') {
-                    sh 'npm run test:cov -- --passWithNoTests --forceExit'
+                    bat 'npm ci'
                 }
             }
         }
+
+        stage('Test Backend') {
+            steps {
+                dir('BackOffice') {
+                    bat 'npm run test:cov -- --passWithNoTests --forceExit'
+                }
+            }
+        }
+
         stage('Build Backend') {
             steps {
-                dir('BackOffice') { sh 'npm run build' }
+                dir('BackOffice') {
+                    bat 'npm run build'
+                }
             }
         }
     }
+
     post {
         always {
-            junit allowEmptyResults: true,
-                  testResults: 'BackOffice/coverage/junit.xml'
+            echo 'Tests exécutés'
         }
+
         success {
             echo '✅ CI Backend réussi'
-            build job: 'CD-Backend', wait: false
+            build job: 'Jenkinsfile.cd.back', wait: false
         }
-        failure { echo '❌ CI Backend échoué' }
+
+        failure {
+            echo '❌ CI Backend échoué'
+        }
     }
 }
