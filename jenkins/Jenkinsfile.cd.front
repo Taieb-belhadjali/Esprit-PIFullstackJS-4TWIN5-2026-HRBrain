@@ -9,31 +9,36 @@ pipeline {
 
     stages {
         stage('Checkout') {
-            steps { checkout scm }
+            steps {
+                checkout scm
+            }
         }
+
         stage('Build Image Docker') {
             steps {
                 dir('FrontOffice') {
-                    sh "docker build -t ${IMAGE_NAME}:latest ."
+                    bat "docker build -t %IMAGE_NAME%:latest ."
                 }
             }
         }
+
         stage('Deploy Frontend') {
             steps {
-                sh """
-                    docker stop ${CONTAINER_NAME} || true
-                    docker rm ${CONTAINER_NAME} || true
-                    docker run -d \
-                        --name ${CONTAINER_NAME} \
-                        -p ${PORT}:80 \
-                        --restart unless-stopped \
-                        ${IMAGE_NAME}:latest
-                """
+                bat '''
+                docker stop %CONTAINER_NAME% || exit 0
+                docker rm %CONTAINER_NAME% || exit 0
+                docker run -d -p %PORT%:80 --name %CONTAINER_NAME% %IMAGE_NAME%:latest
+                '''
             }
         }
     }
+
     post {
-        success { echo '✅ CD Frontend déployé' }
-        failure { echo '❌ CD Frontend échoué' }
+        success {
+            echo '✅ CD Frontend déployé'
+        }
+        failure {
+            echo '❌ CD Frontend échoué'
+        }
     }
 }
