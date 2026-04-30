@@ -1,16 +1,20 @@
 pipeline {
     agent any
+
     environment {
         IMAGE_NAME = 'backoffice'
         CONTAINER_NAME = 'backoffice-app'
         PORT = '3000'
     }
+
     stages {
+
         stage('Checkout') {
             steps {
                 checkout scm
             }
         }
+
         stage('Build Docker Image') {
             steps {
                 dir('BackOffice') {
@@ -18,19 +22,14 @@ pipeline {
                 }
             }
         }
+
         stage('Cleanup') {
             steps {
-                bat 'docker stop %CONTAINER_NAME% 2>nul & exit /b 0'
-                bat 'docker rm %CONTAINER_NAME% 2>nul & exit /b 0'
-                bat 'docker container prune -f 2>nul & exit /b 0'
-                bat '''
-                for /f "tokens=5" %%a in ('netstat -ano ^| findstr /R ":%PORT% "') do (
-                    taskkill /PID %%a /F 2>nul
-                )
-                exit /b 0
-                '''
+                bat 'docker stop %CONTAINER_NAME% 2>nul || exit /b 0'
+                bat 'docker rm %CONTAINER_NAME% 2>nul || exit /b 0'
             }
         }
+
         stage('Run Backend') {
             steps {
                 bat '''
@@ -42,14 +41,24 @@ pipeline {
                 '''
             }
         }
+
+        stage('Health Check') {
+            steps {
+                bat '''
+                timeout /t 5 >nul
+                curl http://localhost:%PORT% || exit /b 1
+                '''
+            }
+        }
     }
+
     post {
         success {
-            echo '✅ CD Backend déployé avec succès'
+            echo '✅ CD Backend déployé et fonctionnel'
         }
         failure {
-            bat 'docker stop %CONTAINER_NAME% 2>nul & exit /b 0'
-            bat 'docker rm %CONTAINER_NAME% 2>nul & exit /b 0'
+            bat 'docker stop %CONTAINER_NAME% 2>nul || exit /b 0'
+            bat 'docker rm %CONTAINER_NAME% 2>nul || exit /b 0'
             echo '❌ CD Backend échoué'
         }
     }
