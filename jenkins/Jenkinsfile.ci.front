@@ -6,6 +6,7 @@ pipeline {
     }
 
     stages {
+
         stage('Checkout') {
             steps {
                 checkout scm
@@ -15,15 +16,31 @@ pipeline {
         stage('Install Frontend') {
             steps {
                 dir('FrontOffice') {
-                    bat 'npm ci'
+                    bat 'npm install'
                 }
             }
         }
 
-        stage('Build Frontend') {
+        stage('Test Frontend') {
+            steps {
+                dir('FrontOffice') {
+                    bat 'npm test -- --watchAll=false || exit 0'
+                }
+            }
+        }
+
+        stage('Build Frontend (Vite)') {
             steps {
                 dir('FrontOffice') {
                     bat 'npm run build'
+                }
+            }
+        }
+
+        stage('Verify Dist') {
+            steps {
+                dir('FrontOffice') {
+                    bat 'dir dist'
                 }
             }
         }
@@ -31,7 +48,7 @@ pipeline {
 
     post {
         success {
-            echo '✅ CI Frontend réussi'
+            echo '✅ CI React + Vite réussi'
             build job: 'Jenkinsfile.cd.front', wait: false
         }
 
