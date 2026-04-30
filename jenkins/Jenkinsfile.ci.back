@@ -15,7 +15,7 @@ pipeline {
         stage('Install Backend') {
             steps {
                 dir('BackOffice') {
-                    bat 'npm ci'
+                    bat 'npm install'
                 }
             }
         }
@@ -38,13 +38,8 @@ pipeline {
     }
 
     post {
-        always {
-            echo 'Tests exécutés'
-        }
-
         success {
             echo '✅ CI Backend réussi'
-            build job: 'Jenkinsfile.cd.back', wait: false
         }
 
         failure {
