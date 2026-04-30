@@ -20,13 +20,14 @@ pipeline {
         }
         stage('Cleanup') {
             steps {
+                bat 'docker stop %CONTAINER_NAME% 2>nul & exit /b 0'
+                bat 'docker rm %CONTAINER_NAME% 2>nul & exit /b 0'
+                bat 'docker container prune -f 2>nul & exit /b 0'
                 bat '''
-                docker stop %CONTAINER_NAME% || exit /b 0
-                docker rm %CONTAINER_NAME% || exit /b 0
-                docker container prune -f || exit /b 0
-                for /f "tokens=5" %%a in ('netstat -ano ^| findstr ":%PORT% "') do (
-                    taskkill /PID %%a /F || exit /b 0
+                for /f "tokens=5" %%a in ('netstat -ano ^| findstr /R ":%PORT% "') do (
+                    taskkill /PID %%a /F 2>nul
                 )
+                exit /b 0
                 '''
             }
         }
@@ -47,10 +48,8 @@ pipeline {
             echo '✅ CD Backend déployé avec succès'
         }
         failure {
-            bat '''
-            docker stop %CONTAINER_NAME% || exit /b 0
-            docker rm %CONTAINER_NAME% || exit /b 0
-            '''
+            bat 'docker stop %CONTAINER_NAME% 2>nul & exit /b 0'
+            bat 'docker rm %CONTAINER_NAME% 2>nul & exit /b 0'
             echo '❌ CD Backend échoué'
         }
     }
