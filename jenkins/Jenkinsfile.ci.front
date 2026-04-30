@@ -37,7 +37,7 @@ pipeline {
                     -Dsonar.projectKey=zeroone-studio-frontend ^
                     -Dsonar.sources=src ^
                     -Dsonar.host.url=http://localhost:9000 ^
-                    -Dsonar.login=YOUR_TOKEN
+                    -Dsonar.login=squ_6daa5c5b7b379ea663868df85cd87eb00fc8773a
                     '''
                 }
             }
