@@ -5,6 +5,12 @@ pipeline {
         nodejs 'NodeJS'
     }
 
+    environment {
+        SONAR_HOST_URL = 'http://localhost:9000'
+        SONAR_TOKEN = credentials('sonar-token')
+        PROJECT_KEY = 'zeroone-studio-frontend'
+    }
+
     stages {
 
         stage('Checkout') {
@@ -32,13 +38,21 @@ pipeline {
         stage('SonarQube Analysis') {
             steps {
                 dir('FrontOffice') {
-                    bat '''
+                    bat """
                     sonar-scanner ^
-                    -Dsonar.projectKey=zeroone-studio-frontend ^
+                    -Dsonar.projectKey=%PROJECT_KEY% ^
                     -Dsonar.sources=src ^
-                    -Dsonar.host.url=http://localhost:9000 ^
-                    -Dsonar.login=squ_6daa5c5b7b379ea663868df85cd87eb00fc8773a
-                    '''
+                    -Dsonar.host.url=%SONAR_HOST_URL% ^
+                    -Dsonar.token=%SONAR_TOKEN%
+                    """
+                }
+            }
+        }
+
+        stage('Quality Gate') {
+            steps {
+                timeout(time: 2, unit: 'MINUTES') {
+                    waitForQualityGate abortPipeline: true
                 }
             }
         }
