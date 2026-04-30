@@ -1,20 +1,16 @@
 pipeline {
     agent any
-
     environment {
         IMAGE_NAME = 'backoffice'
         CONTAINER_NAME = 'backoffice-app'
         PORT = '3000'
     }
-
     stages {
-
         stage('Checkout') {
             steps {
                 checkout scm
             }
         }
-
         stage('Build Docker Image') {
             steps {
                 dir('BackOffice') {
@@ -22,33 +18,36 @@ pipeline {
                 }
             }
         }
-
-        stage('Stop Old Container') {
+        stage('Cleanup') {
             steps {
                 bat '''
                 docker stop %CONTAINER_NAME% || exit /b 0
                 docker rm %CONTAINER_NAME% || exit /b 0
+                docker container prune -f || exit /b 0
                 '''
             }
         }
-
         stage('Run Backend') {
             steps {
                 bat '''
                 docker run -d ^
                 -p %PORT%:3000 ^
                 --name %CONTAINER_NAME% ^
+                --restart unless-stopped ^
                 %IMAGE_NAME%:latest
                 '''
             }
         }
     }
-
     post {
         success {
-            echo '✅ CD NestJS Backend déployé'
+            echo '✅ CD Backend déployé avec succès'
         }
         failure {
+            bat '''
+            docker stop %CONTAINER_NAME% || exit /b 0
+            docker rm %CONTAINER_NAME% || exit /b 0
+            '''
             echo '❌ CD Backend échoué'
         }
     }
