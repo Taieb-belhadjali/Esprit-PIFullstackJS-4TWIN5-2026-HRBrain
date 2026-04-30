@@ -8,6 +8,7 @@ pipeline {
     }
 
     stages {
+
         stage('Checkout') {
             steps {
                 checkout scm
@@ -22,12 +23,22 @@ pipeline {
             }
         }
 
-        stage('Deploy Backend') {
+        stage('Stop Old Container') {
             steps {
                 bat '''
-                docker stop %CONTAINER_NAME% || exit 0
-                docker rm %CONTAINER_NAME% || exit 0
-                docker run -d -p %PORT%:3000 --name %CONTAINER_NAME% %IMAGE_NAME%:latest
+                docker stop %CONTAINER_NAME% || exit /b 0
+                docker rm %CONTAINER_NAME% || exit /b 0
+                '''
+            }
+        }
+
+        stage('Run Backend') {
+            steps {
+                bat '''
+                docker run -d ^
+                -p %PORT%:3000 ^
+                --name %CONTAINER_NAME% ^
+                %IMAGE_NAME%:latest
                 '''
             }
         }
@@ -35,7 +46,7 @@ pipeline {
 
     post {
         success {
-            echo '✅ CD Backend déployé'
+            echo '✅ CD NestJS Backend déployé'
         }
         failure {
             echo '❌ CD Backend échoué'
