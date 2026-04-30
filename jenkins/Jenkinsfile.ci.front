@@ -49,7 +49,6 @@ pipeline {
     post {
         success {
             echo '✅ CI React + Vite réussi'
-            build job: 'Jenkinsfile.cd.front', wait: false
         }
 
         failure {
