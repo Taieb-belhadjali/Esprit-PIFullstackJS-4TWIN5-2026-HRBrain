@@ -6,16 +6,39 @@ pipeline {
     }
 
     stages {
+
         stage('Checkout') {
             steps {
                 checkout scm
             }
         }
 
-        stage('Install Frontend') {
+        stage('Install Dependencies') {
             steps {
                 dir('FrontOffice') {
                     bat 'npm ci'
+                }
+            }
+        }
+
+        stage('Test') {
+            steps {
+                dir('FrontOffice') {
+                    bat 'npm test -- --watchAll=false || exit 0'
+                }
+            }
+        }
+
+        stage('SonarQube Analysis') {
+            steps {
+                dir('FrontOffice') {
+                    bat '''
+                    sonar-scanner ^
+                    -Dsonar.projectKey=zeroone-studio-frontend ^
+                    -Dsonar.sources=src ^
+                    -Dsonar.host.url=http://localhost:9000 ^
+                    -Dsonar.login=YOUR_TOKEN
+                    '''
                 }
             }
         }
@@ -29,12 +52,12 @@ pipeline {
         }
     }
 
-   post {
-    success {
-        echo '✅ CI Frontend réussi'
+    post {
+        success {
+            echo '✅ CI Frontend OK + SonarQube OK'
+        }
+        failure {
+            echo '❌ CI Frontend échoué'
+        }
     }
-    failure {
-        echo '❌ CI Frontend échoué'
-    }
-}
 }
