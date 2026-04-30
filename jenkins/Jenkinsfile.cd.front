@@ -4,7 +4,7 @@ pipeline {
     environment {
         IMAGE_NAME = 'frontoffice'
         CONTAINER_NAME = 'frontoffice-app'
-        PORT = '8081'
+        PORT = '5173'
     }
 
     stages {
