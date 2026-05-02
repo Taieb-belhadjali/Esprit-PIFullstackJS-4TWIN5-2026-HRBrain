@@ -66,10 +66,8 @@ pipeline {
 
         stage('Docker Push') {
             when {
-                anyOf {
-                    branch 'main'
-                    branch 'feature/k8s-jenkins-cicd'
-                    branch 'origin/feature/k8s-jenkins-cicd'
+                expression {
+                    return env.GIT_BRANCH ==~ /.*(main|feature\/k8s-jenkins-cicd).*/
                 }
             }
             steps {
