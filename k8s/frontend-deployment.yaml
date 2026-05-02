@@ -50,6 +50,8 @@ spec:
           operator: "Exists"
           effect: "NoExecute"
           tolerationSeconds: 30      # K8s replanifie en ~30s si un worker tombe
+
+      containers:
         - name: frontend
           image: mouadh08/hrbrain-frontend:latest
           imagePullPolicy: IfNotPresent  # Utilise l'image en cache si déjà présente sur le node
