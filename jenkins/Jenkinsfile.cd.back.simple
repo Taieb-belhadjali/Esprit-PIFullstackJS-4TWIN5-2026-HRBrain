@@ -57,6 +57,10 @@ pipeline {
                         kubectl apply -f k8s/configmap.yaml
                         kubectl apply -f k8s/secret.yaml
 
+                        # Appliquer le deployment (crée ou met à jour)
+                        kubectl apply -f k8s/backend-deployment.yaml
+                        kubectl apply -f k8s/backend-service.yaml
+
                         # Mettre à jour l'image du deployment
                         kubectl set image deployment/${K8S_DEPLOY} \
                           backend=${DOCKER_IMAGE}:${IMAGE_TAG} \
