@@ -1,0 +1,35 @@
+# ─────────────────────────────────────────────────────────────────
+# Job d'initialisation — télécharge le modèle Ollama au premier déploiement
+# À lancer UNE SEULE FOIS après le déploiement d'Ollama
+# kubectl apply -f k8s/ollama-init-job.yaml
+# ─────────────────────────────────────────────────────────────────
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: ollama-pull-model
+  namespace: hrbrain
+spec:
+  ttlSecondsAfterFinished: 300    # Supprime le job 5 min après succès
+  template:
+    spec:
+      nodeSelector:
+        role: ai-worker            # Même worker qu'Ollama
+      restartPolicy: OnFailure
+      containers:
+        - name: ollama-pull
+          image: curlimages/curl:latest
+          command:
+            - sh
+            - -c
+            - |
+              echo "⏳ Attente qu'Ollama soit prêt..."
+              until curl -sf http://ollama-service:11434/api/tags; do
+                echo "  Ollama pas encore prêt, retry dans 5s..."
+                sleep 5
+              done
+              echo "✅ Ollama prêt — téléchargement du modèle qwen2.5:7b-instruct-q4_K_M..."
+              curl -X POST http://ollama-service:11434/api/pull \
+                -H "Content-Type: application/json" \
+                -d '{"name": "qwen2.5:7b-instruct-q4_K_M"}' \
+                --max-time 1800
+              echo "✅ Modèle téléchargé avec succès"

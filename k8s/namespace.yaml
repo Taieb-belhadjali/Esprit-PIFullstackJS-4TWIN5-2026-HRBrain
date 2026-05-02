@@ -1,0 +1,7 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: hrbrain
+  labels:
+    app: hrbrain
+    environment: production

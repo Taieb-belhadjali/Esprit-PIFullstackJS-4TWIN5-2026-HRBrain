@@ -62,8 +62,8 @@ function fixEncoding(str: string): string {
 @Injectable()
 export class RecommendationService {
   private readonly logger = new Logger(RecommendationService.name);
-  private readonly ollamaBaseUrl = 'http://localhost:11434';
-  private readonly model = 'qwen2.5:14b-instruct-q4_K_M';
+  private readonly ollamaBaseUrl = process.env.OLLAMA_BASE_URL ?? 'http://localhost:11434';
+  private readonly model = 'qwen2.5:7b-instruct-q4_K_M';
 
   /** Statut des générations en cours, indexé par activityId */
   private readonly generationStatus = new Map<string, GenerationState>();

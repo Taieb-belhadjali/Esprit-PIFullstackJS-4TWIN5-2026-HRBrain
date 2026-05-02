@@ -1,0 +1,86 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: frontend
+  namespace: hrbrain
+  labels:
+    app: frontend
+    tier: web
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: frontend
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0        # Zero-downtime deployment
+  template:
+    metadata:
+      labels:
+        app: frontend
+        tier: web
+    spec:
+      # ── Forcer le frontend sur Worker 1 et Worker 2 ───────────────────────
+      nodeSelector:
+        role: app-worker           # Même workers que le backend
+
+      # Anti-affinity : préférence SOUPLE de distribuer les replicas sur des nodes différents
+      # weight: 50 (et non 100) → le scheduler peut ignorer la règle si nécessaire
+      # (ex: rolling update crée un 3ème pod temporaire — il doit pouvoir se placer)
+      affinity:
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+            - weight: 50
+              podAffinityTerm:
+                labelSelector:
+                  matchExpressions:
+                    - key: app
+                      operator: In
+                      values: [frontend]
+                topologyKey: kubernetes.io/hostname
+
+      tolerations:
+        - key: "node.kubernetes.io/not-ready"
+          operator: "Exists"
+          effect: "NoExecute"
+          tolerationSeconds: 30      # 30s au lieu de 300s par défaut
+        - key: "node.kubernetes.io/unreachable"
+          operator: "Exists"
+          effect: "NoExecute"
+          tolerationSeconds: 30      # K8s replanifie en ~30s si un worker tombe
+        - name: frontend
+          image: mouadh08/hrbrain-frontend:latest
+          imagePullPolicy: IfNotPresent  # Utilise l'image en cache si déjà présente sur le node
+          ports:
+            - containerPort: 80
+              name: http
+
+          # Limites de ressources (nginx est très léger)
+          resources:
+            requests:
+              memory: "64Mi"
+              cpu: "50m"
+            limits:
+              memory: "128Mi"
+              cpu: "100m"
+
+          # Health checks
+          livenessProbe:
+            httpGet:
+              path: /
+              port: 80
+            initialDelaySeconds: 5   # réduit de 10s → 5s
+            periodSeconds: 20
+            timeoutSeconds: 5
+            failureThreshold: 3
+
+          readinessProbe:
+            httpGet:
+              path: /
+              port: 80
+            initialDelaySeconds: 3   # réduit de 5s → 3s
+            periodSeconds: 5
+            timeoutSeconds: 3
+            failureThreshold: 3

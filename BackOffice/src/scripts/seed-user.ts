@@ -2,7 +2,7 @@ import mongoose from 'mongoose';
 import * as bcrypt from 'bcrypt';
 
 const MONGO_URI =
-  'mongodb+srv://taiebaminebelhadjali_db_user:1uK23IXEAS7NMcZs@cluster0.wczwpwn.mongodb.net/HRBrain_db';
+  'mongodb+srv://taiebaminebelhadjali_db_user:Complexatom88@cluster0.wczwpwn.mongodb.net/HRBrain_db';
 
 async function seed() {
   await mongoose.connect(MONGO_URI);

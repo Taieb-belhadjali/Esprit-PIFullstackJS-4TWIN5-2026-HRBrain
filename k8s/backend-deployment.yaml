@@ -1,0 +1,136 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: backend
+  namespace: hrbrain
+  labels:
+    app: backend
+    tier: api
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: backend
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0
+  template:
+    metadata:
+      labels:
+        app: backend
+        tier: api
+    spec:
+      # ── Forcer le backend sur Worker 1 et Worker 2 ────────────────────────
+      # kubectl label node laptop-2 role=app-worker
+      # kubectl label node laptop-3 role=app-worker
+      nodeSelector:
+        role: app-worker           # Workers 1 et 2 — dédiés app
+
+      # Anti-affinity : préférence SOUPLE de distribuer les replicas sur des nodes différents
+      # weight: 50 (et non 100) → le scheduler peut ignorer la règle si nécessaire
+      # (ex: rolling update crée un 3ème pod temporaire — il doit pouvoir se placer)
+      affinity:
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+            - weight: 50
+              podAffinityTerm:
+                labelSelector:
+                  matchExpressions:
+                    - key: app
+                      operator: In
+                      values: [backend]
+                topologyKey: kubernetes.io/hostname
+
+      tolerations:
+        - key: "node.kubernetes.io/not-ready"
+          operator: "Exists"
+          effect: "NoExecute"
+          tolerationSeconds: 30      # 30s au lieu de 300s par défaut
+        - key: "node.kubernetes.io/unreachable"
+          operator: "Exists"
+          effect: "NoExecute"
+          tolerationSeconds: 30      # K8s replanifie en ~30s si un worker tombe
+        - name: backend
+          image: mouadh08/hrbrain-backend:latest
+          imagePullPolicy: IfNotPresent  # Utilise l'image en cache si déjà présente sur le node
+          ports:
+            - containerPort: 3000
+              name: http
+
+          # Variables d'environnement depuis ConfigMap et Secret
+          env:
+            - name: OLLAMA_BASE_URL
+              value: "http://ollama-service:11434"
+            - name: NODE_ENV
+              valueFrom:
+                configMapKeyRef:
+                  name: hrbrain-config
+                  key: NODE_ENV
+            - name: PORT
+              valueFrom:
+                configMapKeyRef:
+                  name: hrbrain-config
+                  key: PORT
+            - name: MONGO_URI
+              valueFrom:
+                secretKeyRef:
+                  name: hrbrain-secrets
+                  key: MONGO_URI
+            - name: JWT_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: hrbrain-secrets
+                  key: JWT_SECRET
+            - name: GOOGLE_CLIENT_ID
+              valueFrom:
+                secretKeyRef:
+                  name: hrbrain-secrets
+                  key: GOOGLE_CLIENT_ID
+            - name: GOOGLE_CLIENT_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: hrbrain-secrets
+                  key: GOOGLE_CLIENT_SECRET
+
+          # Limites de ressources (adapté pour laptop)
+          resources:
+            requests:
+              memory: "256Mi"
+              cpu: "250m"
+            limits:
+              memory: "512Mi"
+              cpu: "500m"
+
+          # Health checks
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 3000
+            initialDelaySeconds: 20  # réduit de 30s → 20s
+            periodSeconds: 20
+            timeoutSeconds: 10
+            failureThreshold: 3
+
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 3000
+            initialDelaySeconds: 10  # réduit de 15s → 10s
+            periodSeconds: 5
+            timeoutSeconds: 5
+            failureThreshold: 3
+
+          # Volumes pour uploads et logs
+          volumeMounts:
+            - name: uploads-storage
+              mountPath: /app/uploads
+            - name: logs-storage
+              mountPath: /app/logs
+
+      volumes:
+        - name: uploads-storage
+          emptyDir: {}          # Remplacer par PersistentVolumeClaim en prod réelle
+        - name: logs-storage
+          emptyDir: {}
