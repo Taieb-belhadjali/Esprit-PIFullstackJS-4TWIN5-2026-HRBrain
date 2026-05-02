@@ -1,314 +1,231 @@
-# 🔧 Jenkins CI/CD pour HRBrain
+# Jenkins CI/CD Pipelines - HRBrain
 
-Configuration complète du pipeline CI/CD automatisé pour le projet HRBrain.
-
----
-
-## 📁 Structure
+## 📁 Structure des fichiers
 
 ```
 jenkins/
-├── README.md                    # Ce fichier
-├── QUICK-START.md              # Guide rapide (15 min)
-├── SETUP-JENKINS.md            # Guide complet et détaillé
-├── setup-jenkins.sh            # Script d'automatisation
-├── verify-jenkins.sh           # Script de vérification
-├── Jenkinsfile.ci.back         # Pipeline CI Backend
-├── Jenkinsfile.cd.back         # Pipeline CD Backend
-├── Jenkinsfile.ci.front        # Pipeline CI Frontend
-└── Jenkinsfile.cd.front        # Pipeline CD Frontend
+├── README.md                          # Ce fichier
+├── CONFIGURATION-JOBS.md              # Guide de configuration des 4 jobs Jenkins
+│
+├── Jenkinsfile.ci.back.simple         # ✅ CI Backend (version simplifiée - TESTÉ)
+├── Jenkinsfile.ci.front.simple        # ⏳ CI Frontend (version simplifiée)
+├── Jenkinsfile.cd.back.simple         # ⏳ CD Backend (version simplifiée)
+├── Jenkinsfile.cd.front.simple        # ⏳ CD Frontend (version simplifiée)
+│
+├── Jenkinsfile.ci.back                # CI Backend (avec SonarQube)
+├── Jenkinsfile.ci.front               # CI Frontend (avec SonarQube)
+├── Jenkinsfile.cd.back                # CD Backend (avec garde CI Frontend)
+└── Jenkinsfile.cd.front               # CD Frontend (avec garde CI Backend)
 ```
 
----
+## 🎯 Versions Simplifiées vs Complètes
 
-## 🚀 Démarrage rapide
+### Versions Simplifiées (*.simple)
+- **Sans SonarQube** - Pas d'analyse de code statique
+- **Sans Quality Gate** - Pas de vérification de qualité
+- **Sans Tests Unitaires** - Pas d'exécution de tests
+- **Sans Gardes CI** - Les CD ne vérifient pas l'état des CI opposés
+- **Push sur feature/k8s-jenkins-cicd** - Pour les tests
 
-### Option 1 : Guide rapide (recommandé)
-```bash
-# Lire le guide rapide
-cat jenkins/QUICK-START.md
+✅ **Utilisées actuellement** pour valider le pipeline rapidement
 
-# Vérifier la configuration actuelle
-cd jenkins
-chmod +x verify-jenkins.sh
-./verify-jenkins.sh
-```
+### Versions Complètes
+- **Avec SonarQube** - Analyse de code statique
+- **Avec Quality Gate** - Vérification de qualité obligatoire
+- **Avec Tests Unitaires** - Exécution des tests Jest
+- **Avec Gardes CI** - CD Backend vérifie CI Frontend, et vice-versa
+- **Push sur main/develop** - Pour la production
 
-### Option 2 : Script automatisé
-```bash
-cd jenkins
-chmod +x setup-jenkins.sh
-./setup-jenkins.sh
-```
+⏳ **À utiliser plus tard** après installation de SonarQube
 
-### Option 3 : Guide complet
-```bash
-# Lire le guide détaillé
-cat jenkins/SETUP-JENKINS.md
-```
+## 🚀 Utilisation
 
----
+### 1. Configuration des Jobs Jenkins
 
-## 📊 Architecture du Pipeline
+Suivre le guide détaillé: **[CONFIGURATION-JOBS.md](./CONFIGURATION-JOBS.md)**
 
-### Workflow CI/CD
+### 2. Ordre de création des jobs
 
-```
-┌─────────────────────────────────────────────────────────────┐
-│                    Push sur GitHub (main)                    │
-└────────────────────┬────────────────────────────────────────┘
-                     │
-         ┌───────────┴───────────┐
-         ▼                       ▼
-┌─────────────────┐     ┌─────────────────┐
-│  CI Backend     │     │  CI Frontend    │
-│  ─────────────  │     │  ─────────────  │
-│  1. Checkout    │     │  1. Checkout    │
-│  2. npm ci      │     │  2. npm ci      │
-│  3. Lint        │     │  3. TypeCheck   │
-│  4. Build       │     │  4. Build       │
-│  5. Test        │     │  5. SonarQube   │
-│  6. SonarQube   │     │  6. Docker Build│
-│  7. Quality Gate│     │  7. Docker Push │
-│  8. Docker Build│     └────────┬────────┘
-│  9. Docker Push │              │
-└────────┬────────┘              │
-         │                       │
-         │ ✅ Success            │ ✅ Success
-         ▼                       ▼
-┌─────────────────┐     ┌─────────────────┐
-│  CD Backend     │     │  CD Frontend    │
-│  ─────────────  │     │  ─────────────  │
-│  1. Check Front │     │  1. Check Back  │
-│     CI Status   │     │     CI Status   │
-│  2. Pull Image  │     │  2. Pull Image  │
-│  3. Deploy K8s  │     │  3. Deploy K8s  │
-│  4. Rollout     │     │  4. Rollout     │
-│  5. Verify      │     │  5. Verify      │
-│  6. Smoke Test  │     │  6. Smoke Test  │
-└────────┬────────┘     └────────┬────────┘
-         │                       │
-         └───────────┬───────────┘
-                     ▼
-         ┌─────────────────────┐
-         │  Application Live   │
-         │  ─────────────────  │
-         │  Backend:  :30000   │
-         │  Frontend: :30080   │
-         └─────────────────────┘
-```
+1. **hrbrain-ci-backend** ✅ FAIT
+   - Script Path: `jenkins/Jenkinsfile.ci.back.simple`
+   - Status: Build #5 réussi
 
-### Garde de cohérence
+2. **hrbrain-ci-frontend** ⏳ À CRÉER
+   - Script Path: `jenkins/Jenkinsfile.ci.front.simple`
 
-Les pipelines CD incluent une **garde de cohérence** :
+3. **hrbrain-cd-backend** ⏳ À CRÉER
+   - Script Path: `jenkins/Jenkinsfile.cd.back.simple`
+   - Paramètre: IMAGE_TAG (default: latest)
 
-- **CD Backend** vérifie que **CI Frontend** est en succès avant de déployer
-- **CD Frontend** vérifie que **CI Backend** est en succès avant de déployer
+4. **hrbrain-cd-frontend** ⏳ À CRÉER
+   - Script Path: `jenkins/Jenkinsfile.cd.front.simple`
+   - Paramètre: IMAGE_TAG (default: latest)
 
-Cela évite un état incohérent où une partie de l'application est cassée.
-
----
-
-## 🔐 Credentials requis
-
-| ID | Type | Description |
-|----|------|-------------|
-| `dockerhub-credentials` | Username/Password | Accès DockerHub pour push/pull images |
-| `kubeconfig` | Secret file | Configuration kubectl pour déploiement K8s |
-
----
-
-## 📦 Plugins Jenkins requis
-
-- ✅ **Pipeline** (core)
-- ✅ **Git** (core)
-- 🔧 **Docker Pipeline**
-- 🔧 **Kubernetes CLI**
-- 🔧 **SonarQube Scanner** (optionnel)
-- 🔧 **GitHub Integration**
-
----
-
-## 🔨 Jobs Jenkins
-
-| Job | Type | Trigger | Description |
-|-----|------|---------|-------------|
-| `hrbrain-ci-backend` | Pipeline | GitHub push | Build + Test Backend |
-| `hrbrain-cd-backend` | Pipeline | After CI Backend | Deploy Backend to K8s |
-| `hrbrain-ci-frontend` | Pipeline | GitHub push | Build + Test Frontend |
-| `hrbrain-cd-frontend` | Pipeline | After CI Frontend | Deploy Frontend to K8s |
-
----
-
-## 🧪 Tests
-
-### Test manuel complet
+### 3. Tests des pipelines
 
 ```bash
-# 1. Lancer CI Backend
-# Dans Jenkins : hrbrain-ci-backend → Build Now
+# 1. Tester CI Backend (déjà fait)
+# Jenkins: Build Now sur hrbrain-ci-backend
+# Résultat: Image mouadh08/hrbrain-backend:5 créée ✅
 
-# 2. Vérifier que CD Backend se lance automatiquement
-# Dans Jenkins : hrbrain-cd-backend → Build History
+# 2. Tester CI Frontend
+# Jenkins: Build Now sur hrbrain-ci-frontend
+# Résultat attendu: Image mouadh08/hrbrain-frontend:X créée
 
-# 3. Lancer CI Frontend
-# Dans Jenkins : hrbrain-ci-frontend → Build Now
-
-# 4. Vérifier que CD Frontend se lance automatiquement
-# Dans Jenkins : hrbrain-cd-frontend → Build History
-
-# 5. Vérifier l'application
-kubectl get pods -n hrbrain
+# 3. Tester CD Backend
+# Jenkins: Build with Parameters sur hrbrain-cd-backend
+# IMAGE_TAG: 5 (ou le numéro du build CI)
+# Vérification:
+kubectl get pods -n hrbrain -l app=backend
 curl http://192.168.1.11:30000/health
+
+# 4. Tester CD Frontend
+# Jenkins: Build with Parameters sur hrbrain-cd-frontend
+# IMAGE_TAG: X (ou le numéro du build CI)
+# Vérification:
+kubectl get pods -n hrbrain -l app=frontend
 curl http://192.168.1.11:30080
 ```
 
-### Test avec GitHub webhook
+## 📊 Workflow CI/CD
 
-```bash
-# 1. Configurer le webhook GitHub
-# Repo → Settings → Webhooks → Add webhook
-# URL: http://192.168.1.11:8080/github-webhook/
-
-# 2. Faire un commit
-git add .
-git commit -m "test: trigger CI/CD"
-git push origin main
-
-# 3. Vérifier dans Jenkins
-# Les 4 jobs doivent se lancer automatiquement
+```
+┌─────────────────────────────────────────────────────────────┐
+│  Developer Push to feature/k8s-jenkins-cicd                  │
+└─────────────────────────────────────────────────────────────┘
+                            │
+                            ▼
+┌─────────────────────────────────────────────────────────────┐
+│  CI Backend (Jenkinsfile.ci.back.simple)                     │
+│  • Checkout                                                  │
+│  • npm ci                                                    │
+│  • Lint                                                      │
+│  • Build                                                     │
+│  • Docker Build                                              │
+│  • Docker Push → mouadh08/hrbrain-backend:X                  │
+└─────────────────────────────────────────────────────────────┘
+                            │
+                            ▼
+┌─────────────────────────────────────────────────────────────┐
+│  CD Backend (Jenkinsfile.cd.back.simple)                     │
+│  • Verify Image                                              │
+│  • kubectl apply manifests                                   │
+│  • kubectl set image                                         │
+│  • kubectl rollout status                                    │
+│  • Smoke Test (curl health endpoint)                         │
+└─────────────────────────────────────────────────────────────┘
+                            │
+                            ▼
+┌─────────────────────────────────────────────────────────────┐
+│  Backend Deployed on Kubernetes                              │
+│  • 2 replicas running                                        │
+│  • Accessible at http://192.168.1.11:30000                   │
+└─────────────────────────────────────────────────────────────┘
 ```
 
----
+## 🔧 Configuration Jenkins
 
-## 🐛 Troubleshooting
+### Credentials requis
+- `dockerhub-credentials` - Username + PAT pour DockerHub
+- `github-credentials` - Username + Token pour GitHub
+- `kubeconfig` - Secret file pour kubectl
 
-### Vérification rapide
+### Plugins requis
+- git
+- workflow-job
+- workflow-cps
+- workflow-basic-steps
+- workflow-durable-task-step
+- workflow-scm-step
+- credentials-binding
+- kubernetes-cli
+- docker-workflow
+- junit
+
+## 📝 Différences clés entre les versions
+
+### CI Backend
+
+| Feature | Simple | Complete |
+|---------|--------|----------|
+| Checkout | ✅ | ✅ |
+| Install Dependencies | ✅ | ✅ |
+| Lint | ✅ (|| true) | ✅ |
+| Build | ✅ | ✅ |
+| Unit Tests | ❌ | ✅ |
+| SonarQube Analysis | ❌ | ✅ |
+| Quality Gate | ❌ | ✅ |
+| Docker Build | ✅ | ✅ |
+| Docker Push | ✅ (feature branch) | ✅ (main/develop) |
+
+### CD Backend
+
+| Feature | Simple | Complete |
+|---------|--------|----------|
+| Checkout | ✅ | ✅ |
+| Check Frontend CI | ❌ | ✅ |
+| Verify Image | ✅ | ✅ |
+| Deploy to K8s | ✅ | ✅ |
+| Verify Deployment | ✅ | ✅ |
+| Smoke Test | ✅ | ✅ |
+| Rollback on Failure | ✅ | ✅ |
+
+## 🎯 Migration vers les versions complètes
+
+Une fois SonarQube installé et configuré:
+
+1. **Installer SonarQube** sur le cluster K8s ou sur worker-1
+2. **Configurer SonarQube** dans Jenkins (Manage Jenkins → Configure System)
+3. **Mettre à jour les jobs** pour utiliser les Jenkinsfiles complets:
+   - `jenkins/Jenkinsfile.ci.back`
+   - `jenkins/Jenkinsfile.ci.front`
+   - `jenkins/Jenkinsfile.cd.back`
+   - `jenkins/Jenkinsfile.cd.front`
+4. **Tester** les pipelines avec SonarQube
+
+## 📞 Troubleshooting
+
+### Build échoue au stage "Docker Push"
 ```bash
-cd jenkins
-./verify-jenkins.sh
+# Vérifier les credentials DockerHub
+docker login -u mouadh08
+# Vérifier que le token est valide
 ```
 
-### Problèmes courants
-
-#### 1. "npm: command not found"
+### CD échoue au stage "Deploy to Kubernetes"
 ```bash
-sudo ln -sf /usr/local/bin/node /usr/bin/node
-sudo ln -sf /usr/local/bin/npm /usr/bin/npm
-sudo systemctl restart jenkins
-```
-
-#### 2. "docker: permission denied"
-```bash
-sudo usermod -aG docker jenkins
-sudo systemctl restart jenkins
-```
-
-#### 3. "kubectl: command not found"
-```bash
-curl -LO "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl"
-sudo install -o root -g root -m 0755 kubectl /usr/local/bin/kubectl
-```
-
-#### 4. Pipeline bloqué sur SonarQube
-
-**Option A** : Installer SonarQube
-```bash
-docker run -d --name sonarqube -p 9000:9000 sonarqube:lts-community
-```
-
-**Option B** : Désactiver temporairement
-Commenter les stages `SonarQube Analysis` et `Quality Gate` dans les Jenkinsfiles
-
-#### 5. "Unable to connect to the server"
-- Vérifier le credential `kubeconfig`
-- Vérifier la connectivité : `ping 192.168.1.10`
-- Tester kubectl : `kubectl cluster-info`
-
----
-
-## 📈 Monitoring
-
-### Logs Jenkins
-```bash
-# Logs Jenkins
-sudo journalctl -u jenkins -f
-
-# Logs d'un job spécifique
-# Via l'interface web : Job → Build #X → Console Output
-```
-
-### Logs Kubernetes
-```bash
-# Pods
+# Vérifier la connexion kubectl
+kubectl get nodes
 kubectl get pods -n hrbrain
-
-# Logs backend
-kubectl logs -n hrbrain -l app=backend --tail=100
-
-# Logs frontend
-kubectl logs -n hrbrain -l app=frontend --tail=100
-
-# Events
-kubectl get events -n hrbrain --sort-by='.lastTimestamp'
+# Vérifier le kubeconfig dans Jenkins
 ```
 
----
-
-## 🔄 Rollback
-
-### Rollback automatique
-
-Les pipelines CD incluent un rollback automatique en cas d'échec :
-
-```groovy
-post {
-    failure {
-        withKubeConfig([credentialsId: 'kubeconfig']) {
-            sh "kubectl rollout undo deployment/backend -n hrbrain"
-        }
-    }
-}
-```
-
-### Rollback manuel
-
+### Image Docker non trouvée
 ```bash
-# Voir l'historique des déploiements
-kubectl rollout history deployment/backend -n hrbrain
-
-# Rollback à la version précédente
-kubectl rollout undo deployment/backend -n hrbrain
-
-# Rollback à une version spécifique
-kubectl rollout undo deployment/backend -n hrbrain --to-revision=2
+# Vérifier que le CI a bien pushé l'image
+docker pull mouadh08/hrbrain-backend:X
+# Vérifier sur DockerHub
+# https://hub.docker.com/u/mouadh08
 ```
 
----
+## 📈 Métriques de succès
 
-## 📚 Ressources
+- ✅ CI Backend: Build #5 réussi (2 min 30s)
+- ⏳ CI Frontend: À tester
+- ⏳ CD Backend: À tester
+- ⏳ CD Frontend: À tester
 
-- **Jenkins** : http://192.168.1.11:8080
-- **Application** : http://192.168.1.11:30080
-- **Backend API** : http://192.168.1.11:30000
-- **Kubernetes Dashboard** : `kubectl proxy` puis http://localhost:8001/api/v1/namespaces/kubernetes-dashboard/services/https:kubernetes-dashboard:/proxy/
+## 🔄 Prochaines étapes
 
----
-
-## 🎯 Checklist de finalisation
-
-- [ ] Node.js et npm configurés dans PATH
-- [ ] jenkins dans le groupe docker
-- [ ] Plugins Jenkins installés
-- [ ] Credential `dockerhub-credentials` créé
-- [ ] Credential `kubeconfig` créé
-- [ ] Job `hrbrain-ci-backend` créé
-- [ ] Job `hrbrain-cd-backend` créé
-- [ ] Job `hrbrain-ci-frontend` créé
-- [ ] Job `hrbrain-cd-frontend` créé
-- [ ] Test manuel réussi (CI → CD)
-- [ ] Application accessible
+1. ✅ Créer les 4 Jenkinsfiles simplifiés
+2. ⏳ Créer les 3 jobs manquants dans Jenkins
+3. ⏳ Tester les 4 pipelines
+4. ⏳ Merger feature/k8s-jenkins-cicd vers main
+5. ⏳ Mettre à jour les jobs pour pointer vers main
+6. ⏳ Installer SonarQube (optionnel)
+7. ⏳ Migrer vers les Jenkinsfiles complets (optionnel)
 
 ---
 
-**Projet HRBrain : CI/CD 100% opérationnel ! 🎉**
+**Projet HRBrain - CI/CD avec Jenkins et Kubernetes**
+**Progression: 95% - Reste: Tests des 3 pipelines**

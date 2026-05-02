@@ -1,0 +1,127 @@
+// ─────────────────────────────────────────────────────────────────
+// HRBrain — CD Pipeline Backend (déploiement Kubernetes) - Version Simplifiée
+// ─────────────────────────────────────────────────────────────────
+
+pipeline {
+    agent any
+
+    environment {
+        APP_NAME       = 'hrbrain-backend'
+        DOCKER_IMAGE   = "mouadh08/hrbrain-backend"
+        K8S_NAMESPACE  = 'hrbrain'
+        K8S_DEPLOY     = 'backend'
+        IMAGE_TAG      = "${params.IMAGE_TAG ?: 'latest'}"
+    }
+
+    parameters {
+        string(name: 'IMAGE_TAG',
+               defaultValue: 'latest',
+               description: 'Tag de l\'image Docker à déployer (ex: 42)')
+    }
+
+    options {
+        timeout(time: 15, unit: 'MINUTES')
+        disableConcurrentBuilds()
+    }
+
+    stages {
+
+        stage('Checkout') {
+            steps {
+                checkout scm
+            }
+        }
+
+        stage('Verify Image') {
+            steps {
+                withCredentials([usernamePassword(
+                    credentialsId: 'dockerhub-credentials',
+                    usernameVariable: 'DOCKER_USER',
+                    passwordVariable: 'DOCKER_PASS'
+                )]) {
+                    sh """
+                        echo "\$DOCKER_PASS" | docker login -u "\$DOCKER_USER" --password-stdin
+                        docker pull ${DOCKER_IMAGE}:${IMAGE_TAG}
+                        docker logout
+                    """
+                }
+            }
+        }
+
+        stage('Deploy to Kubernetes') {
+            steps {
+                withKubeConfig([credentialsId: 'kubeconfig']) {
+                    sh """
+                        # Appliquer les manifests de base
+                        kubectl apply -f k8s/namespace.yaml
+                        kubectl apply -f k8s/configmap.yaml
+                        kubectl apply -f k8s/secret.yaml
+
+                        # Mettre à jour l'image du deployment
+                        kubectl set image deployment/${K8S_DEPLOY} \
+                          backend=${DOCKER_IMAGE}:${IMAGE_TAG} \
+                          -n ${K8S_NAMESPACE}
+
+                        # Attendre que le rollout soit terminé (max 5 min)
+                        kubectl rollout status deployment/${K8S_DEPLOY} \
+                          -n ${K8S_NAMESPACE} \
+                          --timeout=300s
+                    """
+                }
+            }
+        }
+
+        stage('Verify Deployment') {
+            steps {
+                withKubeConfig([credentialsId: 'kubeconfig']) {
+                    sh """
+                        echo "=== Pods Backend ==="
+                        kubectl get pods -n ${K8S_NAMESPACE} -l app=backend
+
+                        echo "=== Services ==="
+                        kubectl get svc -n ${K8S_NAMESPACE}
+
+                        echo "=== Deployment Status ==="
+                        kubectl describe deployment/${K8S_DEPLOY} -n ${K8S_NAMESPACE} | grep -A5 'Conditions:'
+                    """
+                }
+            }
+        }
+
+        stage('Smoke Test') {
+            steps {
+                withKubeConfig([credentialsId: 'kubeconfig']) {
+                    script {
+                        def nodeIp = sh(
+                            script: "kubectl get nodes -o jsonpath='{.items[0].status.addresses[?(@.type==\"InternalIP\")].address}'",
+                            returnStdout: true
+                        ).trim()
+
+                        sh """
+                            sleep 10
+                            curl -f http://${nodeIp}:30000/health || \
+                              (echo '❌ Smoke test échoué' && exit 1)
+                            echo '✅ Smoke test réussi'
+                        """
+                    }
+                }
+            }
+        }
+
+    }
+
+    post {
+        success {
+            echo "✅ Déploiement Backend réussi — Image: ${DOCKER_IMAGE}:${IMAGE_TAG}"
+        }
+        failure {
+            echo "❌ Déploiement Backend échoué — Rollback en cours..."
+            withKubeConfig([credentialsId: 'kubeconfig']) {
+                sh "kubectl rollout undo deployment/${K8S_DEPLOY} -n ${K8S_NAMESPACE} || true"
+            }
+        }
+        always {
+            cleanWs()
+        }
+    }
+}
