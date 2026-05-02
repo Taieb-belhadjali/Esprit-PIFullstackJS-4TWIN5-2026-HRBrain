@@ -69,6 +69,7 @@ pipeline {
                 anyOf {
                     branch 'main'
                     branch 'feature/k8s-jenkins-cicd'
+                    branch 'origin/feature/k8s-jenkins-cicd'
                 }
             }
             steps {
