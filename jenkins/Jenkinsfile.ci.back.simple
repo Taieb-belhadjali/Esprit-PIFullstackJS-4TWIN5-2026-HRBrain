@@ -12,7 +12,7 @@ pipeline {
     }
 
     options {
-        timeout(time: 20, unit: 'MINUTES')
+        timeout(time: 40, unit: 'MINUTES')
         disableConcurrentBuilds()
         buildDiscarder(logRotator(numToKeepStr: '10'))
     }
@@ -37,7 +37,7 @@ pipeline {
         stage('Lint') {
             steps {
                 dir('BackOffice') {
-                    echo "⏭️ Lint skipped in CI (run locally before push)"
+                    sh 'npm run lint || true'
                 }
             }
         }
