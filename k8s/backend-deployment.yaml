@@ -28,20 +28,16 @@ spec:
       nodeSelector:
         role: app-worker           # Workers 1 et 2 — dédiés app
 
-      # Anti-affinity : préférence SOUPLE de distribuer les replicas sur des nodes différents
-      # weight: 50 (et non 100) → le scheduler peut ignorer la règle si nécessaire
-      # (ex: rolling update crée un 3ème pod temporaire — il doit pouvoir se placer)
+      # Anti-affinity : REQUIRED - force la distribution sur des nodes différents
       affinity:
         podAntiAffinity:
-          preferredDuringSchedulingIgnoredDuringExecution:
-            - weight: 50
-              podAffinityTerm:
-                labelSelector:
-                  matchExpressions:
-                    - key: app
-                      operator: In
-                      values: [backend]
-                topologyKey: kubernetes.io/hostname
+          requiredDuringSchedulingIgnoredDuringExecution:
+            - labelSelector:
+                matchExpressions:
+                  - key: app
+                    operator: In
+                    values: [backend]
+              topologyKey: kubernetes.io/hostname
 
       tolerations:
         - key: "node.kubernetes.io/not-ready"
