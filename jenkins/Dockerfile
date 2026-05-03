@@ -38,5 +38,10 @@ RUN groupadd -f docker && usermod -aG docker jenkins
 # Revenir à l'utilisateur jenkins
 USER jenkins
 
+# Configurer git pour les gros repos
+RUN git config --global http.version HTTP/1.1 && \
+    git config --global http.postBuffer 524288000 && \
+    git config --global core.compression 0
+
 # Vérifier les installations
 RUN node --version && npm --version && docker --version && kubectl version --client
