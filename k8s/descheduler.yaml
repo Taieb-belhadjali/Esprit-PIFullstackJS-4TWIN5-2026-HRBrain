@@ -7,34 +7,40 @@ metadata:
   namespace: kube-system
 data:
   policy.yaml: |
-    apiVersion: "descheduler/v1alpha1"
+    apiVersion: "descheduler/v1alpha2"
     kind: "DeschedulerPolicy"
-    strategies:
-      # Rééquilibrer les pods sur les nodes disponibles
-      LowNodeUtilization:
-        enabled: true
-        params:
-          nodeResourceUtilizationThresholds:
-            thresholds:
-              cpu: 20
-              memory: 20
-              pods: 20
-            targetThresholds:
-              cpu: 50
-              memory: 50
-              pods: 50
-      # Supprimer les pods dupliqués sur le même node
-      RemoveDuplicates:
-        enabled: true
-      # Respecter les règles d'anti-affinité
-      RemovePodsViolatingInterPodAntiAffinity:
-        enabled: true
-      # Respecter les nodeSelector
-      RemovePodsViolatingNodeAffinity:
-        enabled: true
-        params:
-          nodeAffinityType:
-            - requiredDuringSchedulingIgnoredDuringExecution
+    profiles:
+      - name: default
+        pluginConfig:
+          - name: DefaultEvictor
+            args:
+              ignorePvcPods: false
+              evictLocalStoragePods: true
+          - name: LowNodeUtilization
+            args:
+              thresholds:
+                cpu: 20
+                memory: 20
+                pods: 20
+              targetThresholds:
+                cpu: 50
+                memory: 50
+                pods: 50
+          - name: RemoveDuplicates
+          - name: RemovePodsViolatingInterPodAntiAffinity
+          - name: RemovePodsViolatingNodeAffinity
+            args:
+              nodeAffinityType:
+                - requiredDuringSchedulingIgnoredDuringExecution
+        plugins:
+          balance:
+            enabled:
+              - LowNodeUtilization
+          deschedule:
+            enabled:
+              - RemoveDuplicates
+              - RemovePodsViolatingInterPodAntiAffinity
+              - RemovePodsViolatingNodeAffinity
 
 ---
 # CronJob : rééquilibrage toutes les 5 minutes
@@ -60,9 +66,11 @@ spec:
               command:
                 - /bin/descheduler
               args:
-                - --policy-config-map-name=descheduler-policy
-                - --policy-config-map-namespace=kube-system
+                - --policy-config-file=/policy-dir/policy.yaml
                 - --v=3
+              volumeMounts:
+                - name: policy-volume
+                  mountPath: /policy-dir
               resources:
                 requests:
                   cpu: 100m
@@ -70,3 +78,7 @@ spec:
                 limits:
                   cpu: 200m
                   memory: 256Mi
+          volumes:
+            - name: policy-volume
+              configMap:
+                name: descheduler-policy
