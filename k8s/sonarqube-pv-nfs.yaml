@@ -1,0 +1,59 @@
+---
+# PersistentVolume NFS pour SonarQube data
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: sonarqube-pv-data
+  labels:
+    app: sonarqube
+    type: nfs
+spec:
+  capacity:
+    storage: 5Gi
+  accessModes:
+    - ReadWriteOnce
+  persistentVolumeReclaimPolicy: Retain
+  storageClassName: ""
+  nfs:
+    server: 192.168.1.10    # master = NFS server
+    path: /data/sonarqube/data
+
+---
+# PersistentVolume NFS pour SonarQube extensions
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: sonarqube-pv-extensions
+  labels:
+    app: sonarqube
+    type: nfs
+spec:
+  capacity:
+    storage: 2Gi
+  accessModes:
+    - ReadWriteOnce
+  persistentVolumeReclaimPolicy: Retain
+  storageClassName: ""
+  nfs:
+    server: 192.168.1.10
+    path: /data/sonarqube/extensions
+
+---
+# PersistentVolume NFS pour SonarQube logs
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: sonarqube-pv-logs
+  labels:
+    app: sonarqube
+    type: nfs
+spec:
+  capacity:
+    storage: 2Gi
+  accessModes:
+    - ReadWriteOnce
+  persistentVolumeReclaimPolicy: Retain
+  storageClassName: ""
+  nfs:
+    server: 192.168.1.10
+    path: /data/sonarqube/logs

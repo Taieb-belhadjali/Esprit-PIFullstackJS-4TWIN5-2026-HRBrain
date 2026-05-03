@@ -1,0 +1,63 @@
+---
+# PostgreSQL pour SonarQube
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: sonarqube-postgres
+  namespace: hrbrain
+  labels:
+    app: sonarqube-postgres
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: sonarqube-postgres
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      labels:
+        app: sonarqube-postgres
+    spec:
+      nodeSelector:
+        role: app-worker
+      containers:
+        - name: postgres
+          image: postgres:15-alpine
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 5432
+          env:
+            - name: POSTGRES_DB
+              value: "sonarqube"
+            - name: POSTGRES_USER
+              value: "sonarqube"
+            - name: POSTGRES_PASSWORD
+              value: "sonarqube123"
+          resources:
+            requests:
+              memory: "256Mi"
+              cpu: "250m"
+            limits:
+              memory: "512Mi"
+              cpu: "500m"
+          volumeMounts:
+            - name: postgres-data
+              mountPath: /var/lib/postgresql/data
+      volumes:
+        - name: postgres-data
+          emptyDir: {}   # Pour simplifier - remplacer par PVC en prod
+
+---
+# Service PostgreSQL (ClusterIP - interne seulement)
+apiVersion: v1
+kind: Service
+metadata:
+  name: sonarqube-postgres
+  namespace: hrbrain
+spec:
+  selector:
+    app: sonarqube-postgres
+  ports:
+    - port: 5432
+      targetPort: 5432

@@ -1,5 +1,5 @@
 // ─────────────────────────────────────────────────────────────────
-// HRBrain — CI Pipeline Backend (NestJS) - Version Simplifiée
+// HRBrain — CI Pipeline Backend (NestJS) - Version avec SonarQube
 // ─────────────────────────────────────────────────────────────────
 
 pipeline {
@@ -9,6 +9,8 @@ pipeline {
         APP_NAME       = 'hrbrain-backend'
         DOCKER_IMAGE   = "mouadh08/hrbrain-backend"
         DOCKER_TAG     = "${env.BUILD_NUMBER}"
+        SONAR_PROJECT  = "hrbrain-backend"
+        SONAR_URL      = "http://sonarqube-service:9000"
     }
 
     options {
@@ -42,6 +44,43 @@ pipeline {
             }
         }
 
+        stage('Unit Tests') {
+            steps {
+                dir('BackOffice') {
+                    sh 'npm run test -- --coverage --coverageReporters=lcov --coverageReporters=text || true'
+                }
+            }
+            post {
+                always {
+                    // Publier les résultats des tests
+                    junit allowEmptyResults: true,
+                          testResults: 'BackOffice/coverage/junit.xml'
+                }
+            }
+        }
+
+        stage('SonarQube Analysis') {
+            steps {
+                withCredentials([string(credentialsId: 'sonarqube-token', variable: 'SONAR_TOKEN')]) {
+                    dir('BackOffice') {
+                        sh """
+                            npx sonar-scanner \
+                              -Dsonar.projectKey=${SONAR_PROJECT} \
+                              -Dsonar.projectName="HRBrain Backend" \
+                              -Dsonar.sources=src \
+                              -Dsonar.tests=src \
+                              -Dsonar.test.inclusions=**/*.spec.ts \
+                              -Dsonar.typescript.lcov.reportPaths=coverage/lcov.info \
+                              -Dsonar.host.url=${SONAR_URL} \
+                              -Dsonar.token=\${SONAR_TOKEN} \
+                              -Dsonar.exclusions=**/node_modules/**,**/dist/**,**/*.spec.ts \
+                              || true
+                        """
+                    }
+                }
+            }
+        }
+
         stage('Build') {
             steps {
                 dir('BackOffice') {
@@ -67,7 +106,7 @@ pipeline {
         stage('Docker Push') {
             when {
                 expression {
-                    return env.GIT_BRANCH ==~ /.*(main|feature\/k8s-jenkins-cicd).*/
+                    return env.GIT_BRANCH ==~ /.*(main).*/
                 }
             }
             steps {
