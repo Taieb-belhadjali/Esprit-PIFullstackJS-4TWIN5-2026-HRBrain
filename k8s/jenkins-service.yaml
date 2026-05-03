@@ -1,0 +1,22 @@
+---
+# Service NodePort pour accéder à Jenkins depuis l'extérieur
+apiVersion: v1
+kind: Service
+metadata:
+  name: jenkins-service
+  namespace: hrbrain
+  labels:
+    app: jenkins
+spec:
+  type: NodePort
+  selector:
+    app: jenkins
+  ports:
+    - name: http
+      port: 8080
+      targetPort: 8080
+      nodePort: 30008    # Accès via http://<node-ip>:30008
+    - name: agent
+      port: 50000
+      targetPort: 50000
+      nodePort: 30009    # Port pour les agents Jenkins

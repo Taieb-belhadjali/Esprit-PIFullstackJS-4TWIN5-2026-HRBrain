@@ -1,0 +1,109 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: jenkins
+  namespace: hrbrain
+  labels:
+    app: jenkins
+spec:
+  replicas: 1          # Jenkins doit avoir 1 seul replica (état partagé)
+  selector:
+    matchLabels:
+      app: jenkins
+  strategy:
+    type: Recreate     # Recreate (pas RollingUpdate) car PVC ReadWriteOnce
+  template:
+    metadata:
+      labels:
+        app: jenkins
+    spec:
+      serviceAccountName: jenkins
+
+      # Jenkins sur worker-1 ou worker-2 (app-worker)
+      nodeSelector:
+        role: app-worker
+
+      # Tolérations pour les nodes temporairement indisponibles
+      tolerations:
+        - key: "node.kubernetes.io/not-ready"
+          operator: "Exists"
+          effect: "NoExecute"
+          tolerationSeconds: 60
+        - key: "node.kubernetes.io/unreachable"
+          operator: "Exists"
+          effect: "NoExecute"
+          tolerationSeconds: 60
+
+      # Sécurité : Jenkins tourne avec l'UID 1000 (jenkins user)
+      securityContext:
+        fsGroup: 1000
+        runAsUser: 1000
+
+      initContainers:
+        # Fix permissions sur le volume Jenkins
+        - name: fix-permissions
+          image: busybox:1.36
+          command: ["sh", "-c", "chown -R 1000:1000 /var/jenkins_home"]
+          securityContext:
+            runAsUser: 0    # root pour chown
+          volumeMounts:
+            - name: jenkins-data
+              mountPath: /var/jenkins_home
+
+      containers:
+        - name: jenkins
+          image: jenkins/jenkins:lts-jdk21
+          imagePullPolicy: IfNotPresent
+
+          ports:
+            - name: http
+              containerPort: 8080
+            - name: agent
+              containerPort: 50000   # Port pour les agents Jenkins
+
+          env:
+            - name: JAVA_OPTS
+              value: "-Djenkins.install.runSetupWizard=false -Xmx512m -Xms256m"
+            - name: JENKINS_OPTS
+              value: "--httpPort=8080"
+
+          resources:
+            requests:
+              memory: "512Mi"
+              cpu: "250m"
+            limits:
+              memory: "1Gi"
+              cpu: "1000m"
+
+          volumeMounts:
+            - name: jenkins-data
+              mountPath: /var/jenkins_home
+            - name: docker-sock
+              mountPath: /var/run/docker.sock   # Accès Docker pour builds
+
+          livenessProbe:
+            httpGet:
+              path: /login
+              port: 8080
+            initialDelaySeconds: 60
+            periodSeconds: 30
+            timeoutSeconds: 10
+            failureThreshold: 5
+
+          readinessProbe:
+            httpGet:
+              path: /login
+              port: 8080
+            initialDelaySeconds: 30
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 3
+
+      volumes:
+        - name: jenkins-data
+          persistentVolumeClaim:
+            claimName: jenkins-pvc
+        - name: docker-sock
+          hostPath:
+            path: /var/run/docker.sock   # Docker du node hôte
+            type: Socket
