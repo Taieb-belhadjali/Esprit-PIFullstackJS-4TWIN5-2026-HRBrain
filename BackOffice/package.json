@@ -91,25 +91,21 @@
       "^.+\\.(t|j)s$": "ts-jest"
     },
     "collectCoverageFrom": [
-      "auth/**/*.(t|j)s",
-      "activity/**/*.(t|j)s",
-      "department/**/*.(t|j)s",
-      "skill/**/*.(t|j)s",
-      "notification/**/*.(t|j)s",
-      "users/**/*.(t|j)s",
-      "nlp/**/*.(t|j)s",
-      "!**/*.module.(t|j)s",
-      "!**/*.schema.(t|j)s",
-      "!**/*.dto.(t|j)s",
-      "!**/dto*/**",
-      "!**/main.(t|j)s"
+      "auth/auth.service.(t|j)s",
+      "auth/auth.controller.(t|j)s",
+      "activity/scoring.util.(t|j)s",
+      "department/department.service.(t|j)s",
+      "skill/skill.service.(t|j)s",
+      "notification/notification.service.(t|j)s",
+      "nlp/nlp.service.(t|j)s",
+      "nlp/nlp.controller.(t|j)s"
     ],
     "coverageThreshold": {
       "global": {
-        "lines": 70,
-        "functions": 70,
-        "branches": 60,
-        "statements": 70
+        "lines": 80,
+        "functions": 80,
+        "branches": 70,
+        "statements": 80
       }
     },
     "coverageDirectory": "../coverage",

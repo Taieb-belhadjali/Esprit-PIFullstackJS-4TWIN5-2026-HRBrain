@@ -7,8 +7,8 @@ describe('NotificationService', () => {
   let service: NotificationService;
 
   const mockNotification = {
-    _id: 'notif-1',
-    userId: 'user-1',
+    _id: '507f1f77bcf86cd799439011',
+    userId: '507f1f77bcf86cd799439012',
     title: 'Test Notification',
     message: 'Test message',
     type: 'info',
@@ -45,72 +45,72 @@ describe('NotificationService', () => {
   // ── create ─────────────────────────────────────────────────────────────────
   describe('create', () => {
     it('should create a notification successfully', async () => {
-      mockNotifModel.create.mockResolvedValue(mockNotification);
+      mockNotifModel.create.mockResolvedValue(mockNotification)
 
       const result = await service.create({
-        userId: 'user-1',
+        userId: '507f1f77bcf86cd799439012',
         title: 'Test',
         message: 'Test message',
         type: 'info',
         category: 'System',
-      });
+      })
 
-      expect(result).toEqual(mockNotification);
-      expect(mockNotifModel.create).toHaveBeenCalledTimes(1);
-    });
+      expect(result).toEqual(mockNotification)
+      expect(mockNotifModel.create).toHaveBeenCalledTimes(1)
+    })
 
     it('should convert string userId to ObjectId', async () => {
-      mockNotifModel.create.mockResolvedValue(mockNotification);
+      mockNotifModel.create.mockResolvedValue(mockNotification)
 
       await service.create({
-        userId: 'user-1',
+        userId: '507f1f77bcf86cd799439012',
         title: 'Test',
         message: 'Test',
         type: 'info',
         category: 'System',
-      });
+      })
 
       expect(mockNotifModel.create).toHaveBeenCalledWith(
         expect.objectContaining({
           userId: expect.any(Object), // ObjectId
         }),
-      );
-    });
+      )
+    })
 
     it('should create notification with optional link', async () => {
-      mockNotifModel.create.mockResolvedValue(mockNotification);
+      mockNotifModel.create.mockResolvedValue(mockNotification)
 
       await service.create({
-        userId: 'user-1',
+        userId: '507f1f77bcf86cd799439012',
         title: 'Test',
         message: 'Test',
         type: 'success',
         category: 'Activity',
         link: '/dashboard/activities',
-      });
+      })
 
       expect(mockNotifModel.create).toHaveBeenCalledWith(
         expect.objectContaining({ link: '/dashboard/activities' }),
-      );
-    });
-  });
+      )
+    })
+  })
 
   // ── createForMany ──────────────────────────────────────────────────────────
   describe('createForMany', () => {
     it('should create notifications for multiple users', async () => {
-      mockNotifModel.insertMany.mockResolvedValue([]);
+      mockNotifModel.insertMany.mockResolvedValue([])
 
-      await service.createForMany(['user-1', 'user-2'], {
+      await service.createForMany(['507f1f77bcf86cd799439011', '507f1f77bcf86cd799439012'], {
         title: 'Test',
         message: 'Test message',
         type: 'info',
         category: 'System',
-      });
+      })
 
-      expect(mockNotifModel.insertMany).toHaveBeenCalledTimes(1);
-      const insertedDocs = mockNotifModel.insertMany.mock.calls[0][0];
-      expect(insertedDocs).toHaveLength(2);
-    });
+      expect(mockNotifModel.insertMany).toHaveBeenCalledTimes(1)
+      const insertedDocs = mockNotifModel.insertMany.mock.calls[0][0]
+      expect(insertedDocs).toHaveLength(2)
+    })
 
     it('should not call insertMany when userIds is empty', async () => {
       await service.createForMany([], {
@@ -118,105 +118,99 @@ describe('NotificationService', () => {
         message: 'Test',
         type: 'info',
         category: 'System',
-      });
+      })
 
-      expect(mockNotifModel.insertMany).not.toHaveBeenCalled();
-    });
-  });
+      expect(mockNotifModel.insertMany).not.toHaveBeenCalled()
+    })
+  })
 
-  // ── findByUser ─────────────────────────────────────────────────────────────
   describe('findByUser', () => {
     it('should return notifications for a user', async () => {
-      const notifications = [mockNotification];
+      const notifications = [mockNotification]
       mockNotifModel.find.mockReturnValue({
         sort: jest.fn().mockReturnValue({
           limit: jest.fn().mockReturnValue({
             lean: jest.fn().mockResolvedValue(notifications),
           }),
         }),
-      });
+      })
 
-      const result = await service.findByUser('user-1');
-      expect(result).toEqual(notifications);
-    });
+      const result = await service.findByUser('507f1f77bcf86cd799439012')
+      expect(result).toEqual(notifications)
+    })
 
     it('should sort by createdAt descending', async () => {
       const sortMock = jest.fn().mockReturnValue({
         limit: jest.fn().mockReturnValue({
           lean: jest.fn().mockResolvedValue([]),
         }),
-      });
-      mockNotifModel.find.mockReturnValue({ sort: sortMock });
+      })
+      mockNotifModel.find.mockReturnValue({ sort: sortMock })
 
-      await service.findByUser('user-1');
-      expect(sortMock).toHaveBeenCalledWith({ createdAt: -1 });
-    });
-  });
+      await service.findByUser('507f1f77bcf86cd799439012')
+      expect(sortMock).toHaveBeenCalledWith({ createdAt: -1 })
+    })
+  })
 
-  // ── markAsRead ─────────────────────────────────────────────────────────────
   describe('markAsRead', () => {
     it('should mark a notification as read', async () => {
-      mockNotifModel.updateOne.mockResolvedValue({ modifiedCount: 1 });
+      mockNotifModel.updateOne.mockResolvedValue({ modifiedCount: 1 })
 
-      await service.markAsRead('notif-1', 'user-1');
+      await service.markAsRead('507f1f77bcf86cd799439011', '507f1f77bcf86cd799439012')
 
       expect(mockNotifModel.updateOne).toHaveBeenCalledWith(
-        expect.objectContaining({ _id: 'notif-1' }),
+        expect.objectContaining({ _id: '507f1f77bcf86cd799439011' }),
         { $set: { read: true } },
-      );
-    });
-  });
+      )
+    })
+  })
 
-  // ── markAllAsRead ──────────────────────────────────────────────────────────
   describe('markAllAsRead', () => {
     it('should mark all notifications as read for a user', async () => {
-      mockNotifModel.updateMany.mockResolvedValue({ modifiedCount: 5 });
+      mockNotifModel.updateMany.mockResolvedValue({ modifiedCount: 5 })
 
-      await service.markAllAsRead('user-1');
+      await service.markAllAsRead('507f1f77bcf86cd799439012')
 
       expect(mockNotifModel.updateMany).toHaveBeenCalledWith(
         expect.objectContaining({ read: false }),
         { $set: { read: true } },
-      );
-    });
-  });
+      )
+    })
+  })
 
-  // ── delete ─────────────────────────────────────────────────────────────────
   describe('delete', () => {
     it('should delete a notification', async () => {
-      mockNotifModel.deleteOne.mockResolvedValue({ deletedCount: 1 });
+      mockNotifModel.deleteOne.mockResolvedValue({ deletedCount: 1 })
 
-      await service.delete('notif-1', 'user-1');
+      await service.delete('507f1f77bcf86cd799439011', '507f1f77bcf86cd799439012')
 
       expect(mockNotifModel.deleteOne).toHaveBeenCalledWith(
-        expect.objectContaining({ _id: 'notif-1' }),
-      );
-    });
-  });
+        expect.objectContaining({ _id: '507f1f77bcf86cd799439011' }),
+      )
+    })
+  })
 
-  // ── countUnread ────────────────────────────────────────────────────────────
   describe('countUnread', () => {
     it('should return count of unread notifications', async () => {
-      mockNotifModel.countDocuments.mockResolvedValue(3);
+      mockNotifModel.countDocuments.mockResolvedValue(3)
 
-      const result = await service.countUnread('user-1');
-      expect(result).toBe(3);
-    });
+      const result = await service.countUnread('507f1f77bcf86cd799439012')
+      expect(result).toBe(3)
+    })
 
     it('should return 0 when no unread notifications', async () => {
-      mockNotifModel.countDocuments.mockResolvedValue(0);
+      mockNotifModel.countDocuments.mockResolvedValue(0)
 
-      const result = await service.countUnread('user-1');
-      expect(result).toBe(0);
-    });
-  });
+      const result = await service.countUnread('507f1f77bcf86cd799439012')
+      expect(result).toBe(0)
+    })
+  })
 
-  // ── Scenario notifications ─────────────────────────────────────────────────
   describe('notifyRecommendationReady', () => {
     it('should create notification for manager', async () => {
-      mockNotifModel.create.mockResolvedValue(mockNotification);
+      mockNotifModel.create.mockResolvedValue(mockNotification)
 
-      await service.notifyRecommendationReady('manager-1', 'React Training', 5, 'activity-1');
+      await service.notifyRecommendationReady('507f1f77bcf86cd799439012', 'React Training', 5, '507f1f77bcf86cd799439013')
 
       expect(mockNotifModel.create).toHaveBeenCalledWith(
         expect.objectContaining({
@@ -224,33 +218,33 @@ describe('NotificationService', () => {
           type: 'success',
           category: 'Recommendation',
         }),
-      );
-    });
+      )
+    })
 
     it('should use singular form for 1 candidate', async () => {
-      mockNotifModel.create.mockResolvedValue(mockNotification);
+      mockNotifModel.create.mockResolvedValue(mockNotification)
 
-      await service.notifyRecommendationReady('manager-1', 'Training', 1, 'activity-1');
+      await service.notifyRecommendationReady('507f1f77bcf86cd799439012', 'Training', 1, '507f1f77bcf86cd799439013')
 
-      const callArg = mockNotifModel.create.mock.calls[0][0];
-      expect(callArg.message).toContain('1 candidat classé');
-    });
+      const callArg = mockNotifModel.create.mock.calls[0][0]
+      expect(callArg.message).toContain('1 candidat classé')
+    })
 
     it('should use plural form for multiple candidates', async () => {
-      mockNotifModel.create.mockResolvedValue(mockNotification);
+      mockNotifModel.create.mockResolvedValue(mockNotification)
 
-      await service.notifyRecommendationReady('manager-1', 'Training', 3, 'activity-1');
+      await service.notifyRecommendationReady('507f1f77bcf86cd799439012', 'Training', 3, '507f1f77bcf86cd799439013')
 
-      const callArg = mockNotifModel.create.mock.calls[0][0];
-      expect(callArg.message).toContain('3 candidats classés');
-    });
-  });
+      const callArg = mockNotifModel.create.mock.calls[0][0]
+      expect(callArg.message).toContain('3 candidats classés')
+    })
+  })
 
   describe('notifyEmployeeApproved', () => {
     it('should create notification for employee', async () => {
-      mockNotifModel.create.mockResolvedValue(mockNotification);
+      mockNotifModel.create.mockResolvedValue(mockNotification)
 
-      await service.notifyEmployeeApproved('emp-1', 'React Training', 'activity-1');
+      await service.notifyEmployeeApproved('507f1f77bcf86cd799439012', 'React Training', '507f1f77bcf86cd799439013')
 
       expect(mockNotifModel.create).toHaveBeenCalledWith(
         expect.objectContaining({
@@ -258,40 +252,40 @@ describe('NotificationService', () => {
           type: 'success',
           category: 'Activity',
         }),
-      );
-    });
-  });
+      )
+    })
+  })
 
   describe('notifyNewActivityInDepartment', () => {
     it('should notify all employees in department', async () => {
-      mockNotifModel.insertMany.mockResolvedValue([]);
+      mockNotifModel.insertMany.mockResolvedValue([])
 
       await service.notifyNewActivityInDepartment(
-        ['emp-1', 'emp-2'],
+        ['507f1f77bcf86cd799439011', '507f1f77bcf86cd799439012'],
         'React Training',
         'Engineering',
-        'activity-1',
-      );
+        '507f1f77bcf86cd799439013',
+      )
 
-      expect(mockNotifModel.insertMany).toHaveBeenCalledTimes(1);
-      const docs = mockNotifModel.insertMany.mock.calls[0][0];
-      expect(docs).toHaveLength(2);
-    });
-  });
+      expect(mockNotifModel.insertMany).toHaveBeenCalledTimes(1)
+      const docs = mockNotifModel.insertMany.mock.calls[0][0]
+      expect(docs).toHaveLength(2)
+    })
+  })
 
   describe('notifyNewEmployeeInDepartment', () => {
     it('should notify all managers in department', async () => {
-      mockNotifModel.insertMany.mockResolvedValue([]);
+      mockNotifModel.insertMany.mockResolvedValue([])
 
       await service.notifyNewEmployeeInDepartment(
-        ['manager-1', 'manager-2'],
+        ['507f1f77bcf86cd799439011', '507f1f77bcf86cd799439012'],
         'John Doe',
         'Engineering',
-      );
+      )
 
-      expect(mockNotifModel.insertMany).toHaveBeenCalledTimes(1);
-      const docs = mockNotifModel.insertMany.mock.calls[0][0];
-      expect(docs).toHaveLength(2);
-    });
-  });
-});
+      expect(mockNotifModel.insertMany).toHaveBeenCalledTimes(1)
+      const docs = mockNotifModel.insertMany.mock.calls[0][0]
+      expect(docs).toHaveLength(2)
+    })
+  })
+})

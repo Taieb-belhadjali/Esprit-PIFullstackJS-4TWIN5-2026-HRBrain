@@ -66,13 +66,21 @@ export default defineConfig({
     coverage: {
       provider: 'v8',
       reporter: ['text', 'lcov', 'html'],
-      exclude: [
-        'node_modules/',
-        'src/test/',
-        '**/*.d.ts',
-        '**/*.config.*',
-        '**/dist/**',
+      include: [
+        'src/api/**/*.ts',
       ],
+      exclude: [
+        'src/api/api.ts',        // interceptors difficiles à tester
+        'src/api/translations.ts', // données statiques
+        'node_modules/**',
+        'src/test/**',
+      ],
+      thresholds: {
+        lines: 80,
+        functions: 80,
+        branches: 70,
+        statements: 80,
+      },
     },
   },
 

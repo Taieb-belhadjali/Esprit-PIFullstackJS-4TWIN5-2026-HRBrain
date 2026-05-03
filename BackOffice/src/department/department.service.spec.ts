@@ -132,7 +132,7 @@ describe('DepartmentService', () => {
         }),
       });
 
-      const result = await service.findByManager('manager-1');
+      const result = await service.findByManager('507f1f77bcf86cd799439011');
       expect(result).toEqual(departments);
       expect(mockDepartmentModel.find).toHaveBeenCalledWith(
         expect.objectContaining({ $or: expect.any(Array) }),
