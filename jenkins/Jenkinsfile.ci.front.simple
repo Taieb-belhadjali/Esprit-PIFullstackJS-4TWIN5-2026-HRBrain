@@ -37,7 +37,7 @@ pipeline {
         stage('Lint') {
             steps {
                 dir('FrontOffice') {
-                    sh './node_modules/.bin/tsc --noEmit || true'
+                    sh 'node_modules/typescript/bin/tsc --noEmit || true'
                 }
             }
         }
@@ -45,7 +45,7 @@ pipeline {
         stage('Build') {
             steps {
                 dir('FrontOffice') {
-                    sh 'npm run build'
+                    sh 'NODE_OPTIONS="--max-old-space-size=1024" npm run build'
                 }
             }
             post {
