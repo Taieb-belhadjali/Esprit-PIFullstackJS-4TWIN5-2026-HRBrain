@@ -26,7 +26,6 @@ data:
                 cpu: 50
                 memory: 50
                 pods: 50
-          - name: RemoveDuplicates
           - name: RemovePodsViolatingInterPodAntiAffinity
           - name: RemovePodsViolatingNodeAffinity
             args:
@@ -38,7 +37,6 @@ data:
               - LowNodeUtilization
           deschedule:
             enabled:
-              - RemoveDuplicates
               - RemovePodsViolatingInterPodAntiAffinity
               - RemovePodsViolatingNodeAffinity
 
