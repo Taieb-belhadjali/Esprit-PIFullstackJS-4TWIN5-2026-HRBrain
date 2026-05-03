@@ -6,12 +6,8 @@ import { ViteImageOptimizer } from 'vite-plugin-image-optimizer'
 
 export default defineConfig({
   plugins: [
-    // The React and Tailwind plugins are both required for Make, even if
-    // Tailwind is not being actively used – do not remove them
     react(),
     tailwindcss(),
-
-    // ── Image optimization ────────────────────────────────────────────────────
     ViteImageOptimizer({
       jpg:  { quality: 80 },
       jpeg: { quality: 80 },
@@ -59,6 +55,24 @@ export default defineConfig({
           ],
         },
       },
+    },
+  },
+
+  // ── Vitest Configuration ──────────────────────────────────────────────────
+  test: {
+    globals: true,
+    environment: 'jsdom',
+    setupFiles: ['./src/test/setup.ts'],
+    coverage: {
+      provider: 'v8',
+      reporter: ['text', 'lcov', 'html'],
+      exclude: [
+        'node_modules/',
+        'src/test/',
+        '**/*.d.ts',
+        '**/*.config.*',
+        '**/dist/**',
+      ],
     },
   },
 

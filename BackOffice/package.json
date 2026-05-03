@@ -91,8 +91,27 @@
       "^.+\\.(t|j)s$": "ts-jest"
     },
     "collectCoverageFrom": [
-      "auth/**/*.(t|j)s"
+      "auth/**/*.(t|j)s",
+      "activity/**/*.(t|j)s",
+      "department/**/*.(t|j)s",
+      "skill/**/*.(t|j)s",
+      "notification/**/*.(t|j)s",
+      "users/**/*.(t|j)s",
+      "nlp/**/*.(t|j)s",
+      "!**/*.module.(t|j)s",
+      "!**/*.schema.(t|j)s",
+      "!**/*.dto.(t|j)s",
+      "!**/dto*/**",
+      "!**/main.(t|j)s"
     ],
+    "coverageThreshold": {
+      "global": {
+        "lines": 70,
+        "functions": 70,
+        "branches": 60,
+        "statements": 70
+      }
+    },
     "coverageDirectory": "../coverage",
     "coverageReporters": [
       "lcov",

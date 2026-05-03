@@ -47,12 +47,11 @@ pipeline {
         stage('Unit Tests') {
             steps {
                 dir('BackOffice') {
-                    sh 'npm run test -- --coverage --coverageReporters=lcov --coverageReporters=text || true'
+                    sh 'npm run test:cov -- --forceExit || true'
                 }
             }
             post {
                 always {
-                    // Publier les résultats des tests
                     junit allowEmptyResults: true,
                           testResults: 'BackOffice/coverage/junit.xml'
                 }

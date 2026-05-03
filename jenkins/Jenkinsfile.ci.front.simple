@@ -47,7 +47,7 @@ pipeline {
         stage('Unit Tests') {
             steps {
                 dir('FrontOffice') {
-                    sh 'npm run test -- --run --coverage --reporter=junit --outputFile=coverage/junit.xml || true'
+                    sh 'npm run test:coverage || true'
                 }
             }
             post {
