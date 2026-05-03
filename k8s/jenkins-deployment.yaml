@@ -102,8 +102,8 @@ spec:
       volumes:
         - name: jenkins-data
           persistentVolumeClaim:
-            claimName: jenkins-pvc
+            claimName: jenkins-pvc-nfs    # NFS PVC - accessible depuis tous les nodes
         - name: docker-sock
           hostPath:
-            path: /var/run/docker.sock   # Docker du node hôte
+            path: /var/run/docker.sock
             type: Socket

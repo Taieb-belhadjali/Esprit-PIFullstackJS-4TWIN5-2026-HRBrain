@@ -1,0 +1,17 @@
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: jenkins-pv-nfs
+  labels:
+    app: jenkins
+    type: nfs
+spec:
+  capacity:
+    storage: 10Gi
+  accessModes:
+    - ReadWriteMany    # NFS supporte ReadWriteMany (plusieurs nodes)
+  persistentVolumeReclaimPolicy: Retain
+  storageClassName: ""
+  nfs:
+    server: 192.168.1.10    # master = NFS server
+    path: /data/jenkins-nfs
