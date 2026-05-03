@@ -1,0 +1,82 @@
+---
+# ConfigMap : politique de rééquilibrage
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: descheduler-policy
+  namespace: kube-system
+data:
+  policy.yaml: |
+    apiVersion: "descheduler/v1alpha2"
+    kind: "DeschedulerPolicy"
+    profiles:
+      - name: default
+        pluginConfig:
+          - name: DefaultEvictor
+            args:
+              ignorePvcPods: false
+              evictLocalStoragePods: true
+          - name: LowNodeUtilization
+            args:
+              thresholds:
+                cpu: 20
+                memory: 20
+                pods: 20
+              targetThresholds:
+                cpu: 50
+                memory: 50
+                pods: 50
+          - name: RemovePodsViolatingInterPodAntiAffinity
+          - name: RemovePodsViolatingNodeAffinity
+            args:
+              nodeAffinityType:
+                - requiredDuringSchedulingIgnoredDuringExecution
+        plugins:
+          balance:
+            enabled:
+              - LowNodeUtilization
+          deschedule:
+            enabled:
+              - RemovePodsViolatingInterPodAntiAffinity
+              - RemovePodsViolatingNodeAffinity
+
+---
+# CronJob : rééquilibrage toutes les 5 minutes
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: descheduler
+  namespace: kube-system
+spec:
+  schedule: "*/3 * * * *"   # toutes les 3 minutes
+  concurrencyPolicy: Forbid
+  jobTemplate:
+    spec:
+      template:
+        spec:
+          priorityClassName: system-cluster-critical
+          restartPolicy: Never
+          serviceAccountName: descheduler-sa
+          containers:
+            - name: descheduler
+              image: registry.k8s.io/descheduler/descheduler:v0.28.0
+              imagePullPolicy: IfNotPresent
+              command:
+                - /bin/descheduler
+              args:
+                - --policy-config-file=/policy-dir/policy.yaml
+                - --v=3
+              volumeMounts:
+                - name: policy-volume
+                  mountPath: /policy-dir
+              resources:
+                requests:
+                  cpu: 100m
+                  memory: 128Mi
+                limits:
+                  cpu: 200m
+                  memory: 256Mi
+          volumes:
+            - name: policy-volume
+              configMap:
+                name: descheduler-policy

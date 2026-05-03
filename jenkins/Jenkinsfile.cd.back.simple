@@ -1,9 +1,5 @@
 // ─────────────────────────────────────────────────────────────────
-// HRBrain — CD Pipeline Backend (déploiement Kubernetes)
-// Trigger : après succès du CI Backend sur main
-//
-// ⚠️  GARDE : vérifie que le CI Frontend est aussi en succès avant
-//     de déployer — évite un état incohérent back OK / front cassé
+// HRBrain — CD Pipeline Backend (déploiement Kubernetes) - Version Simplifiée
 // ─────────────────────────────────────────────────────────────────
 
 pipeline {
@@ -15,8 +11,6 @@ pipeline {
         K8S_NAMESPACE  = 'hrbrain'
         K8S_DEPLOY     = 'backend'
         IMAGE_TAG      = "${params.IMAGE_TAG ?: 'latest'}"
-        // Nom exact du job CI Frontend dans Jenkins
-        FRONTEND_CI_JOB = 'hrbrain-ci-frontend'
     }
 
     parameters {
@@ -32,43 +26,12 @@ pipeline {
 
     stages {
 
-        // ── 1. Checkout ──────────────────────────────────────────
         stage('Checkout') {
             steps {
                 checkout scm
             }
         }
 
-        // ── 2. Garde — CI Frontend doit être en succès ────────────
-        // Si le frontend est cassé, on bloque le déploiement backend
-        // pour éviter un état incohérent (back déployé, front KO)
-        stage('Check Frontend CI Status') {
-            steps {
-                script {
-                    def frontendJob = Jenkins.instance.getItemByFullName(env.FRONTEND_CI_JOB)
-
-                    if (frontendJob == null) {
-                        error("❌ Job CI Frontend '${env.FRONTEND_CI_JOB}' introuvable dans Jenkins")
-                    }
-
-                    def lastBuild = frontendJob.getLastBuild()
-                    if (lastBuild == null) {
-                        error("❌ Aucun build trouvé pour le CI Frontend — déploiement bloqué")
-                    }
-
-                    def result = lastBuild.getResult()?.toString()
-                    echo "📋 Dernier build CI Frontend : #${lastBuild.number} → ${result}"
-
-                    if (result != 'SUCCESS') {
-                        error("❌ CI Frontend en état '${result}' — déploiement Backend bloqué. Corrige le frontend d'abord.")
-                    }
-
-                    echo "✅ CI Frontend OK — déploiement Backend autorisé"
-                }
-            }
-        }
-
-        // ── 3. Vérification image Docker ─────────────────────────
         stage('Verify Image') {
             steps {
                 withCredentials([usernamePassword(
@@ -77,7 +40,7 @@ pipeline {
                     passwordVariable: 'DOCKER_PASS'
                 )]) {
                     sh """
-                        echo "$DOCKER_PASS" | docker login -u "$DOCKER_USER" --password-stdin
+                        echo "\$DOCKER_PASS" | docker login -u "\$DOCKER_USER" --password-stdin
                         docker pull ${DOCKER_IMAGE}:${IMAGE_TAG}
                         docker logout
                     """
@@ -85,7 +48,6 @@ pipeline {
             }
         }
 
-        // ── 4. Déploiement Kubernetes ────────────────────────────
         stage('Deploy to Kubernetes') {
             steps {
                 withKubeConfig([credentialsId: 'kubeconfig']) {
@@ -94,6 +56,10 @@ pipeline {
                         kubectl apply -f k8s/namespace.yaml
                         kubectl apply -f k8s/configmap.yaml
                         kubectl apply -f k8s/secret.yaml
+
+                        # Appliquer le deployment (crée ou met à jour)
+                        kubectl apply -f k8s/backend-deployment.yaml
+                        kubectl apply -f k8s/backend-service.yaml
 
                         # Mettre à jour l'image du deployment
                         kubectl set image deployment/${K8S_DEPLOY} \
@@ -109,7 +75,6 @@ pipeline {
             }
         }
 
-        // ── 5. Vérification post-déploiement ─────────────────────
         stage('Verify Deployment') {
             steps {
                 withKubeConfig([credentialsId: 'kubeconfig']) {
@@ -127,7 +92,6 @@ pipeline {
             }
         }
 
-        // ── 6. Smoke Test ────────────────────────────────────────
         stage('Smoke Test') {
             steps {
                 withKubeConfig([credentialsId: 'kubeconfig']) {

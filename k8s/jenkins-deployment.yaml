@@ -1,0 +1,98 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: jenkins
+  namespace: hrbrain
+  labels:
+    app: jenkins
+spec:
+  replicas: 1          # Jenkins doit avoir 1 seul replica (état partagé)
+  selector:
+    matchLabels:
+      app: jenkins
+  strategy:
+    type: Recreate     # Recreate (pas RollingUpdate) car PVC ReadWriteOnce
+  template:
+    metadata:
+      labels:
+        app: jenkins
+    spec:
+      serviceAccountName: jenkins
+
+      # Jenkins sur worker-1 ou worker-2 (app-worker)
+      nodeSelector:
+        role: app-worker
+
+      # Tolérations pour les nodes temporairement indisponibles
+      tolerations:
+        - key: "node.kubernetes.io/not-ready"
+          operator: "Exists"
+          effect: "NoExecute"
+          tolerationSeconds: 10    # Réduit à 10s pour migration rapide
+        - key: "node.kubernetes.io/unreachable"
+          operator: "Exists"
+          effect: "NoExecute"
+          tolerationSeconds: 10    # Réduit à 10s pour migration rapide
+
+      # Sécurité : Jenkins tourne avec l'UID 1000 (jenkins user)
+      securityContext:
+        fsGroup: 1000
+        runAsUser: 1000
+
+      containers:
+        - name: jenkins
+          image: mouadh08/jenkins-hrbrain:latest
+          imagePullPolicy: Always
+
+          ports:
+            - name: http
+              containerPort: 8080
+            - name: agent
+              containerPort: 50000   # Port pour les agents Jenkins
+
+          env:
+            - name: JAVA_OPTS
+              value: "-Djenkins.install.runSetupWizard=false -Xmx512m -Xms256m"
+            - name: JENKINS_OPTS
+              value: "--httpPort=8080"
+
+          resources:
+            requests:
+              memory: "1Gi"
+              cpu: "500m"
+            limits:
+              memory: "3Gi"
+              cpu: "2000m"
+
+          volumeMounts:
+            - name: jenkins-data
+              mountPath: /var/jenkins_home
+            - name: docker-sock
+              mountPath: /var/run/docker.sock   # Accès Docker pour builds
+
+          livenessProbe:
+            httpGet:
+              path: /login
+              port: 8080
+            initialDelaySeconds: 180  # 3 minutes - NFS est lent au démarrage
+            periodSeconds: 30
+            timeoutSeconds: 10
+            failureThreshold: 10      # 10 échecs avant de tuer le pod
+
+          readinessProbe:
+            httpGet:
+              path: /login
+              port: 8080
+            initialDelaySeconds: 120  # 2 minutes
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 10
+
+      volumes:
+        - name: jenkins-data
+          persistentVolumeClaim:
+            claimName: jenkins-pvc-nfs    # NFS PVC - accessible depuis tous les nodes
+        - name: docker-sock
+          hostPath:
+            path: /var/run/docker.sock
+            type: Socket

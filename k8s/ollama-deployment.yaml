@@ -1,0 +1,95 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ollama
+  namespace: hrbrain
+  labels:
+    app: ollama
+    tier: ai
+spec:
+  replicas: 1          # 1 seul — le modèle est lourd (4.7 GB)
+  selector:
+    matchLabels:
+      app: ollama
+  strategy:
+    type: Recreate     # Recreate (pas RollingUpdate) — évite 2 instances en même temps
+  template:
+    metadata:
+      labels:
+        app: ollama
+        tier: ai
+    spec:
+      # ── Forcer Ollama sur Worker 3 (le plus puissant / dédié IA) ──────────
+      nodeSelector:
+        role: ai-worker            # kubectl label node laptop-4 role=ai-worker
+
+      # Tolérance si le node a un taint dédié IA
+      tolerations:
+        - key: "dedicated"
+          operator: "Equal"
+          value: "ai"
+          effect: "NoSchedule"
+
+      containers:
+        - name: ollama
+          image: ollama/ollama:latest
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 11434
+              name: http
+
+          # Ressources — Ollama est gourmand en RAM
+          # Limité à 5Gi pour ne pas tuer les autres pods du cluster
+          resources:
+            requests:
+              memory: "3Gi"
+              cpu: "500m"
+            limits:
+              memory: "5Gi"    # ⚠️ Hard limit — OOMKilled si dépassé
+              cpu: "2000m"
+
+          # Le modèle est téléchargé dans ce volume au premier démarrage
+          volumeMounts:
+            - name: ollama-models
+              mountPath: /root/.ollama
+
+          # Liveness : vérifie que l'API répond
+          livenessProbe:
+            httpGet:
+              path: /api/tags
+              port: 11434
+            initialDelaySeconds: 60    # Le modèle prend du temps à charger
+            periodSeconds: 30
+            timeoutSeconds: 10
+            failureThreshold: 5
+
+          readinessProbe:
+            httpGet:
+              path: /api/tags
+              port: 11434
+            initialDelaySeconds: 30
+            periodSeconds: 15
+            timeoutSeconds: 10
+            failureThreshold: 3
+
+      # Volume persistant pour stocker les modèles téléchargés
+      volumes:
+        - name: ollama-models
+          persistentVolumeClaim:
+            claimName: ollama-models-pvc
+
+---
+# ── PersistentVolumeClaim pour les modèles Ollama ────────────────────────────
+# Évite de re-télécharger le modèle (4.7 GB) à chaque redémarrage du pod
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: ollama-models-pvc
+  namespace: hrbrain
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 20Gi    # Assez pour qwen2.5:7b + marge
+  storageClassName: local-storage   # Voir note dans README

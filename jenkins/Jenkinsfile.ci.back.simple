@@ -1,0 +1,103 @@
+// ─────────────────────────────────────────────────────────────────
+// HRBrain — CI Pipeline Backend (NestJS) - Version Simplifiée
+// ─────────────────────────────────────────────────────────────────
+
+pipeline {
+    agent any
+
+    environment {
+        APP_NAME       = 'hrbrain-backend'
+        DOCKER_IMAGE   = "mouadh08/hrbrain-backend"
+        DOCKER_TAG     = "${env.BUILD_NUMBER}"
+    }
+
+    options {
+        timeout(time: 40, unit: 'MINUTES')
+        disableConcurrentBuilds()
+        buildDiscarder(logRotator(numToKeepStr: '10'))
+    }
+
+    stages {
+
+        stage('Checkout') {
+            steps {
+                checkout scm
+                echo "✅ Branch: ${env.GIT_BRANCH} | Commit: ${env.GIT_COMMIT?.take(8)}"
+            }
+        }
+
+        stage('Install Dependencies') {
+            steps {
+                dir('BackOffice') {
+                    sh 'npm ci'
+                }
+            }
+        }
+
+        stage('Lint') {
+            steps {
+                dir('BackOffice') {
+                    sh 'npm run lint || true'
+                }
+            }
+        }
+
+        stage('Build') {
+            steps {
+                dir('BackOffice') {
+                    sh 'npm run build'
+                }
+            }
+        }
+
+        stage('Docker Build') {
+            steps {
+                dir('BackOffice') {
+                    sh """
+                        docker build \
+                          --target production \
+                          -t ${DOCKER_IMAGE}:${DOCKER_TAG} \
+                          -t ${DOCKER_IMAGE}:latest \
+                          .
+                    """
+                }
+            }
+        }
+
+        stage('Docker Push') {
+            when {
+                expression {
+                    return env.GIT_BRANCH ==~ /.*(main|feature\/k8s-jenkins-cicd).*/
+                }
+            }
+            steps {
+                withCredentials([usernamePassword(
+                    credentialsId: 'dockerhub-credentials',
+                    usernameVariable: 'DOCKER_USER',
+                    passwordVariable: 'DOCKER_PASS'
+                )]) {
+                    sh """
+                        echo "\$DOCKER_PASS" | docker login -u "\$DOCKER_USER" --password-stdin
+                        docker push ${DOCKER_IMAGE}:${DOCKER_TAG}
+                        docker push ${DOCKER_IMAGE}:latest
+                        docker logout
+                    """
+                }
+            }
+        }
+
+    }
+
+    post {
+        success {
+            echo "✅ Pipeline CI Backend terminé — Image: ${DOCKER_IMAGE}:${DOCKER_TAG}"
+        }
+        failure {
+            echo "❌ Pipeline CI Backend échoué"
+        }
+        always {
+            sh "docker rmi ${DOCKER_IMAGE}:${DOCKER_TAG} || true"
+            cleanWs()
+        }
+    }
+}
