@@ -85,19 +85,19 @@ spec:
             httpGet:
               path: /login
               port: 8080
-            initialDelaySeconds: 30   # Réduit de 60s → 30s
-            periodSeconds: 15
+            initialDelaySeconds: 120  # Augmenté à 120s - Jenkins avec NFS est plus lent
+            periodSeconds: 30
             timeoutSeconds: 10
-            failureThreshold: 3
+            failureThreshold: 5
 
           readinessProbe:
             httpGet:
               path: /login
               port: 8080
-            initialDelaySeconds: 20   # Réduit de 30s → 20s
-            periodSeconds: 5
+            initialDelaySeconds: 60   # Augmenté à 60s
+            periodSeconds: 10
             timeoutSeconds: 5
-            failureThreshold: 3
+            failureThreshold: 5
 
       volumes:
         - name: jenkins-data
