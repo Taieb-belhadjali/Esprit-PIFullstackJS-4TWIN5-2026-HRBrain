@@ -1,0 +1,72 @@
+---
+# ConfigMap : politique de rééquilibrage
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: descheduler-policy
+  namespace: kube-system
+data:
+  policy.yaml: |
+    apiVersion: "descheduler/v1alpha1"
+    kind: "DeschedulerPolicy"
+    strategies:
+      # Rééquilibrer les pods sur les nodes disponibles
+      LowNodeUtilization:
+        enabled: true
+        params:
+          nodeResourceUtilizationThresholds:
+            thresholds:
+              cpu: 20
+              memory: 20
+              pods: 20
+            targetThresholds:
+              cpu: 50
+              memory: 50
+              pods: 50
+      # Supprimer les pods dupliqués sur le même node
+      RemoveDuplicates:
+        enabled: true
+      # Respecter les règles d'anti-affinité
+      RemovePodsViolatingInterPodAntiAffinity:
+        enabled: true
+      # Respecter les nodeSelector
+      RemovePodsViolatingNodeAffinity:
+        enabled: true
+        params:
+          nodeAffinityType:
+            - requiredDuringSchedulingIgnoredDuringExecution
+
+---
+# CronJob : rééquilibrage toutes les 5 minutes
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: descheduler
+  namespace: kube-system
+spec:
+  schedule: "*/5 * * * *"   # toutes les 5 minutes
+  concurrencyPolicy: Forbid
+  jobTemplate:
+    spec:
+      template:
+        spec:
+          priorityClassName: system-cluster-critical
+          restartPolicy: Never
+          serviceAccountName: descheduler-sa
+          containers:
+            - name: descheduler
+              image: registry.k8s.io/descheduler/descheduler:v0.28.0
+              imagePullPolicy: IfNotPresent
+              command:
+                - /bin/descheduler
+              args:
+                - --policy-config-map-name=descheduler-policy
+                - --policy-config-map-namespace=kube-system
+                - --v=3
+              resources:
+                requests:
+                  cpu: 100m
+                  memory: 128Mi
+                limits:
+                  cpu: 200m
+                  memory: 256Mi
