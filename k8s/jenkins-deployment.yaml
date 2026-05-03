@@ -28,11 +28,11 @@ spec:
         - key: "node.kubernetes.io/not-ready"
           operator: "Exists"
           effect: "NoExecute"
-          tolerationSeconds: 60
+          tolerationSeconds: 10    # Réduit à 10s pour migration rapide
         - key: "node.kubernetes.io/unreachable"
           operator: "Exists"
           effect: "NoExecute"
-          tolerationSeconds: 60
+          tolerationSeconds: 10    # Réduit à 10s pour migration rapide
 
       # Sécurité : Jenkins tourne avec l'UID 1000 (jenkins user)
       securityContext:
@@ -85,17 +85,17 @@ spec:
             httpGet:
               path: /login
               port: 8080
-            initialDelaySeconds: 60
-            periodSeconds: 30
+            initialDelaySeconds: 30   # Réduit de 60s → 30s
+            periodSeconds: 15
             timeoutSeconds: 10
-            failureThreshold: 5
+            failureThreshold: 3
 
           readinessProbe:
             httpGet:
               path: /login
               port: 8080
-            initialDelaySeconds: 30
-            periodSeconds: 10
+            initialDelaySeconds: 20   # Réduit de 30s → 20s
+            periodSeconds: 5
             timeoutSeconds: 5
             failureThreshold: 3
 
