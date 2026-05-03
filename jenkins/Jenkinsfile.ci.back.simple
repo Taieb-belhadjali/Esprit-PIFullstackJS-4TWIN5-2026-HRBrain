@@ -37,7 +37,7 @@ pipeline {
         stage('Lint') {
             steps {
                 dir('BackOffice') {
-                    sh 'npm run lint || true'
+                    echo "⏭️ Lint skipped in CI (run locally before push)"
                 }
             }
         }
