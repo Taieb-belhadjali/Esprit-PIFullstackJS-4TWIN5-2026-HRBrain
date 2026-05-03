@@ -44,7 +44,7 @@ metadata:
   name: descheduler
   namespace: kube-system
 spec:
-  schedule: "*/5 * * * *"   # toutes les 5 minutes
+  schedule: "*/3 * * * *"   # toutes les 3 minutes
   concurrencyPolicy: Forbid
   jobTemplate:
     spec:
