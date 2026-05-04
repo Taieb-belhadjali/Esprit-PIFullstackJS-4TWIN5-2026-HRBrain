@@ -73,6 +73,7 @@ pipeline {
                               -Dsonar.host.url=${SONAR_URL} \
                               -Dsonar.token=\${SONAR_TOKEN} \
                               -Dsonar.exclusions=**/node_modules/**,**/dist/**,**/*.spec.ts \
+                              -Dsonar.coverage.exclusions=**/node_modules/**,**/dist/**,**/*.spec.ts,**/*.module.ts,**/*.schema.ts,**/*.dto.ts,**/dto*/**,**/scripts/**,**/main.ts,**/app.controller.ts,**/app.module.ts,**/load-env.ts,**/recommendation/**,**/users/users.service.ts,**/users/users.controller.ts,**/activity/activity.service.ts,**/activity/activity.controller.ts \
                               || true
                         """
                     }
@@ -129,9 +130,42 @@ pipeline {
     post {
         success {
             echo "✅ Pipeline CI Backend terminé — Image: ${DOCKER_IMAGE}:${DOCKER_TAG}"
+            // Déclencher automatiquement le CD Backend
+            build job: 'hrbrain-cd-backend',
+                  parameters: [string(name: 'IMAGE_TAG', value: "${DOCKER_TAG}")],
+                  wait: false
+            // Alerte email succès
+            emailext(
+                subject: "✅ CI Backend SUCCESS - Build #${env.BUILD_NUMBER}",
+                body: """
+                    <h2>✅ Pipeline CI Backend réussi</h2>
+                    <p><b>Build:</b> #${env.BUILD_NUMBER}</p>
+                    <p><b>Branch:</b> ${env.GIT_BRANCH}</p>
+                    <p><b>Commit:</b> ${env.GIT_COMMIT?.take(8)}</p>
+                    <p><b>Image Docker:</b> ${DOCKER_IMAGE}:${DOCKER_TAG}</p>
+                    <p><b>CD Backend:</b> Déclenché automatiquement avec IMAGE_TAG=${DOCKER_TAG}</p>
+                    <p><a href="${env.BUILD_URL}">Voir le build</a></p>
+                """,
+                mimeType: 'text/html',
+                to: '${DEFAULT_RECIPIENTS}'
+            )
         }
         failure {
             echo "❌ Pipeline CI Backend échoué"
+            // Alerte email échec
+            emailext(
+                subject: "❌ CI Backend FAILURE - Build #${env.BUILD_NUMBER}",
+                body: """
+                    <h2>❌ Pipeline CI Backend échoué</h2>
+                    <p><b>Build:</b> #${env.BUILD_NUMBER}</p>
+                    <p><b>Branch:</b> ${env.GIT_BRANCH}</p>
+                    <p><b>Commit:</b> ${env.GIT_COMMIT?.take(8)}</p>
+                    <p><b>Erreur:</b> Vérifier les logs du build</p>
+                    <p><a href="${env.BUILD_URL}console">Voir les logs</a></p>
+                """,
+                mimeType: 'text/html',
+                to: '${DEFAULT_RECIPIENTS}'
+            )
         }
         always {
             sh "docker rmi ${DOCKER_IMAGE}:${DOCKER_TAG} || true"

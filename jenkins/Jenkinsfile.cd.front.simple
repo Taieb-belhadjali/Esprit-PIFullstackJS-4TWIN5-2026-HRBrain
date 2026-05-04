@@ -114,12 +114,37 @@ pipeline {
     post {
         success {
             echo "✅ Déploiement Frontend réussi — Image: ${DOCKER_IMAGE}:${IMAGE_TAG}"
+            emailext(
+                subject: "✅ CD Frontend SUCCESS - Deploy #${env.BUILD_NUMBER}",
+                body: """
+                    <h2>✅ Déploiement Frontend réussi</h2>
+                    <p><b>Build:</b> #${env.BUILD_NUMBER}</p>
+                    <p><b>Image:</b> ${DOCKER_IMAGE}:${IMAGE_TAG}</p>
+                    <p><b>Namespace:</b> ${K8S_NAMESPACE}</p>
+                    <p><b>Application:</b> <a href="http://192.168.1.12:30080">http://192.168.1.12:30080</a></p>
+                    <p><a href="${env.BUILD_URL}">Voir le build</a></p>
+                """,
+                mimeType: 'text/html',
+                to: '${DEFAULT_RECIPIENTS}'
+            )
         }
         failure {
             echo "❌ Déploiement Frontend échoué — Rollback en cours..."
             withKubeConfig([credentialsId: 'kubeconfig']) {
                 sh "kubectl rollout undo deployment/${K8S_DEPLOY} -n ${K8S_NAMESPACE} || true"
             }
+            emailext(
+                subject: "❌ CD Frontend FAILURE - Deploy #${env.BUILD_NUMBER}",
+                body: """
+                    <h2>❌ Déploiement Frontend échoué</h2>
+                    <p><b>Build:</b> #${env.BUILD_NUMBER}</p>
+                    <p><b>Image:</b> ${DOCKER_IMAGE}:${IMAGE_TAG}</p>
+                    <p><b>Action:</b> Rollback automatique effectué</p>
+                    <p><a href="${env.BUILD_URL}console">Voir les logs</a></p>
+                """,
+                mimeType: 'text/html',
+                to: '${DEFAULT_RECIPIENTS}'
+            )
         }
         always {
             cleanWs()
