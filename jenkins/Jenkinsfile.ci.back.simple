@@ -147,7 +147,7 @@ pipeline {
                     <p><a href="${env.BUILD_URL}">Voir le build</a></p>
                 """,
                 mimeType: 'text/html',
-                to: '${DEFAULT_RECIPIENTS}'
+                to: 'taiebaminebelhadjali@gmail.com'
             )
         }
         failure {
@@ -164,7 +164,7 @@ pipeline {
                     <p><a href="${env.BUILD_URL}console">Voir les logs</a></p>
                 """,
                 mimeType: 'text/html',
-                to: '${DEFAULT_RECIPIENTS}'
+                to: 'taiebaminebelhadjali@gmail.com'
             )
         }
         always {
