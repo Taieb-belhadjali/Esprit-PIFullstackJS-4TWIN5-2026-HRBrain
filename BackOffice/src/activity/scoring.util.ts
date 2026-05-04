@@ -35,7 +35,7 @@ export function parseCvSkillLevels(
   const result: EmployeeSkillLevel[] = [];
   for (const line of cvText.split('\n')) {
     const trimmed = line.trim();
-    const match = trimmed.match(/^([A-Za-z0-9\s#\+\.\-\_@]+):([A-Za-z]+)(?::[^\s]*)?$/i);
+    const match = trimmed.match(/^([A-Za-z0-9\s#+.\-_@]+):([A-Za-z]+)(?::[^\s]*)?$/i);
     if (!match) continue;
     const name  = match[1].trim().toUpperCase();
     const level = match[2].toUpperCase();

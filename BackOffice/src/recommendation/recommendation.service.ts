@@ -454,7 +454,6 @@ export class RecommendationService {
           String(createdById),
           (activity as any).title,
           parsed.rankings?.length ?? 0,
-          activityId,
         );
       }
     } catch (err: any) {
@@ -558,7 +557,6 @@ export class RecommendationService {
           await this.notifService.notifyEmployeeApproved(
             body.employeeId,
             (activity as any).title,
-            activityId,
           );
         }
       } catch (err: any) {

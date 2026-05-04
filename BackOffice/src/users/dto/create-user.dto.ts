@@ -5,7 +5,6 @@ import {
   IsNotEmpty,
   IsOptional,
   IsString,
-  IsIn,
 } from 'class-validator';
 
 export const SUPPORTED_LANGUAGES = [

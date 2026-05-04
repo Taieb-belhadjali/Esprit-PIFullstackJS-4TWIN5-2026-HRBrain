@@ -8,7 +8,7 @@ import { Model, Types } from 'mongoose';
 import * as bcrypt from 'bcrypt';
 import { readFile, writeFile, mkdir } from 'fs/promises';
 import { existsSync } from 'fs';
-import { resolve, join } from 'path';
+import { join } from 'path';
 import { PDFParse } from 'pdf-parse';
 import { User } from './shemas/user.shema';
 import { CreateUserDto } from './dto/create-user.dto';
@@ -64,7 +64,7 @@ export class UsersService {
       lineNumber++;
 
       // Accepte : lettres, chiffres, espaces, #, +, ., -, _, @ avant le ":"
-      const match = line.match(/^([A-Za-z0-9\s#\+\.\-\_@]+):([A-Za-z]+)$/i);
+      const match = line.match(/^([A-Za-z0-9\s#+.\-_@]+):([A-Za-z]+)$/i);
 
       if (!match) {
         errors.push(

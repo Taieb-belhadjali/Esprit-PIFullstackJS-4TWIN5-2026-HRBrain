@@ -210,7 +210,7 @@ describe('NotificationService', () => {
     it('should create notification for manager', async () => {
       mockNotifModel.create.mockResolvedValue(mockNotification)
 
-      await service.notifyRecommendationReady('507f1f77bcf86cd799439012', 'React Training', 5, '507f1f77bcf86cd799439013')
+      await service.notifyRecommendationReady('507f1f77bcf86cd799439012', 'React Training', 5)
 
       expect(mockNotifModel.create).toHaveBeenCalledWith(
         expect.objectContaining({
@@ -224,7 +224,7 @@ describe('NotificationService', () => {
     it('should use singular form for 1 candidate', async () => {
       mockNotifModel.create.mockResolvedValue(mockNotification)
 
-      await service.notifyRecommendationReady('507f1f77bcf86cd799439012', 'Training', 1, '507f1f77bcf86cd799439013')
+      await service.notifyRecommendationReady('507f1f77bcf86cd799439012', 'Training', 1)
 
       const callArg = mockNotifModel.create.mock.calls[0][0]
       expect(callArg.message).toContain('1 candidat classé')
@@ -233,7 +233,7 @@ describe('NotificationService', () => {
     it('should use plural form for multiple candidates', async () => {
       mockNotifModel.create.mockResolvedValue(mockNotification)
 
-      await service.notifyRecommendationReady('507f1f77bcf86cd799439012', 'Training', 3, '507f1f77bcf86cd799439013')
+      await service.notifyRecommendationReady('507f1f77bcf86cd799439012', 'Training', 3)
 
       const callArg = mockNotifModel.create.mock.calls[0][0]
       expect(callArg.message).toContain('3 candidats classés')
@@ -244,7 +244,7 @@ describe('NotificationService', () => {
     it('should create notification for employee', async () => {
       mockNotifModel.create.mockResolvedValue(mockNotification)
 
-      await service.notifyEmployeeApproved('507f1f77bcf86cd799439012', 'React Training', '507f1f77bcf86cd799439013')
+      await service.notifyEmployeeApproved('507f1f77bcf86cd799439012', 'React Training')
 
       expect(mockNotifModel.create).toHaveBeenCalledWith(
         expect.objectContaining({
@@ -264,7 +264,6 @@ describe('NotificationService', () => {
         ['507f1f77bcf86cd799439011', '507f1f77bcf86cd799439012'],
         'React Training',
         'Engineering',
-        '507f1f77bcf86cd799439013',
       )
 
       expect(mockNotifModel.insertMany).toHaveBeenCalledTimes(1)

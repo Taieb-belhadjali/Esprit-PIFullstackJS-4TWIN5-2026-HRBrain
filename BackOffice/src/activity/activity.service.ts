@@ -55,7 +55,6 @@ export class ActivityService {
             employeeIds,
             dto.title,
             (dept as any)?.name ?? '',
-            String(activity._id),
           );
         }
       } catch { /* non-blocking */ }

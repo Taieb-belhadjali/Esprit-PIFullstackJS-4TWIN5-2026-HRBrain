@@ -90,7 +90,6 @@ export class NotificationService {
     managerId: string,
     activityTitle: string,
     candidateCount: number,
-    activityId: string,
   ): Promise<void> {
     await this.create({
       userId: managerId,
@@ -109,7 +108,6 @@ export class NotificationService {
   async notifyEmployeeApproved(
     employeeId: string,
     activityTitle: string,
-    activityId: string,
   ): Promise<void> {
     await this.create({
       userId: employeeId,
@@ -129,7 +127,6 @@ export class NotificationService {
     employeeIds: string[],
     activityTitle: string,
     departmentName: string,
-    activityId: string,
   ): Promise<void> {
     await this.createForMany(employeeIds, {
       title: 'Nouvelle activité disponible',

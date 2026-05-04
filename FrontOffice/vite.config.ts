@@ -68,11 +68,11 @@ export default defineConfig({
       reporter: ['text', 'lcov', 'html'],
       include: [
         'src/api/**/*.ts',
-        'src/app/hooks/useApi.ts',
-        'src/app/context/LanguageContext.tsx',
+        'src/app/hooks/**/*.ts',
+        'src/app/context/**/*.tsx',
       ],
       exclude: [
-        'src/api/api.ts',        // interceptors difficiles à tester
+        'src/api/api.ts',          // interceptors difficiles à tester
         'src/api/translations.ts', // données statiques
         'node_modules/**',
         'src/test/**',
