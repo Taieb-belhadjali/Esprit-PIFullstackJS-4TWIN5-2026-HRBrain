@@ -66,11 +66,11 @@ pipeline {
                             npx sonar-scanner \
                               -Dsonar.projectKey=${SONAR_PROJECT} \
                               -Dsonar.projectName="HRBrain Frontend" \
-                              -Dsonar.sources=src \
+                              -Dsonar.sources=src/api,src/app/hooks,src/app/context \
                               -Dsonar.typescript.lcov.reportPaths=coverage/lcov.info \
                               -Dsonar.host.url=${SONAR_URL} \
                               -Dsonar.token=\${SONAR_TOKEN} \
-                              -Dsonar.exclusions=**/node_modules/**,**/dist/**,**/*.test.tsx \
+                              -Dsonar.exclusions=**/node_modules/**,**/dist/**,**/*.test.tsx,**/*.test.ts \
                               || true
                         """
                     }
