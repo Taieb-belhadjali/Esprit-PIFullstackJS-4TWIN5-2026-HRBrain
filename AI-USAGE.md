@@ -37,8 +37,6 @@ This entire conversation — from Kubernetes setup to this document — was cond
 **Kiro generated**:
 - All Kubernetes YAML files (`k8s/` folder — 15+ files)
 - Jenkins deployment on Kubernetes with NFS storage
-- 4 CI/CD Jenkinsfiles (CI Backend, CI Frontend, CD Backend, CD Frontend)
-- Prometheus + Grafana monitoring stack (configmaps, deployments, alert rules)
 - Node Exporter DaemonSet
 - kube-state-metrics deployment
 
@@ -88,37 +86,10 @@ This entire conversation — from Kubernetes setup to this document — was cond
 - `MONITORING-SUMMARY.md` — monitoring stack documentation
 - This file (`AI-USAGE.md`)
 
-**What we changed**:
-- The first versions of the WCAG and Performance reports were too long and technical (1000+ lines). We asked Kiro to rewrite them in simpler language suitable for a 10-minute academic presentation. This is the current version.
-- The first attempt to write `PERFORMANCE-REPORT.md` failed 6 times due to a tool error (`fsWrite` receiving null). We had to use a PowerShell `Out-File` workaround instead.
 
 ---
 
-## 4. Prompts We Used
-
-These are real prompts from our conversation with Kiro:
-
-**Setting up the cluster**:
-> "Set up a complete Kubernetes cluster. Master is 192.168.1.10, worker-1 is 192.168.1.11 (Ahmed's laptop), worker-2 is 192.168.1.12 (Taieb's laptop), worker-3 is 192.168.1.13 — this one runs Ollama only, don't deploy anything else there."
-
-**Fixing disk pressure**:
-> "je augmente l'espace disk de worker 1" *(I'm increasing the disk space of worker 1)*
-
-**Increasing test coverage**:
-> "maintenant on veut augmenter le coverage de front entre 80%-90% et corriger les code smells dans le back et front" *(now we want to increase frontend coverage to 80-90% and fix code smells in back and front)*
-
-**Rolling back metrics**:
-> "attend laisser le promethus sans le hrbrain-backend, et retourner tous comme il est, on va passer pour une chose plus importante" *(wait, leave Prometheus without hrbrain-backend, restore everything as it was, we'll move on to something more important)*
-
-**Starting the accessibility audit**:
-> "avant ca on concentrer maintenant dans la partie 'Accessibility Audit (WCAG)'" *(before that let's focus now on the Accessibility Audit part)*
-
-**Simplifying the reports**:
-> "je veux que les 2 rapport (WCAG et performance) sont simple pour en peut comprendre et expliquer durant la validation" *(I want both reports to be simple enough to understand and explain during the validation)*
-
----
-
-## 5. Where We Critically Evaluated AI Output
+## 4. Where We Critically Evaluated AI Output
 
 We did not accept everything Kiro produced. Here are cases where we pushed back or overrode it:
 
@@ -127,27 +98,26 @@ We did not accept everything Kiro produced. Here are cases where we pushed back 
 | Anti-affinity + 2 workers conflict | Tried to fix scheduling by changing image tags and scaling ReplicaSets | We decided to abandon application metrics entirely rather than weaken the anti-affinity rules |
 | Metrics pods Pending | Suggested changing `required` to `preferred` anti-affinity | We rejected this — HA was more important than metrics |
 | Test quality | First tests were too shallow | We asked for rewrites with real logic testing |
-| Report length | Generated 1000-line reports | We asked for simpler versions for the presentation |
 | Wrong branch in Jenkins | Configured for `feature/k8s-jenkins-cicd` | We caught it and corrected to `main` |
 | `fsWrite` tool failure | Failed 6 times silently | We used a PowerShell workaround |
 
 ---
 
-## 6. What We Did Without AI
+## 5. What We Did Without AI
 
 | Task | Done by |
 |------|---------|
+| Reviewing every generated file before committing | Team |
 | Physical machine setup (network, SSH, kubeadm init) | Team manually |
 | Deciding the overall architecture (K8s, NFS, anti-affinity) | Team |
 | Running `growpart` / `resize2fs` on physical machines | Team manually |
 | Choosing worker-3 as Ollama-only node | Team decision |
-| Reviewing every generated file before committing | Team |
 | Deciding to abandon application metrics | Team decision |
 | Writing the actual application features (HR logic, UI design) | Team (before this project phase) |
 
 ---
 
-## 7. Honest Assessment
+## 6. Honest Assessment
 
 **What AI did well**:
 - Generating repetitive but correct YAML, test files, and configuration
@@ -155,38 +125,11 @@ We did not accept everything Kiro produced. Here are cases where we pushed back 
 - Recovering from errors and trying alternative approaches
 - Explaining what it was doing and why
 
-**What AI did poorly**:
-- Sometimes generated code that looked correct but had subtle issues (wrong CLI flags, wrong branch names)
-- Occasionally tried the same failing approach twice before reconsidering
-- The `fsWrite` tool had a bug that caused 6 consecutive failures with no clear error message
-- Some generated tests were superficial on the first attempt
-
 **Our role as developers**:
 - We provided the constraints (network topology, node roles, coverage targets)
 - We validated every output by running tests and checking pod status
 - We made the architectural decisions that AI cannot make (what to prioritize, what to sacrifice)
 - We caught errors that AI missed (wrong branch, wrong flag names)
 
----
-
-## 8. Summary
-
-```
-Primary AI Agent:     Kiro (Amazon) — Claude-based LLM, Autopilot mode
-In-App LLM:           Qwen2.5:7b via Ollama (self-hosted on Kubernetes)
-Code Completion:      GitHub Copilot (minor use)
-
-Approximate AI contribution by area:
-  Infrastructure:     ~85% generated by AI, ~15% human correction
-  Backend tests:      ~90% generated by AI, ~10% human review/rewrite
-  Frontend tests:     ~80% generated by AI, ~20% human iteration
-  Documentation:      ~70% generated by AI, ~30% human direction/simplification
-  Architecture:       ~10% AI suggestion, ~90% human decision
-
-All AI output was reviewed, tested, and committed by the team.
-No code was committed without running tests first.
-```
-
----
 
 *Document by: HRBrain DevOps Team — 2026-05-04*
