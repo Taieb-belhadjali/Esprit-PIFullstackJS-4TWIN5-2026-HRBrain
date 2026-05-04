@@ -42,17 +42,20 @@ data:
             action: keep
             regex: default;kubernetes;https
 
-      # Kubernetes nodes
-      - job_name: 'kubernetes-nodes'
-        kubernetes_sd_configs:
-          - role: node
-        scheme: https
-        tls_config:
-          ca_file: /var/run/secrets/kubernetes.io/serviceaccount/ca.crt
-        bearer_token_file: /var/run/secrets/kubernetes.io/serviceaccount/token
-        relabel_configs:
-          - action: labelmap
-            regex: __meta_kubernetes_node_label_(.+)
+      # Kubernetes nodes - Disabled (using node-exporter instead)
+      # The kubelet metrics have TLS certificate issues
+      # Node Exporter provides the same metrics (CPU, RAM, Disk, Network)
+      # - job_name: 'kubernetes-nodes'
+      #   kubernetes_sd_configs:
+      #     - role: node
+      #   scheme: https
+      #   tls_config:
+      #     ca_file: /var/run/secrets/kubernetes.io/serviceaccount/ca.crt
+      #     insecure_skip_verify: true
+      #   bearer_token_file: /var/run/secrets/kubernetes.io/serviceaccount/token
+      #   relabel_configs:
+      #     - action: labelmap
+      #       regex: __meta_kubernetes_node_label_(.+)
 
       # Kubernetes pods
       - job_name: 'kubernetes-pods'
@@ -97,50 +100,67 @@ data:
       # HRBrain Backend
       - job_name: 'hrbrain-backend'
         kubernetes_sd_configs:
-          - role: endpoints
+          - role: pod
             namespaces:
               names:
                 - hrbrain
         relabel_configs:
-          - source_labels: [__meta_kubernetes_service_name]
-            regex: 'backend-service'
+          - source_labels: [__meta_kubernetes_pod_annotation_prometheus_io_scrape]
             action: keep
-          - source_labels: [__meta_kubernetes_endpoint_port_name]
-            regex: 'http'
+            regex: true
+          - source_labels: [__meta_kubernetes_pod_annotation_prometheus_io_path]
+            action: replace
+            target_label: __metrics_path__
+            regex: (.+)
+          - source_labels: [__address__, __meta_kubernetes_pod_annotation_prometheus_io_port]
+            action: replace
+            regex: ([^:]+)(?::\d+)?;(\d+)
+            replacement: $1:$2
+            target_label: __address__
+          - source_labels: [__meta_kubernetes_pod_label_app]
             action: keep
+            regex: backend
+          - action: labelmap
+            regex: __meta_kubernetes_pod_label_(.+)
+          - source_labels: [__meta_kubernetes_namespace]
+            action: replace
+            target_label: kubernetes_namespace
+          - source_labels: [__meta_kubernetes_pod_name]
+            action: replace
+            target_label: kubernetes_pod_name
 
-      # HRBrain Frontend
-      - job_name: 'hrbrain-frontend'
-        kubernetes_sd_configs:
-          - role: endpoints
-            namespaces:
-              names:
-                - hrbrain
-        relabel_configs:
-          - source_labels: [__meta_kubernetes_service_name]
-            regex: 'frontend-service'
-            action: keep
+      # HRBrain Frontend - Disabled (no /metrics endpoint yet)
+      # - job_name: 'hrbrain-frontend'
+      #   kubernetes_sd_configs:
+      #     - role: endpoints
+      #       namespaces:
+      #         names:
+      #           - hrbrain
+      #   relabel_configs:
+      #     - source_labels: [__meta_kubernetes_service_name]
+      #       regex: 'frontend-service'
+      #       action: keep
 
-      # Jenkins
-      - job_name: 'jenkins'
-        kubernetes_sd_configs:
-          - role: endpoints
-            namespaces:
-              names:
-                - hrbrain
-        relabel_configs:
-          - source_labels: [__meta_kubernetes_service_name]
-            regex: 'jenkins'
-            action: keep
+      # Jenkins - Disabled (no /metrics endpoint yet)
+      # - job_name: 'jenkins'
+      #   kubernetes_sd_configs:
+      #     - role: endpoints
+      #       namespaces:
+      #         names:
+      #           - hrbrain
+      #   relabel_configs:
+      #     - source_labels: [__meta_kubernetes_service_name]
+      #       regex: 'jenkins'
+      #       action: keep
 
-      # SonarQube
-      - job_name: 'sonarqube'
-        kubernetes_sd_configs:
-          - role: endpoints
-            namespaces:
-              names:
-                - hrbrain
-        relabel_configs:
-          - source_labels: [__meta_kubernetes_service_name]
-            regex: 'sonarqube'
-            action: keep
+      # SonarQube - Disabled (no /metrics endpoint yet)
+      # - job_name: 'sonarqube'
+      #   kubernetes_sd_configs:
+      #     - role: endpoints
+      #       namespaces:
+      #         names:
+      #           - hrbrain
+      #   relabel_configs:
+      #     - source_labels: [__meta_kubernetes_service_name]
+      #       regex: 'sonarqube'
+      #       action: keep

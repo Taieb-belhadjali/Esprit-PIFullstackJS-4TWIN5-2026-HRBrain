@@ -21,6 +21,10 @@ spec:
       labels:
         app: backend
         tier: api
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "3000"
+        prometheus.io/path: "/metrics"
     spec:
       # ── Forcer le backend sur Worker 1 et Worker 2 ────────────────────────
       # kubectl label node laptop-2 role=app-worker

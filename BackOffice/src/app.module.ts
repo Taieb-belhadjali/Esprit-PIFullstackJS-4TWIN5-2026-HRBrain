@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common';
+import { Module, NestModule, MiddlewareConsumer } from '@nestjs/common';
 import { AppController } from './app.controller';
 import { MongooseModule } from '@nestjs/mongoose';
 import { ConfigModule } from '@nestjs/config';
@@ -10,6 +10,8 @@ import { ActivityModule } from './activity/activity.module';
 import { NlpModule } from './nlp/nlp.module';
 import { RecommendationModule } from './recommendation/recommendation.module';
 import { NotificationModule } from './notification/notification.module';
+import { MetricsModule } from './metrics/metrics.module';
+import { MetricsMiddleware } from './metrics/metrics.middleware';
 
 @Module({
   imports: [
@@ -17,6 +19,7 @@ import { NotificationModule } from './notification/notification.module';
     MongooseModule.forRoot(
       'mongodb+srv://taiebaminebelhadjali_db_user:Complexatom88@cluster0.wczwpwn.mongodb.net/HRBrain_db',
     ),
+    MetricsModule,
     UsersModule,
     AuthModule,
     SkillModule,
@@ -28,4 +31,8 @@ import { NotificationModule } from './notification/notification.module';
   ],
   controllers: [AppController],
 })
-export class AppModule {}
+export class AppModule implements NestModule {
+  configure(consumer: MiddlewareConsumer) {
+    consumer.apply(MetricsMiddleware).forRoutes('*');
+  }
+}
