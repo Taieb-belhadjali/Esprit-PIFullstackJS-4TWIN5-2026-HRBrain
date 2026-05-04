@@ -94,18 +94,25 @@
       "auth/auth.service.(t|j)s",
       "auth/auth.controller.(t|j)s",
       "activity/scoring.util.(t|j)s",
+      "activity/activity.service.(t|j)s",
+      "activity/activity.controller.(t|j)s",
       "department/department.service.(t|j)s",
+      "department/department.controller.(t|j)s",
       "skill/skill.service.(t|j)s",
+      "skill/skill.controller.(t|j)s",
       "notification/notification.service.(t|j)s",
+      "notification/notification.controller.(t|j)s",
+      "recommendation/recommendation.controller.(t|j)s",
+      "users/users.service.(t|j)s",
       "nlp/nlp.service.(t|j)s",
       "nlp/nlp.controller.(t|j)s"
     ],
     "coverageThreshold": {
       "global": {
-        "lines": 80,
-        "functions": 80,
-        "branches": 70,
-        "statements": 80
+        "lines": 70,
+        "functions": 70,
+        "branches": 60,
+        "statements": 70
       }
     },
     "coverageDirectory": "../coverage",

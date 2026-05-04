@@ -68,6 +68,8 @@ export default defineConfig({
       reporter: ['text', 'lcov', 'html'],
       include: [
         'src/api/**/*.ts',
+        'src/app/hooks/useApi.ts',
+        'src/app/context/LanguageContext.tsx',
       ],
       exclude: [
         'src/api/api.ts',        // interceptors difficiles à tester
