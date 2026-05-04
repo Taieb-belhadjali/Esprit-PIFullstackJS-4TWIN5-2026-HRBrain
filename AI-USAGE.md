@@ -2,7 +2,6 @@
 
 **Project**: HRBrain – HR Management System  
 **Date**: 2026-05-04  
-**Team**: ZeroOne Studio (Mouadh Hamzaoui, Taieb Amine Belhadjali)
 
 > **Note on transparency**: This document is written honestly. AI was used heavily throughout this project — not just for small tasks, but for large portions of infrastructure, testing, and documentation. We describe exactly what was generated, what failed, what we had to fix manually, and what decisions we made ourselves.
 
