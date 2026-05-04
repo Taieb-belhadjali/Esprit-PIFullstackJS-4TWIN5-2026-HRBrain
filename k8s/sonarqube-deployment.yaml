@@ -99,7 +99,9 @@ spec:
 
       volumes:
         - name: sonarqube-data
-          emptyDir: {}          # emptyDir pour Elasticsearch (NFS trop lent)
+          hostPath:
+            path: /data/sonarqube-local/data   # Stockage local persistant
+            type: DirectoryOrCreate
         - name: sonarqube-extensions
           persistentVolumeClaim:
             claimName: sonarqube-pvc-extensions
