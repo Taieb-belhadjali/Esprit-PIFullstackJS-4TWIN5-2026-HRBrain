@@ -1,0 +1,94 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: prometheus-rules
+  namespace: monitoring
+data:
+  alerts.yml: |
+    groups:
+      - name: kubernetes_alerts
+        interval: 30s
+        rules:
+          # Node alerts
+          - alert: NodeDown
+            expr: up{job="kubernetes-nodes"} == 0
+            for: 5m
+            labels:
+              severity: critical
+            annotations:
+              summary: "Node {{ $labels.instance }} is down"
+              description: "Node {{ $labels.instance }} has been down for more than 5 minutes."
+
+          - alert: NodeHighCPU
+            expr: (100 - (avg by (instance) (irate(node_cpu_seconds_total{mode="idle"}[5m])) * 100)) > 80
+            for: 10m
+            labels:
+              severity: warning
+            annotations:
+              summary: "High CPU usage on {{ $labels.instance }}"
+              description: "CPU usage is above 80% for more than 10 minutes."
+
+          - alert: NodeHighMemory
+            expr: (1 - (node_memory_MemAvailable_bytes / node_memory_MemTotal_bytes)) * 100 > 85
+            for: 10m
+            labels:
+              severity: warning
+            annotations:
+              summary: "High memory usage on {{ $labels.instance }}"
+              description: "Memory usage is above 85% for more than 10 minutes."
+
+          - alert: NodeDiskPressure
+            expr: (1 - (node_filesystem_avail_bytes{mountpoint="/"} / node_filesystem_size_bytes{mountpoint="/"})) * 100 > 85
+            for: 5m
+            labels:
+              severity: critical
+            annotations:
+              summary: "Disk pressure on {{ $labels.instance }}"
+              description: "Disk usage is above 85% on root filesystem."
+
+          # Pod alerts
+          - alert: PodCrashLooping
+            expr: rate(kube_pod_container_status_restarts_total[15m]) > 0
+            for: 5m
+            labels:
+              severity: warning
+            annotations:
+              summary: "Pod {{ $labels.namespace }}/{{ $labels.pod }} is crash looping"
+              description: "Pod has restarted {{ $value }} times in the last 15 minutes."
+
+          - alert: PodNotReady
+            expr: kube_pod_status_phase{phase!="Running",phase!="Succeeded"} == 1
+            for: 10m
+            labels:
+              severity: warning
+            annotations:
+              summary: "Pod {{ $labels.namespace }}/{{ $labels.pod }} not ready"
+              description: "Pod has been in {{ $labels.phase }} state for more than 10 minutes."
+
+          # Application alerts
+          - alert: BackendDown
+            expr: up{job="hrbrain-backend"} == 0
+            for: 2m
+            labels:
+              severity: critical
+            annotations:
+              summary: "HRBrain Backend is down"
+              description: "Backend service has been down for more than 2 minutes."
+
+          - alert: FrontendDown
+            expr: up{job="hrbrain-frontend"} == 0
+            for: 2m
+            labels:
+              severity: critical
+            annotations:
+              summary: "HRBrain Frontend is down"
+              description: "Frontend service has been down for more than 2 minutes."
+
+          - alert: JenkinsDown
+            expr: up{job="jenkins"} == 0
+            for: 5m
+            labels:
+              severity: warning
+            annotations:
+              summary: "Jenkins is down"
+              description: "Jenkins has been down for more than 5 minutes."
