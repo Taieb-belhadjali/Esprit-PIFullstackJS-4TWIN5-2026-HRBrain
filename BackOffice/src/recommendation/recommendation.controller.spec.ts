@@ -21,6 +21,7 @@ describe('RecommendationController', () => {
     findAllByActivity: jest.fn(),
     getTop100: jest.fn(),
     getStatus: jest.fn(),
+    getGenerationStatus: jest.fn(),
     getApprovedActivitiesForEmployee: jest.fn(),
   };
 
@@ -133,15 +134,14 @@ describe('RecommendationController', () => {
 
   describe('getStatus', () => {
     it('should return idle status when no generation running', () => {
-      mockRecoService.getStatus = jest.fn();
-      jest.spyOn(service, 'getGenerationStatus' as any).mockReturnValue(null);
+      mockRecoService.getGenerationStatus = jest.fn().mockReturnValue(null);
       const result = controller.getStatus('507f1f77bcf86cd799439012');
       expect(result).toEqual({ status: 'idle', activityId: '507f1f77bcf86cd799439012' });
     });
 
     it('should return generation status when running', () => {
       const state = { status: 'running', startedAt: new Date() };
-      jest.spyOn(service, 'getGenerationStatus' as any).mockReturnValue(state);
+      mockRecoService.getGenerationStatus = jest.fn().mockReturnValue(state);
       const result = controller.getStatus('507f1f77bcf86cd799439012');
       expect(result).toMatchObject({ activityId: '507f1f77bcf86cd799439012', status: 'running' });
     });

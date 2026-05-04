@@ -14,7 +14,7 @@ vi.mock('../api/api', () => ({
 }))
 
 import API from '../api/api'
-import { useApi } from '../app/hooks/useApi'
+import { useApi, useApiParallel } from '../app/hooks/useApi'
 
 describe('useApi', () => {
   beforeEach(() => {
@@ -43,7 +43,7 @@ describe('useApi', () => {
     expect(result.current.error).toBeNull()
   })
 
-  it('should return error on failed fetch', async () => {
+  it('should return error on failed fetch with response message', async () => {
     vi.mocked(API.get).mockRejectedValue({
       message: 'Network Error',
       response: { data: { message: 'Server Error' } },
@@ -72,12 +72,9 @@ describe('useApi', () => {
     const { result } = renderHook(() => useApi('/users'))
 
     await waitFor(() => expect(result.current.loading).toBe(false))
-
     expect(API.get).toHaveBeenCalledTimes(1)
 
-    act(() => {
-      result.current.refetch()
-    })
+    act(() => { result.current.refetch() })
 
     await waitFor(() => expect(result.current.loading).toBe(false))
     expect(API.get).toHaveBeenCalledTimes(2)
@@ -99,5 +96,90 @@ describe('useApi', () => {
     })
 
     expect(result.current.error).toBe('Network Error')
+  })
+
+  it('should use fallback error message when no message available', async () => {
+    vi.mocked(API.get).mockRejectedValue({})
+
+    const { result } = renderHook(() => useApi('/users'))
+
+    await waitFor(() => {
+      expect(result.current.loading).toBe(false)
+    })
+
+    expect(result.current.error).toBe('Erreur réseau')
+  })
+})
+
+describe('useApiParallel', () => {
+  beforeEach(() => {
+    vi.clearAllMocks()
+  })
+
+  it('should return initial loading state', () => {
+    vi.mocked(API.get).mockReturnValue(new Promise(() => {}))
+    const { result } = renderHook(() => useApiParallel(['/users', '/skills']))
+    expect(result.current.loading).toBe(true)
+    expect(result.current.results).toEqual([null, null])
+    expect(result.current.error).toBeNull()
+  })
+
+  it('should return data from all URLs on success', async () => {
+    const users = [{ id: 1 }]
+    const skills = [{ id: 2 }]
+    vi.mocked(API.get)
+      .mockResolvedValueOnce({ data: users })
+      .mockResolvedValueOnce({ data: skills })
+
+    const { result } = renderHook(() => useApiParallel(['/users', '/skills']))
+
+    await waitFor(() => {
+      expect(result.current.loading).toBe(false)
+    })
+
+    expect(result.current.results[0]).toEqual(users)
+    expect(result.current.results[1]).toEqual(skills)
+    expect(result.current.error).toBeNull()
+  })
+
+  it('should return error when any request fails', async () => {
+    vi.mocked(API.get).mockRejectedValue({
+      message: 'Network Error',
+      response: { data: { message: 'Parallel Error' } },
+    })
+
+    const { result } = renderHook(() => useApiParallel(['/users', '/skills']))
+
+    await waitFor(() => {
+      expect(result.current.loading).toBe(false)
+    })
+
+    expect(result.current.error).toBe('Parallel Error')
+  })
+
+  it('should not fetch when skip is true', () => {
+    const { result } = renderHook(() => useApiParallel(['/users'], { skip: true }))
+    expect(result.current.loading).toBe(false)
+    expect(API.get).not.toHaveBeenCalled()
+  })
+
+  it('should refetch when refetch is called', async () => {
+    vi.mocked(API.get).mockResolvedValue({ data: [] })
+
+    const { result } = renderHook(() => useApiParallel(['/users']))
+
+    await waitFor(() => expect(result.current.loading).toBe(false))
+    expect(API.get).toHaveBeenCalledTimes(1)
+
+    act(() => { result.current.refetch() })
+
+    await waitFor(() => expect(result.current.loading).toBe(false))
+    expect(API.get).toHaveBeenCalledTimes(2)
+  })
+
+  it('should expose refetch function', () => {
+    vi.mocked(API.get).mockReturnValue(new Promise(() => {}))
+    const { result } = renderHook(() => useApiParallel(['/users']))
+    expect(typeof result.current.refetch).toBe('function')
   })
 })
