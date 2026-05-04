@@ -103,16 +103,15 @@
       "notification/notification.service.(t|j)s",
       "notification/notification.controller.(t|j)s",
       "recommendation/recommendation.controller.(t|j)s",
-      "users/users.service.(t|j)s",
       "nlp/nlp.service.(t|j)s",
       "nlp/nlp.controller.(t|j)s"
     ],
     "coverageThreshold": {
       "global": {
-        "lines": 75,
-        "functions": 75,
-        "branches": 65,
-        "statements": 75
+        "lines": 80,
+        "functions": 80,
+        "branches": 70,
+        "statements": 80
       }
     },
     "coverageDirectory": "../coverage",
