@@ -10,7 +10,7 @@ pipeline {
         DOCKER_IMAGE   = "mouadh08/hrbrain-frontend"
         DOCKER_TAG     = "${env.BUILD_NUMBER}"
         SONAR_PROJECT  = "hrbrain-frontend"
-        SONAR_URL      = "http://sonarqube-service:9000"
+        SONAR_URL      = "http://192.168.1.12:30900"
     }
 
     options {
