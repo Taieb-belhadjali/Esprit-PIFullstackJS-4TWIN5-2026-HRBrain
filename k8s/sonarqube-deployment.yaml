@@ -99,11 +99,9 @@ spec:
 
       volumes:
         - name: sonarqube-data
-          persistentVolumeClaim:
-            claimName: sonarqube-pvc-data
+          emptyDir: {}          # emptyDir pour Elasticsearch (NFS trop lent)
         - name: sonarqube-extensions
           persistentVolumeClaim:
             claimName: sonarqube-pvc-extensions
         - name: sonarqube-logs
-          persistentVolumeClaim:
-            claimName: sonarqube-pvc-logs
+          emptyDir: {}
