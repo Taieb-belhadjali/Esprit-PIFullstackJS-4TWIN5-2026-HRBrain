@@ -338,6 +338,20 @@ git push origin feature/ma-fonctionnalite
 
 ---
 
+## 🤖 AI Usage
+
+This project used AI tools extensively. See the dedicated documentation:
+
+👉 **[AI-USAGE.md](./AI-USAGE.md)**
+
+| Tool | Role |
+|------|------|
+| **Kiro (Amazon)** | Main agent – code, infra, tests, docs (Autopilot mode) |
+| **Ollama + Qwen2.5:7b** | In-app AI features (recommendations, NLP) |
+| **GitHub Copilot** | Inline code completion |
+
+---
+
 ## 📝 Changelog
 
 ### Version 1.0.0 (2 Mai 2026)
