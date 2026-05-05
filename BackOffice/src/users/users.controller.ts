@@ -117,10 +117,19 @@ export class UsersController {
   ) {
     return this.usersService.findAll({
       page:   Math.max(1, parseInt(page)   || 1),
-      limit:  Math.min(200, parseInt(limit) || 50),
+      limit:  Math.min(10000, parseInt(limit) || 50),
       role,
       search,
     });
+  }
+
+  /** Aggregated stats for dashboards (no heavy population) */
+  @Get('analytics-stats')
+  @UseGuards(JwtAuthGuard)
+  getAnalyticsStats(@Request() req: any, @Query('since') since?: string) {
+    const managerId = req.user?.role === 'MANAGER' ? req.user.sub : undefined;
+    const sinceDate = since ? new Date(since) : undefined;
+    return this.usersService.getAnalyticsStats(managerId, sinceDate);
   }
 
   @Get(':id')

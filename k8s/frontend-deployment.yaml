@@ -21,6 +21,10 @@ spec:
       labels:
         app: frontend
         tier: web
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "9113"
+        prometheus.io/path: "/metrics"
     spec:
       # ── Forcer le frontend sur Worker 1 et Worker 2 ───────────────────────
       nodeSelector:
@@ -82,3 +86,19 @@ spec:
             periodSeconds: 5
             timeoutSeconds: 3
             failureThreshold: 3
+
+        - name: nginx-exporter
+          image: nginx/nginx-prometheus-exporter:1.1
+          imagePullPolicy: IfNotPresent
+          args:
+            - --nginx.scrape-uri=http://localhost/stub_status
+          ports:
+            - containerPort: 9113
+              name: metrics
+          resources:
+            requests:
+              cpu: 10m
+              memory: 32Mi
+            limits:
+              cpu: 50m
+              memory: 64Mi

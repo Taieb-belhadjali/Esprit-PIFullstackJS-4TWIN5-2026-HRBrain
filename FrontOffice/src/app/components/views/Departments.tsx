@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo } from 'react';
-import { Building2, Plus, Sparkles, Edit2, Trash2 } from 'lucide-react';
+import { Building2, Plus, Sparkles, Edit2, Trash2, Eye } from 'lucide-react';
 import {
   getDepartments, createDepartment, updateDepartment, deleteDepartment, type Department,
 } from '../departments/departmentService';
@@ -45,8 +45,9 @@ export function Departments({ userRole }: { userRole: UserRole }) {
 
   const loadManagers = async () => {
     try {
-      const res = await apiGet('/users');
-      setManagers((res.data as any[]).filter((u: any) => u.role === 'MANAGER'));
+      const res = await API.get('/users?role=MANAGER&limit=200');
+      const list: any[] = res.data?.data ?? res.data ?? [];
+      setManagers(list);
     } catch { setManagers([]); }
   };
 
@@ -57,10 +58,11 @@ export function Departments({ userRole }: { userRole: UserRole }) {
       setLoading(true);
       Promise.all([
         getDepartments().catch(() => []),
-        apiGet('/users').catch(() => ({ data: [] })),
+        API.get('/users?role=MANAGER&limit=200').catch(() => ({ data: { data: [] } })),
       ]).then(([depts, usersRes]) => {
         setDepartments(depts);
-        setManagers((usersRes.data as any[]).filter((u: any) => u.role === 'MANAGER'));
+        const list: any[] = (usersRes.data as any)?.data ?? usersRes.data ?? [];
+        setManagers(list);
       }).finally(() => setLoading(false));
     }
   }, [userRole]);
@@ -251,6 +253,13 @@ export function Departments({ userRole }: { userRole: UserRole }) {
                       <p className="text-gray-400 font-mono text-xs mt-2 truncate">{dept._id}</p>
                     </div>
                     <div className="flex gap-2 ml-4 opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity">
+                      <button
+                        onClick={() => setViewDept(dept)}
+                        className="p-2 rounded-lg bg-indigo-50 hover:bg-indigo-100 text-indigo-600 transition-all hover:scale-110 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                        aria-label={`Voir le département ${dept.name}`}
+                      >
+                        <Eye size={18} aria-hidden="true" />
+                      </button>
                       {canWrite && (
                         <>
                           <button

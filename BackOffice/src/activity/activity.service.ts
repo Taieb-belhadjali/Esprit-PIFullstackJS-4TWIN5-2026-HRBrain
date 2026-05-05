@@ -40,7 +40,8 @@ export class ActivityService {
     if (payload.createdById && typeof payload.createdById === 'string') {
       payload.createdById = new Types.ObjectId(payload.createdById);
     }
-    const activity = await new this.activityModel(payload).save();
+    const saved = await new this.activityModel(payload).save();
+    const activity = await this.activityModel.findById(saved._id).populate('requiredSkills.skillId').exec() as ActivityDocument;
 
     // Scénario 3 — Notifier les employés du département ciblé
     if (dto.targetedDepartmentId) {
@@ -121,6 +122,41 @@ export class ActivityService {
     return !!dept;
   }
 
+  /** Fast aggregated stats for dashboards — no population */
+  async getStats(role: string, userId: string) {
+    let match: any = {};
+
+    if (role === 'MANAGER') {
+      const depts = await this.departmentModel
+        .find({
+          $or: [
+            { managerIds: new Types.ObjectId(userId) },
+            { managerIds: userId },
+          ],
+        }, '_id')
+        .lean();
+      if (depts.length === 0) return { total: 0, statusDistribution: [], recent: [] };
+      match.targetedDepartmentId = { $in: depts.map((d: any) => d._id) };
+    }
+
+    const [total, statusDistribution, recent] = await Promise.all([
+      this.activityModel.countDocuments(match),
+      this.activityModel.aggregate([
+        { $match: match },
+        { $group: { _id: { $ifNull: ['$status', 'unknown'] }, count: { $sum: 1 } } },
+        { $project: { _id: 0, status: '$_id', count: 1 } },
+        { $sort: { count: -1 } },
+      ]),
+      this.activityModel
+        .find(match, { title: 1, status: 1, startDate: 1 })
+        .sort({ startDate: -1 })
+        .limit(5)
+        .lean(),
+    ]);
+
+    return { total, statusDistribution, recent };
+  }
+
   async findOne(id: string): Promise<ActivityDocument> {
     const activity = await this.activityModel.findById(id).populate('requiredSkills.skillId').exec();
     if (!activity) throw new NotFoundException(`Activity ${id} not found`);
@@ -128,7 +164,10 @@ export class ActivityService {
   }
 
   async update(id: string, dto: UpdateActivityDto): Promise<ActivityDocument> {
-    const updated = await this.activityModel.findByIdAndUpdate(id, dto, { returnDocument: 'after' }).exec();
+    const updated = await this.activityModel
+      .findByIdAndUpdate(id, dto, { returnDocument: 'after' })
+      .populate('requiredSkills.skillId')
+      .exec();
     if (!updated) throw new NotFoundException(`Activity ${id} not found`);
     return updated;
   }

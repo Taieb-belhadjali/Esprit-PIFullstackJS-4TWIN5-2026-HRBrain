@@ -1,5 +1,5 @@
 import React from 'react';
-import { Calendar, Target, Edit, Trash2, Tag, Building2, BookOpen, Users, History } from 'lucide-react';
+import { Calendar, Target, Edit, Trash2, Tag, Building2, BookOpen, Users, History, Eye } from 'lucide-react';
 import { Activity, RequiredSkill } from './types';
 
 type UserRole = 'HR' | 'Manager' | 'Employee' | 'SUPERADMIN';
@@ -12,6 +12,8 @@ interface ActivityCardProps {
   onDelete: (id: string) => void;
   onRecommend?: (activity: Activity) => void;
   onHistory?: (activity: Activity) => void;
+  onView?: (activity: Activity) => void;
+  onViewRecommendations?: (activity: Activity) => void;
 }
 
 const statusColors: Record<string, string> = {
@@ -47,9 +49,11 @@ const ActivityCard: React.FC<ActivityCardProps> = ({
   onDelete,
   onRecommend,
   onHistory,
+  onView,
+  onViewRecommendations,
 }) => {
-  // SUPERADMIN = read-only on activities (no edit/delete/create)
   const canManage = userRole === 'Manager';
+  const canView = !canManage && !!onView;
 
   // Construit le texte descriptif complet de la card pour le TTS
   const cardDescription = [
@@ -97,6 +101,26 @@ const ActivityCard: React.FC<ActivityCardProps> = ({
             </div>
           </div>
 
+          {canView && (
+            <div className="flex gap-2 ml-3 opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity">
+              {onViewRecommendations && (
+                <button
+                  onClick={() => onViewRecommendations(activity)}
+                  className="p-2 rounded-lg bg-purple-50 hover:bg-purple-100 text-purple-600 transition-all hover:scale-110 focus:outline-none focus:ring-2 focus:ring-purple-400"
+                  aria-label={`Recommandations pour ${activity.title}`}
+                >
+                  <Users size={16} aria-hidden="true" />
+                </button>
+              )}
+              <button
+                onClick={() => onView!(activity)}
+                className="p-2 rounded-lg bg-indigo-50 hover:bg-indigo-100 text-indigo-600 transition-all hover:scale-110 focus:outline-none focus:ring-2 focus:ring-indigo-400"
+                aria-label={`Voir les détails de ${activity.title}`}
+              >
+                <Eye size={16} aria-hidden="true" />
+              </button>
+            </div>
+          )}
           {canManage && (
             <div className="flex gap-2 ml-3 opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity">
               {onHistory && (

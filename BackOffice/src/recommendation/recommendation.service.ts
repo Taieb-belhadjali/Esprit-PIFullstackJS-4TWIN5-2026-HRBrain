@@ -256,7 +256,9 @@ export class RecommendationService {
     const undecidedCandidates = top100.filter(
       (c) => !approvedIds.has(String(c.employee._id)) && !rejectedIds.has(String(c.employee._id)),
     );
-    const filteredCandidates = [...approvedCandidates, ...undecidedCandidates].slice(0, 10);
+    // Show top_k + 3 candidates in the prompt — enough variety without overwhelming the model
+    const promptCandidateCount = Math.min(top_k + 3, 10);
+    const filteredCandidates = [...approvedCandidates, ...undecidedCandidates].slice(0, promptCandidateCount);
     filteredCandidates.forEach((c, i) => (c.rank = i + 1));
 
     const reqSkillsForPrompt = ((activity as any).requiredSkills ?? [])
@@ -362,10 +364,9 @@ export class RecommendationService {
       const raw = await this.callOllama(prompt, `recommendation — activity: ${(activity as any).title}`, top_k);
       this.logger.log(`[LLM] Raw response (${raw.length} chars): ${raw.slice(0, 200)}…`);
 
-      // Validation JSON : extraire le premier objet JSON valide si le LLM ajoute du texte parasite
-      const jsonMatch = raw.match(/\{[\s\S]*\}/);
-      if (!jsonMatch) throw new Error('No JSON object found in LLM response');
-      parsed = JSON.parse(jsonMatch[0]);
+      // Robust JSON extraction — handles markdown code blocks and multiple JSON objects
+      parsed = this.extractFirstValidRankingsJson(raw);
+      if (!parsed) throw new Error('No JSON object found in LLM response');
 
       if (!Array.isArray(parsed.rankings) || parsed.rankings.length === 0) {
         throw new Error(`Invalid rankings structure: ${JSON.stringify(parsed).slice(0, 100)}`);
@@ -589,7 +590,40 @@ export class RecommendationService {
     });
   }
 
-  // ── 6. Ollama streaming call ──────────────────────────────────────────────
+  // ── 6. JSON extraction helper ────────────────────────────────────────────
+  private extractFirstValidRankingsJson(raw: string): any | null {
+    // 1. Try each ```json``` / ``` code block in order — stop at first valid one
+    const codeBlocks = [...raw.matchAll(/```(?:json)?\s*([\s\S]*?)```/g)];
+    for (const block of codeBlocks) {
+      try {
+        const obj = JSON.parse(block[1].trim());
+        if (obj && Array.isArray(obj.rankings) && obj.rankings.length > 0) return obj;
+      } catch { /* next block */ }
+    }
+
+    // 2. Scan for balanced JSON objects — return first one with a valid rankings array
+    let depth = 0;
+    let start = -1;
+    for (let i = 0; i < raw.length; i++) {
+      const ch = raw[i];
+      if (ch === '{') {
+        if (depth === 0) start = i;
+        depth++;
+      } else if (ch === '}') {
+        depth--;
+        if (depth === 0 && start >= 0) {
+          try {
+            const obj = JSON.parse(raw.slice(start, i + 1));
+            if (obj && Array.isArray(obj.rankings) && obj.rankings.length > 0) return obj;
+          } catch { /* keep scanning */ }
+          start = -1;
+        }
+      }
+    }
+    return null;
+  }
+
+  // ── 7. Ollama streaming call ──────────────────────────────────────────────
   private readonly ollamaTimeoutMs = 10 * 60 * 1000; // 10 minutes max
 
   private async callOllama(prompt: string, context?: string, top_k = 5): Promise<string> {
@@ -617,7 +651,11 @@ export class RecommendationService {
         model: this.model,
         prompt,
         stream: false,
-        options: { temperature: 0.1, num_predict: Math.max(512, top_k * 150), num_ctx: 2048 },
+        options: {
+          temperature: 0.1,
+          num_predict: Math.max(800, top_k * 220),
+          num_ctx: Math.max(4096, Math.ceil(prompt.length / 3.5) + Math.max(800, top_k * 220) + 256),
+        },
       },
       { timeout: this.ollamaTimeoutMs },
     );

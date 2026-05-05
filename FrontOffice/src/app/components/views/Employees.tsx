@@ -247,9 +247,9 @@ export function Employees({ userRole }: EmployeesProps) {
                     >
                       <Eye className="w-4 h-4 text-muted-foreground" aria-hidden="true" />
                     </button>
-                    {/* HR: can edit/delete all employees
+                    {/* HR: can edit/delete non-HR employees only
                         SUPERADMIN: can only edit/delete HR accounts */}
-                    {(userRole === 'HR' || (userRole === 'SUPERADMIN' && employee.role === 'HR')) && (
+                    {((userRole === 'HR' && employee.role !== 'HR') || (userRole === 'SUPERADMIN' && employee.role === 'HR')) && (
                       <>
                         <button
                           className="p-2 hover:bg-secondary rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
@@ -306,7 +306,16 @@ export function Employees({ userRole }: EmployeesProps) {
         confirmLabel="Supprimer"
         cancelLabel="Annuler"
         onConfirm={async () => {
-          if (confirmDelete) { await deleteEmployee(confirmDelete.id); fetchEmployees(); setConfirmDelete(null); }
+          if (confirmDelete) {
+            try {
+              await deleteEmployee(confirmDelete.id);
+              fetchEmployees();
+            } catch (err: any) {
+              alert(err?.response?.data?.message || 'Erreur lors de la suppression');
+            } finally {
+              setConfirmDelete(null);
+            }
+          }
         }}
         onCancel={() => setConfirmDelete(null)}
       />

@@ -18,24 +18,29 @@ HR DECISIONS
 {{hr_feedback}}
 
 INSTRUCTIONS
-1. Pick exactly {{top_k}} DIFFERENT candidates. Use EXACT employeeId unchanged.
-2. Assign UNIQUE integer scores 0-100. Do NOT copy AlgoTotal. [HR:APPROVED] get highest scores.
-3. Write exactly 3 reasons using ONLY real skill names/levels from candidate data.
+1. Pick exactly {{top_k}} DIFFERENT candidates. Each employeeId must appear EXACTLY ONCE. NEVER repeat an ID.
+2. Use EXACT employeeId string — copy character by character, do NOT modify any character.
+3. Assign UNIQUE integer scores 0-100. Do NOT copy AlgoTotal. [HR:APPROVED] get highest scores.
+4. Write exactly 3 reasons using ONLY real skill names/levels from candidate data.
 
-R1 (skill coverage) — use RequiredSkillStatus, pick most important skill:
-  NOT_IN_CV → "Lacks SKILL entirely"
-  gap=0 → "Has SKILL:EMP_LEVEL, meets requirement"
-  gap=N → "Has SKILL:EMP_LEVEL, requires REQ_LEVEL — gap of N"
+For each candidate write 3 reasons (use ONLY real names/levels from their RequiredSkillStatus and Skills):
+  R1 — pick the MOST IMPORTANT required skill from RequiredSkillStatus:
+       gap>0 → "Has REQ_SKILL:EMP_LEVEL, requires REQ_LEVEL — gap of N"
+       gap=0 → "Has REQ_SKILL:EMP_LEVEL, meets requirement"
+       absent → "Lacks REQ_SKILL entirely"
+  R2 — pick a DIFFERENT required skill from RequiredSkillStatus (not same as R1):
+       gap=1-2 → "Gap of N on REQ_SKILL (EMP_LEVEL→REQ_LEVEL) — ideal learning zone"
+       absent  → "No baseline on REQ_SKILL — full acquisition needed"
+       gap>2   → "Gap of N on REQ_SKILL — significant effort needed"
+  R3 — use ONE skill from the employee's own Skills list that is NOT in {{required_skill_names}}:
+       "Leverages EMP_SKILL:LEVEL to accelerate learning of {{primary_skill}}"
+       If all their skills are required skills or Skills=none: "No transferable skill baseline"
 
-R2 (progression) — use RequiredSkillStatus, DIFFERENT skill than R1:
-  NOT_IN_CV → "No baseline on SKILL — full acquisition"
-  gap=1-2 → "Gap of N on SKILL (EMP→REQ) — ideal learning zone"
-  gap>2 → "Gap of N on SKILL — significant effort needed"
+EXAMPLE (fictional IDs — for format illustration only):
+{"rankings":[
+  {"employeeId":"aaa111","score":90,"reasons":["Has REACT:LOW, requires HIGH — gap of 2","Gap of 1 on JAVASCRIPT (LOW→MEDIUM) — ideal learning zone","Leverages GATSBY:LOW to accelerate learning of REACT"]},
+  {"employeeId":"bbb222","score":75,"reasons":["Lacks REACT entirely","No baseline on JAVASCRIPT — full acquisition needed","Leverages DOCKER:LOW to accelerate learning of REACT"]}
+]}
 
-R3 (context fit) — use a skill from employee's Skills list ONLY:
-  FORBIDDEN: do NOT use skills from {{required_skill_names}}
-  "Leverages SKILL:LEVEL to accelerate learning of {{primary_skill}}"
-  If Skills=none → "No existing skill baseline — full upskilling profile"
-
-OUTPUT — return ONLY valid JSON, nothing else:
+OUTPUT — return ONLY valid JSON, no markdown, no explanation:
 {"rankings":[{"employeeId":"<exact id>","score":<int>,"reasons":["<r1>","<r2>","<r3>"]}]}

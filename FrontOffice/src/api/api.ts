@@ -1,7 +1,7 @@
 import axios from "axios";
 
 const API = axios.create({
-  baseURL: "http://localhost:3000",
+  baseURL: "/api",
   // Global timeout: abort requests that take more than 15s.
   // Prevents silent hangs when the backend is slow or unreachable.
   // The LLM/Ollama endpoints override this with their own longer timeout.

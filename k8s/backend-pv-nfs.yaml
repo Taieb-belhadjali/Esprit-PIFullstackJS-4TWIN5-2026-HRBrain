@@ -1,0 +1,39 @@
+---
+# PersistentVolume NFS pour les uploads du backend
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: backend-pv-uploads
+  labels:
+    app: backend
+    type: nfs
+spec:
+  capacity:
+    storage: 5Gi
+  accessModes:
+    - ReadWriteMany
+  persistentVolumeReclaimPolicy: Retain
+  storageClassName: ""
+  nfs:
+    server: 192.168.1.10
+    path: /data/backend/uploads
+
+---
+# PersistentVolume NFS pour les logs du backend
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: backend-pv-logs
+  labels:
+    app: backend
+    type: nfs
+spec:
+  capacity:
+    storage: 2Gi
+  accessModes:
+    - ReadWriteMany
+  persistentVolumeReclaimPolicy: Retain
+  storageClassName: ""
+  nfs:
+    server: 192.168.1.10
+    path: /data/backend/logs

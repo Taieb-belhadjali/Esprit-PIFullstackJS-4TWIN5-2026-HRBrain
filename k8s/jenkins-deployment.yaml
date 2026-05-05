@@ -42,7 +42,7 @@ spec:
       containers:
         - name: jenkins
           image: mouadh08/jenkins-hrbrain:latest
-          imagePullPolicy: Always
+          imagePullPolicy: IfNotPresent
 
           ports:
             - name: http

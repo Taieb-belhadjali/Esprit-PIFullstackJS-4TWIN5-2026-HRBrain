@@ -6,12 +6,15 @@ import { useReadingMask } from '../../context/ReadingMaskContext';
 import { useLanguage } from '../../context/LanguageContext';
 import { useAppTranslation } from '../../hooks/useAppTranslation';
 
+type UserRole = 'HR' | 'Manager' | 'Employee' | 'SUPERADMIN';
+
 interface SettingsProps {
   onLogout: () => void;
   theme: 'light' | 'dark';
   setTheme: (theme: 'light' | 'dark') => void;
   language: string;
   setLanguage: (lang: string) => void;
+  userRole?: UserRole;
 }
 
 const LANGUAGE_NAMES: Record<string, string> = {
@@ -29,7 +32,7 @@ const LANGUAGE_NAMES: Record<string, string> = {
   hi: 'हिन्दी',
 };
 
-export function Settings({ onLogout, theme, setTheme, language: _langProp, setLanguage: _setLangProp }: SettingsProps) {
+export function Settings({ onLogout, theme, setTheme, language: _langProp, setLanguage: _setLangProp, userRole = 'Employee' }: SettingsProps) {
   const { language: currentLanguage, setLanguage: setCurrentLanguage } = useLanguage();
   const t = useAppTranslation();
   const [language, setLanguage] = useState(currentLanguage);
@@ -190,37 +193,41 @@ export function Settings({ onLogout, theme, setTheme, language: _langProp, setLa
             </label>
           </div>
 
-          <div className="flex items-center justify-between p-4 border border-border rounded-lg">
-            <div>
-              <p className="font-medium text-foreground">{t('activityUpdates')}</p>
-              <p className="text-sm text-muted-foreground">{t('activityUpdatesDesc')}</p>
+          {userRole !== 'SUPERADMIN' && (
+            <div className="flex items-center justify-between p-4 border border-border rounded-lg">
+              <div>
+                <p className="font-medium text-foreground">{t('activityUpdates')}</p>
+                <p className="text-sm text-muted-foreground">{t('activityUpdatesDesc')}</p>
+              </div>
+              <label className="relative inline-flex items-center cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={activityNotifications}
+                  onChange={(e) => setActivityNotifications(e.target.checked)}
+                  className="sr-only peer"
+                />
+                <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-primary rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-card after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary"></div>
+              </label>
             </div>
-            <label className="relative inline-flex items-center cursor-pointer">
-              <input
-                type="checkbox"
-                checked={activityNotifications}
-                onChange={(e) => setActivityNotifications(e.target.checked)}
-                className="sr-only peer"
-              />
-              <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-primary rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-card after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary"></div>
-            </label>
-          </div>
+          )}
 
-          <div className="flex items-center justify-between p-4 border border-border rounded-lg">
-            <div>
-              <p className="font-medium text-foreground">{t('recommendationAlerts')}</p>
-              <p className="text-sm text-muted-foreground">{t('recommendationAlertsDesc')}</p>
+          {userRole !== 'SUPERADMIN' && (
+            <div className="flex items-center justify-between p-4 border border-border rounded-lg">
+              <div>
+                <p className="font-medium text-foreground">{t('recommendationAlerts')}</p>
+                <p className="text-sm text-muted-foreground">{t('recommendationAlertsDesc')}</p>
+              </div>
+              <label className="relative inline-flex items-center cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={recommendationNotifications}
+                  onChange={(e) => setRecommendationNotifications(e.target.checked)}
+                  className="sr-only peer"
+                />
+                <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-primary rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-card after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary"></div>
+              </label>
             </div>
-            <label className="relative inline-flex items-center cursor-pointer">
-              <input
-                type="checkbox"
-                checked={recommendationNotifications}
-                onChange={(e) => setRecommendationNotifications(e.target.checked)}
-                className="sr-only peer"
-              />
-              <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-primary rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-card after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary"></div>
-            </label>
-          </div>
+          )}
         </div>
       </div>
 
@@ -322,15 +329,19 @@ export function Settings({ onLogout, theme, setTheme, language: _langProp, setLa
             <p className="text-sm text-muted-foreground">{t('twoFactorDesc')}</p>
           </button>
 
-          <button className="w-full text-left p-4 border border-border rounded-lg hover:bg-secondary transition-colors">
-            <p className="font-medium text-foreground">{t('privacySettings')}</p>
-            <p className="text-sm text-muted-foreground">{t('privacySettingsDesc')}</p>
-          </button>
+          {userRole !== 'SUPERADMIN' && (
+            <button className="w-full text-left p-4 border border-border rounded-lg hover:bg-secondary transition-colors">
+              <p className="font-medium text-foreground">{t('privacySettings')}</p>
+              <p className="text-sm text-muted-foreground">{t('privacySettingsDesc')}</p>
+            </button>
+          )}
 
-          <button className="w-full text-left p-4 border border-border rounded-lg hover:bg-secondary transition-colors">
-            <p className="font-medium text-foreground">{t('downloadData')}</p>
-            <p className="text-sm text-muted-foreground">{t('downloadDataDesc')}</p>
-          </button>
+          {(userRole === 'HR' || userRole === 'Manager' || userRole === 'Employee') && (
+            <button className="w-full text-left p-4 border border-border rounded-lg hover:bg-secondary transition-colors">
+              <p className="font-medium text-foreground">{t('downloadData')}</p>
+              <p className="text-sm text-muted-foreground">{t('downloadDataDesc')}</p>
+            </button>
+          )}
         </div>
       </div>
 

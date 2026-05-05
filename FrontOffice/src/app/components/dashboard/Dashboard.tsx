@@ -1,4 +1,5 @@
-import { lazy, Suspense, useEffect, useMemo, useState, useCallback } from 'react';
+import { lazy, Suspense, useEffect, useMemo, useState, useCallback, Component } from 'react';
+import type { ReactNode } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { Sidebar } from './Sidebar';
 import { VoiceCommandProvider } from '../voice/VoiceCommandContext';
@@ -37,6 +38,24 @@ const Departments     = lazy(() => import('../views/Departments').then(m => ({ d
 const VoiceAssistant         = lazy(() => import(/* @vite-prefetch */ '../voice/VoiceAssistant').then(m => ({ default: m.VoiceAssistant })));
 const KeyboardShortcutsPanel = lazy(() => import(/* @vite-prefetch */ '../ui/KeyboardShortcutsPanel').then(m => ({ default: m.KeyboardShortcutsPanel })));
 const TTSWidget              = lazy(() => import(/* @vite-prefetch */ '../tts/TTSWidget').then(m => ({ default: m.TTSWidget })));
+
+class ViewErrorBoundary extends Component<{ children: ReactNode }, { error: Error | null }> {
+  state = { error: null };
+  static getDerivedStateFromError(error: Error) { return { error }; }
+  render() {
+    if (this.state.error) {
+      return (
+        <div className="p-6">
+          <div className="rounded-2xl border border-destructive/40 bg-destructive/10 p-6 text-destructive">
+            <p className="font-semibold mb-1">Une erreur est survenue dans cette vue.</p>
+            <p className="text-sm opacity-75">{(this.state.error as Error).message}</p>
+          </div>
+        </div>
+      );
+    }
+    return this.props.children;
+  }
+}
 
 // Minimal skeleton shown while a view chunk is loading (avoids CLS)
 function ViewSkeleton() {
@@ -92,7 +111,7 @@ export function Dashboard({ user, onLogout, theme, setTheme, language, setLangua
     home:            ['HR', 'Manager', 'Employee', 'SUPERADMIN'],
     employees:       ['HR', 'Manager', 'SUPERADMIN'],
     departments:     ['HR', 'SUPERADMIN'],
-    skills:          ['HR', 'Manager', 'Employee', 'SUPERADMIN'],
+    skills:          ['HR', 'Manager', 'SUPERADMIN'],
     activities:      ['HR', 'Manager', 'Employee', 'SUPERADMIN'],
     recommendations: ['HR', 'Manager', 'SUPERADMIN'],
     analytics:       ['HR', 'Manager', 'SUPERADMIN'],
@@ -210,7 +229,7 @@ export function Dashboard({ user, onLogout, theme, setTheme, language, setLangua
       case 'analytics':       return <Analytics userRole={role} />;
       case 'notifications':   return <Notifications />;
       case 'profile':         return <Profile user={{ ...user, role: role }} />;
-      case 'settings':        return <Settings onLogout={onLogout} theme={theme} setTheme={setTheme} language={language} setLanguage={setLanguage} />;
+      case 'settings':        return <Settings onLogout={onLogout} theme={theme} setTheme={setTheme} language={language} setLanguage={setLanguage} userRole={role} />;
       default:                return <Home userRole={role} />;
     }
   };
@@ -236,9 +255,11 @@ export function Dashboard({ user, onLogout, theme, setTheme, language, setLangua
                 className={`flex-1 overflow-auto transition-all duration-300 ${isSidebarCollapsed ? 'ml-16' : 'ml-64'}`}
                 aria-label={`Vue ${currentView}`}
               >
-                <Suspense fallback={<ViewSkeleton />}>
-                  {renderView()}
-                </Suspense>
+                <ViewErrorBoundary>
+                  <Suspense fallback={<ViewSkeleton />}>
+                    {renderView()}
+                  </Suspense>
+                </ViewErrorBoundary>
               </main>
               <Suspense fallback={null}>
                 <TTSWidget />

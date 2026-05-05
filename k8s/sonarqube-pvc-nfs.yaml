@@ -48,3 +48,20 @@ spec:
   resources:
     requests:
       storage: 2Gi
+
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: sonarqube-pvc-postgres
+  namespace: hrbrain
+  labels:
+    app: sonarqube-postgres
+spec:
+  accessModes:
+    - ReadWriteOnce
+  storageClassName: ""
+  volumeName: sonarqube-pv-postgres
+  resources:
+    requests:
+      storage: 5Gi

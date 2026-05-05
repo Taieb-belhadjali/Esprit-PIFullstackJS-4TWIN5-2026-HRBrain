@@ -1,10 +1,11 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { UsersService } from './users.service';
 import { getModelToken } from '@nestjs/mongoose';
-import { NotFoundException, BadRequestException } from '@nestjs/common';
+import { NotFoundException } from '@nestjs/common';
 import { User } from './shemas/user.shema';
 import { Skill } from '../skill/skill.schema';
 import { Department } from '../department/department.schema';
+import { Activity } from '../activity/activity.schema';
 import { NotificationService } from '../notification/notification.service';
 
 jest.mock('bcrypt');
@@ -23,11 +24,34 @@ describe('UsersService', () => {
     departmentId: '507f1f77bcf86cd799439012',
   };
 
+  // Chain helper: .select().populate().populate().skip().limit().lean()
+  const makeFindChain = (resolved: any) => ({
+    select: jest.fn().mockReturnValue({
+      populate: jest.fn().mockReturnValue({
+        populate: jest.fn().mockReturnValue({
+          skip: jest.fn().mockReturnValue({
+            limit: jest.fn().mockReturnValue({
+              lean: jest.fn().mockResolvedValue(resolved),
+            }),
+          }),
+        }),
+      }),
+    }),
+  });
+
+  // Chain helper: .populate().populate()
+  const makePopulateChain = (resolved: any) => ({
+    populate: jest.fn().mockReturnValue({
+      populate: jest.fn().mockResolvedValue(resolved),
+    }),
+  });
+
   const mockUserModel = {
     find: jest.fn(),
     findById: jest.fn(),
     findByIdAndUpdate: jest.fn(),
     findByIdAndDelete: jest.fn(),
+    countDocuments: jest.fn(),
   };
 
   const mockModelConstructor = jest.fn().mockImplementation((data) => ({
@@ -36,13 +60,19 @@ describe('UsersService', () => {
   }));
 
   const mockSkillModel = {
-    find: jest.fn(),
+    find: jest.fn().mockReturnValue({ lean: jest.fn().mockResolvedValue([]) }),
     findById: jest.fn(),
     create: jest.fn(),
   };
 
   const mockDepartmentModel = {
     findById: jest.fn(),
+    findByIdAndUpdate: jest.fn(),
+    updateMany: jest.fn().mockResolvedValue({}),
+  };
+
+  const mockActivityModel = {
+    deleteMany: jest.fn().mockResolvedValue({ deletedCount: 0 }),
   };
 
   const mockNotifService = {
@@ -57,9 +87,10 @@ describe('UsersService', () => {
           provide: getModelToken(User.name),
           useValue: Object.assign(mockModelConstructor, mockUserModel),
         },
-        { provide: getModelToken(Skill.name), useValue: mockSkillModel },
-        { provide: getModelToken(Department.name), useValue: mockDepartmentModel },
-        { provide: NotificationService, useValue: mockNotifService },
+        { provide: getModelToken(Skill.name),       useValue: mockSkillModel },
+        { provide: getModelToken(Department.name),  useValue: mockDepartmentModel },
+        { provide: getModelToken(Activity.name),    useValue: mockActivityModel },
+        { provide: NotificationService,             useValue: mockNotifService },
       ],
     }).compile();
 
@@ -69,61 +100,43 @@ describe('UsersService', () => {
 
   // ── findAll ────────────────────────────────────────────────────────────────
   describe('findAll', () => {
-    it('should return all users', async () => {
+    it('should return paginated users', async () => {
       const users = [mockUser];
-      mockUserModel.find.mockReturnValue({
-        populate: jest.fn().mockReturnValue({
-          populate: jest.fn().mockResolvedValue(users),
-        }),
-      });
+      mockUserModel.find.mockReturnValue(makeFindChain(users));
+      mockUserModel.countDocuments.mockResolvedValue(1);
 
-      const result = await service.findAll();
-      expect(result).toEqual(users);
+      const result = await service.findAll({ page: 1, limit: 50 });
+      expect(result.data).toEqual(users);
+      expect(result.total).toBe(1);
       expect(mockUserModel.find).toHaveBeenCalled();
     });
 
     it('should return empty array when no users', async () => {
-      mockUserModel.find.mockReturnValue({
-        populate: jest.fn().mockReturnValue({
-          populate: jest.fn().mockResolvedValue([]),
-        }),
-      });
+      mockUserModel.find.mockReturnValue(makeFindChain([]));
+      mockUserModel.countDocuments.mockResolvedValue(0);
 
-      const result = await service.findAll();
-      expect(result).toEqual([]);
+      const result = await service.findAll({ page: 1, limit: 50 });
+      expect(result.data).toEqual([]);
+      expect(result.total).toBe(0);
     });
   });
 
   // ── findOne ────────────────────────────────────────────────────────────────
   describe('findOne', () => {
     it('should return a user by id', async () => {
-      mockUserModel.findById.mockReturnValue({
-        populate: jest.fn().mockReturnValue({
-          populate: jest.fn().mockResolvedValue(mockUser),
-        }),
-      });
+      mockUserModel.findById.mockReturnValue(makePopulateChain(mockUser));
 
       const result = await service.findOne('507f1f77bcf86cd799439011');
       expect(result).toEqual(mockUser);
     });
 
     it('should throw NotFoundException when user not found', async () => {
-      mockUserModel.findById.mockReturnValue({
-        populate: jest.fn().mockReturnValue({
-          populate: jest.fn().mockResolvedValue(null),
-        }),
-      });
-
+      mockUserModel.findById.mockReturnValue(makePopulateChain(null));
       await expect(service.findOne('nonexistent')).rejects.toThrow(NotFoundException);
     });
 
     it('should throw NotFoundException with correct message', async () => {
-      mockUserModel.findById.mockReturnValue({
-        populate: jest.fn().mockReturnValue({
-          populate: jest.fn().mockResolvedValue(null),
-        }),
-      });
-
+      mockUserModel.findById.mockReturnValue(makePopulateChain(null));
       await expect(service.findOne('nonexistent')).rejects.toThrow('User not found');
     });
   });
@@ -132,34 +145,21 @@ describe('UsersService', () => {
   describe('update', () => {
     it('should update a user successfully', async () => {
       const updatedUser = { ...mockUser, name: 'Jane Doe' };
-      mockUserModel.findByIdAndUpdate.mockReturnValue({
-        populate: jest.fn().mockReturnValue({
-          populate: jest.fn().mockResolvedValue(updatedUser),
-        }),
-      });
+      mockUserModel.findByIdAndUpdate.mockReturnValue(makePopulateChain(updatedUser));
 
-      const result = await service.update('507f1f77bcf86cd799439011', { name: 'Jane Doe' });
+      const result = await service.update('507f1f77bcf86cd799439011', { name: 'Jane Doe' } as any);
       expect(result).toEqual(updatedUser);
     });
 
     it('should throw NotFoundException when user not found', async () => {
-      mockUserModel.findByIdAndUpdate.mockReturnValue({
-        populate: jest.fn().mockReturnValue({
-          populate: jest.fn().mockResolvedValue(null),
-        }),
-      });
-
-      await expect(service.update('nonexistent', { name: 'Test' })).rejects.toThrow(NotFoundException);
+      mockUserModel.findByIdAndUpdate.mockReturnValue(makePopulateChain(null));
+      await expect(service.update('nonexistent', { name: 'Test' } as any)).rejects.toThrow(NotFoundException);
     });
 
     it('should call findByIdAndUpdate with new: true', async () => {
-      mockUserModel.findByIdAndUpdate.mockReturnValue({
-        populate: jest.fn().mockReturnValue({
-          populate: jest.fn().mockResolvedValue(mockUser),
-        }),
-      });
+      mockUserModel.findByIdAndUpdate.mockReturnValue(makePopulateChain(mockUser));
 
-      await service.update('507f1f77bcf86cd799439011', { name: 'Test' });
+      await service.update('507f1f77bcf86cd799439011', { name: 'Test' } as any);
       expect(mockUserModel.findByIdAndUpdate).toHaveBeenCalledWith(
         '507f1f77bcf86cd799439011',
         { name: 'Test' },
@@ -180,11 +180,24 @@ describe('UsersService', () => {
       expect(result).toEqual({ message: 'User deleted' });
     });
 
+    it('should cascade-delete activities for MANAGER', async () => {
+      const managerUser = { ...mockUser, role: 'MANAGER' };
+      mockUserModel.findByIdAndDelete.mockReturnValue({
+        lean: jest.fn().mockResolvedValue(managerUser),
+      });
+      mockActivityModel.deleteMany.mockResolvedValue({ deletedCount: 3 });
+      mockDepartmentModel.updateMany.mockResolvedValue({});
+
+      const result = await service.remove('507f1f77bcf86cd799439011');
+      expect(result).toEqual({ message: 'User deleted' });
+      expect(mockActivityModel.deleteMany).toHaveBeenCalled();
+      expect(mockDepartmentModel.updateMany).toHaveBeenCalled();
+    });
+
     it('should throw NotFoundException when user not found', async () => {
       mockUserModel.findByIdAndDelete.mockReturnValue({
         lean: jest.fn().mockResolvedValue(null),
       });
-
       await expect(service.remove('nonexistent')).rejects.toThrow(NotFoundException);
     });
 
@@ -192,8 +205,45 @@ describe('UsersService', () => {
       mockUserModel.findByIdAndDelete.mockReturnValue({
         lean: jest.fn().mockResolvedValue(null),
       });
-
       await expect(service.remove('nonexistent')).rejects.toThrow('User not found');
+    });
+  });
+
+  // ── Scénario 4 — notifyNewEmployeeInDepartment ────────────────────────────
+  describe('Scénario 4 — notifyNewEmployeeInDepartment', () => {
+    it('should notify managers when a new employee joins their department', async () => {
+      (bcrypt.hash as jest.Mock).mockResolvedValue('hashedPassword');
+
+      // generateCvFile calls skillModel.find({}, ...).lean()
+      mockSkillModel.find.mockReturnValue({ lean: jest.fn().mockResolvedValue([]) });
+
+      const savedUser = { ...mockUser, _id: '507f1f77bcf86cd799439099', cv: undefined };
+      const mockSave = jest.fn().mockResolvedValue(savedUser);
+      mockModelConstructor.mockImplementationOnce((data: any) => ({
+        ...data,
+        save: mockSave,
+      }));
+
+      // findById: supports both .lean() (CSV step) and direct-await + .populate() (final return)
+      mockUserModel.findById.mockReturnValue({
+        lean: jest.fn().mockResolvedValue(savedUser),
+        populate: jest.fn().mockResolvedValue(savedUser),
+      });
+      // findByIdAndUpdate (auto-CV patch) is awaited directly — no chain needed
+      mockUserModel.findByIdAndUpdate.mockResolvedValue(savedUser);
+
+      const dept = { _id: '507f1f77bcf86cd799439012', name: 'Engineering', managerIds: ['507f1f77bcf86cd799439013'] };
+      mockDepartmentModel.findById.mockReturnValue({
+        lean: jest.fn().mockResolvedValue(dept),
+      });
+
+      await service.create({ name: 'Alice', email: 'alice@test.com', password: 'pass', role: 'EMPLOYEE', departmentId: dept._id } as any);
+
+      expect(mockNotifService.notifyNewEmployeeInDepartment).toHaveBeenCalledWith(
+        ['507f1f77bcf86cd799439013'],
+        'Alice',
+        'Engineering',
+      );
     });
   });
 });

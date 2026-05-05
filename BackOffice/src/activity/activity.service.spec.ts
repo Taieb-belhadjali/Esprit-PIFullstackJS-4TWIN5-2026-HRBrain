@@ -77,7 +77,14 @@ describe('ActivityService', () => {
 
   // ── create ─────────────────────────────────────────────────────────────────
   describe('create', () => {
+    // Helper: mock findById().populate().exec() used after save
+    const mockFindByIdPopulate = (resolved: any) =>
+      mockActivityModel.findById.mockReturnValue({
+        populate: jest.fn().mockReturnValue({ exec: jest.fn().mockResolvedValue(resolved) }),
+      });
+
     it('should create an activity successfully', async () => {
+      mockFindByIdPopulate(mockActivity);
       mockDepartmentModel.findById.mockResolvedValue({ name: 'Engineering' });
       mockUserModel.find.mockResolvedValue([]);
 
@@ -99,6 +106,7 @@ describe('ActivityService', () => {
     });
 
     it('should notify employees when department is specified', async () => {
+      mockFindByIdPopulate(mockActivity);
       mockDepartmentModel.findById.mockReturnValue({
         lean: jest.fn().mockResolvedValue({ name: 'Engineering' }),
       });
@@ -123,7 +131,6 @@ describe('ActivityService', () => {
       };
 
       await service.create(dto);
-      // Notification may or may not be called depending on implementation
       expect(mockModelConstructor).toHaveBeenCalled();
     });
   });
@@ -282,7 +289,7 @@ describe('ActivityService', () => {
     it('should update an activity', async () => {
       const updated = { ...mockActivity, title: 'Updated Training' };
       mockActivityModel.findByIdAndUpdate.mockReturnValue({
-        exec: jest.fn().mockResolvedValue(updated),
+        populate: jest.fn().mockReturnValue({ exec: jest.fn().mockResolvedValue(updated) }),
       });
 
       const result = await service.update('507f1f77bcf86cd799439011', { title: 'Updated Training' });
@@ -291,7 +298,7 @@ describe('ActivityService', () => {
 
     it('should throw NotFoundException when activity not found', async () => {
       mockActivityModel.findByIdAndUpdate.mockReturnValue({
-        exec: jest.fn().mockResolvedValue(null),
+        populate: jest.fn().mockReturnValue({ exec: jest.fn().mockResolvedValue(null) }),
       });
 
       await expect(service.update('nonexistent', { title: 'Test' })).rejects.toThrow(NotFoundException);

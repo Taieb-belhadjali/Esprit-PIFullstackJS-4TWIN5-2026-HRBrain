@@ -70,7 +70,7 @@ export function Sidebar({
       id: 'skills',
       labelKey: 'skills',
       icon: <Brain className="w-5 h-5" />,
-      roles: ['HR', 'Manager', 'Employee', 'SUPERADMIN'],
+      roles: ['HR', 'Manager', 'SUPERADMIN'],
     },
     {
       id: 'activities',

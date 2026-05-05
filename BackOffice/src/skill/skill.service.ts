@@ -1,6 +1,6 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
-import { Model } from 'mongoose';
+import { Model, Types } from 'mongoose';
 import { Skill, SkillDocument } from './skill.schema';
 import { CreateSkillDto } from './dto-skill/create-skill.dto';
 import { UpdateSkillDto } from './dto-skill/update-skill.dto';
@@ -19,11 +19,20 @@ export class SkillService {
     return createdSkill.save();
   }
 
+  /** Fast count — avoids loading all documents */
+  async count(departmentId?: string): Promise<number> {
+    const filter: any = {};
+    if (departmentId && Types.ObjectId.isValid(departmentId)) {
+      filter.departmentId = new Types.ObjectId(departmentId);
+    }
+    return this.skillModel.countDocuments(filter);
+  }
+
   // Retourne tous les skills, filtrés par département si fourni
   async findAll(departmentId?: string): Promise<SkillDocument[]> {
     const filter: any = {};
-    if (departmentId) {
-      filter.departmentId = departmentId;
+    if (departmentId && Types.ObjectId.isValid(departmentId)) {
+      filter.departmentId = new Types.ObjectId(departmentId);
     }
     return this.skillModel.find(filter).exec();
   }

@@ -23,14 +23,6 @@ interface AnalyticsProps {
   language?: string;
 }
 
-// Interface pour les données utilisateur depuis l'API
-interface AnalyticsUser {
-  _id: string;
-  role: string;
-  departmentId?: { name?: string } | string | null;
-  createdAt?: string; // Date de création pour le filtrage
-}
-
 // Interface pour les données d'activité depuis l'API
 interface AnalyticsActivity {
   _id: string;
@@ -43,12 +35,6 @@ interface AnalyticsActivity {
 
 // Interface pour les départements
 interface AnalyticsDepartment {
-  _id: string;
-  name: string;
-}
-
-// Interface pour les compétences
-interface AnalyticsSkill {
   _id: string;
   name: string;
 }
@@ -93,59 +79,82 @@ function getTimeRangeStart(range: string) {
  * @param userRole - Rôle de l'utilisateur connecté
  */
 export function Analytics({ userRole }: AnalyticsProps) {
-  // États pour stocker les données chargées depuis l'API
-  const [users, setUsers] = useState<AnalyticsUser[]>([]);
-  const [activities, setActivities] = useState<AnalyticsActivity[]>([]);
-  const [departments, setDepartments] = useState<AnalyticsDepartment[]>([]);
-  const [skills, setSkills] = useState<AnalyticsSkill[]>([]);
-  const [loading, setLoading] = useState(true); // Indicateur de chargement
-  const [error, setError] = useState<string | null>(null); // Message d'erreur
-  const [timeRange, setTimeRange] = useState('6months'); // Période sélectionnée pour le filtrage
+  // Aggregated stats from backend (no heavy user list)
+  const [totalEmployees,   setTotalEmployees]   = useState(0);
+  const [empByDeptData,    setEmpByDeptData]    = useState<{ name: string; count: number }[]>([]);
+  const [roleDistData,     setRoleDistData]     = useState<{ role: string; count: number }[]>([]);
+  const [totalSkills,      setTotalSkills]      = useState(0);
+  const [activities,       setActivities]       = useState<AnalyticsActivity[]>([]);
+  const [departments,      setDepartments]      = useState<AnalyticsDepartment[]>([]);
+  const [loading,          setLoading]          = useState(true);
+  const [error,            setError]            = useState<string | null>(null);
+  const [timeRange,        setTimeRange]        = useState('6months');
 
-  // Chargement des données au montage du composant
+  // Load activities + departments once per role change (not affected by timeRange)
   useEffect(() => {
-    async function loadAnalytics() {
+    async function loadStatic() {
       try {
         setLoading(true);
-        // Récupération parallèle des données depuis l'API
-        const [usersRes, activitiesRes, departmentsRes, skillsRes] = await Promise.all([
-          API.get<AnalyticsUser[]>('/users'),
-          API.get<AnalyticsActivity[]>('/activities'),
-          API.get<AnalyticsDepartment[]>('/departments'),
-          API.get<AnalyticsSkill[]>('/skills'),
-        ]);
-
-        // Mise à jour des états avec les données reçues
-        setUsers(usersRes.data || []);
-        setActivities(activitiesRes.data || []);
-        setDepartments(departmentsRes.data || []);
-        setSkills(skillsRes.data || []);
+        setError(null);
+        if (userRole === 'Manager') {
+          const [activitiesRes, deptRes] = await Promise.all([
+            API.get<AnalyticsActivity[]>('/activities'),
+            API.get<AnalyticsDepartment[]>('/departments/my'),
+          ]);
+          const myDepts: AnalyticsDepartment[] = Array.isArray(deptRes.data) ? deptRes.data : [];
+          setDepartments(myDepts);
+          setActivities(Array.isArray(activitiesRes.data) ? activitiesRes.data : []);
+          const firstDeptId = myDepts[0]?._id;
+          if (firstDeptId) {
+            const scRes = await API.get(`/skills/count?departmentId=${firstDeptId}`);
+            setTotalSkills(scRes.data?.count ?? 0);
+          }
+        } else {
+          const [activitiesRes, departmentsRes, skillCountRes] = await Promise.all([
+            API.get<AnalyticsActivity[]>('/activities'),
+            API.get<AnalyticsDepartment[]>('/departments'),
+            API.get('/skills/count'),
+          ]);
+          setActivities(Array.isArray(activitiesRes.data) ? activitiesRes.data : []);
+          setDepartments(Array.isArray(departmentsRes.data) ? departmentsRes.data : []);
+          setTotalSkills(skillCountRes.data?.count ?? 0);
+        }
       } catch (err) {
-        console.error('Analytics load failed', err);
+        console.error('Analytics static load failed', err);
         setError('Impossible de charger les données analytics.');
       } finally {
         setLoading(false);
       }
     }
+    loadStatic();
+  }, [userRole]);
 
-    loadAnalytics();
-  }, []);
+  // Reload user-aggregation stats whenever role OR time range changes
+  useEffect(() => {
+    async function loadStats() {
+      try {
+        const since = getTimeRangeStart(timeRange).toISOString();
+        const statsRes = await API.get(`/users/analytics-stats?since=${encodeURIComponent(since)}`);
+        setTotalEmployees(statsRes.data?.employeeCount ?? 0);
+        setEmpByDeptData(
+          (statsRes.data?.empByDept ?? []).map((d: any) => ({
+            name: d.department ?? d.name ?? 'Inconnu',
+            count: d.count,
+          })),
+        );
+        setRoleDistData(Array.isArray(statsRes.data?.roleDistribution) ? statsRes.data.roleDistribution : []);
+      } catch (err) {
+        console.error('Analytics stats load failed', err);
+      }
+    }
+    loadStats();
+  }, [userRole, timeRange]);
 
-  // Calcul de la date de début selon la période sélectionnée
   const timeRangeStart = useMemo(() => getTimeRangeStart(timeRange), [timeRange]);
 
-  // Filtrage des utilisateurs selon la période (basé sur createdAt)
-  const filteredUsers = useMemo(() => {
-    return users.filter((user) => {
-      if (!user.createdAt) return true; // Inclure si pas de date
-      const date = new Date(user.createdAt);
-      return !isNaN(date.getTime()) && date >= timeRangeStart;
-    });
-  }, [users, timeRangeStart]);
-
-  // Filtrage des activités selon la période (basé sur createdAt ou startDate)
+  // Only activities are filtered by time range (users come pre-aggregated)
   const filteredActivities = useMemo(() => {
-    return activities.filter((activity) => {
+    return (Array.isArray(activities) ? activities : []).filter((activity) => {
       const dateString = activity.createdAt || activity.startDate;
       if (!dateString) return true;
       const date = new Date(dateString);
@@ -153,67 +162,40 @@ export function Analytics({ userRole }: AnalyticsProps) {
     });
   }, [activities, timeRangeStart]);
 
-  // Métriques principales du dashboard
+  // KPI metrics
   const summaryMetrics = useMemo(() => {
-    const employeeCount = filteredUsers.filter((user) => user.role === 'EMPLOYEE').length;
-    const departmentCount = departments.length; // Départements non filtrés par période
-    const activityCount = filteredActivities.length;
-    const skillCount = skills.length; // Compétences non filtrées par période
-
+    const isManager = userRole === 'Manager';
     return [
       {
-        title: 'Nombre d\'employés',
-        value: employeeCount.toString(),
+        title: isManager ? 'Employés (mes depts)' : 'Nombre d\'employés',
+        value: totalEmployees.toString(),
         icon: <Users className="w-6 h-6" aria-hidden="true" />,
         color: 'bg-blue-500',
       },
       {
-        title: 'Nombre de départements',
-        value: departmentCount.toString(),
+        title: isManager ? 'Mes départements' : 'Nombre de départements',
+        value: departments.length.toString(),
         icon: <Target className="w-6 h-6" aria-hidden="true" />,
         color: 'bg-purple-500',
       },
       {
-        title: 'Nombre d\'activités',
-        value: activityCount.toString(),
+        title: isManager ? 'Activités (mes depts)' : 'Nombre d\'activités',
+        value: filteredActivities.length.toString(),
         icon: <Calendar className="w-6 h-6" aria-hidden="true" />,
         color: 'bg-orange-500',
       },
       {
         title: 'Nombre de compétences',
-        value: skillCount.toString(),
+        value: totalSkills.toString(),
         icon: <TrendingUp className="w-6 h-6" aria-hidden="true" />,
         color: 'bg-green-500',
       },
     ];
-  }, [filteredUsers, departments, filteredActivities, skills]);
+  }, [totalEmployees, departments, filteredActivities, totalSkills, userRole]);
 
-  // Données pour le graphique "Employés par département"
-  const employeesByDepartment = useMemo(() => {
-    const counts = new Map<string, number>();
-    filteredUsers
-      .filter((user) => user.role === 'EMPLOYEE')
-      .forEach((user) => {
-        const departmentName =
-          typeof user.departmentId === 'object' && user.departmentId !== null
-            ? user.departmentId.name || 'Inconnu'
-            : 'Inconnu';
-        counts.set(departmentName, (counts.get(departmentName) || 0) + 1);
-      });
-    return Array.from(counts.entries())
-      .map(([name, count]) => ({ name, count }))
-      .sort((a, b) => b.count - a.count);
-  }, [filteredUsers]);
-
-  // Données pour le graphique "Répartition des rôles"
-  const roleDistribution = useMemo(() => {
-    const counts = filteredUsers.reduce((acc, user) => {
-      acc[user.role] = (acc[user.role] || 0) + 1;
-      return acc;
-    }, {} as Record<string, number>);
-
-    return Object.entries(counts).map(([role, count]) => ({ role, count }));
-  }, [filteredUsers]);
+  // Charts — come directly from backend aggregation
+  const employeesByDepartment = empByDeptData;
+  const roleDistribution      = roleDistData;
 
   // Données pour le graphique en secteurs "Activités par statut"
   const activityStatusData = useMemo(() => {
@@ -286,7 +268,11 @@ export function Analytics({ userRole }: AnalyticsProps) {
       <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
         <div>
           <h1 className="text-3xl font-semibold text-foreground">Analytics</h1>
-          <p className="text-muted-foreground mt-2">Vue d\'ensemble dynamique des employés, activités et compétences pour le rôle {userRole}.</p>
+          <p className="text-muted-foreground mt-2">
+            {userRole === 'Manager'
+              ? 'Vue analytique de vos départements — employés, activités et compétences.'
+              : 'Vue d\'ensemble globale — employés, activités, départements et compétences.'}
+          </p>
         </div>
         <div className="flex items-center gap-3">
           <label htmlFor="analytics-timerange" className="text-sm font-medium text-foreground">Période</label>
@@ -310,7 +296,9 @@ export function Analytics({ userRole }: AnalyticsProps) {
           <div key={metric.title} className="rounded-3xl border border-border bg-card p-6 shadow-sm">
             <div className="flex items-center justify-between gap-4">
               <div className={`${metric.color} rounded-2xl p-3 text-white`}>{metric.icon}</div>
-              <span className="text-sm text-muted-foreground">Dernier mois</span>
+              <span className="text-sm text-muted-foreground">
+                {userRole === 'Manager' ? 'Mes depts' : 'Global'}
+              </span>
             </div>
             <p className="mt-6 text-4xl font-semibold text-foreground">{metric.value}</p>
             <p className="mt-2 text-sm text-muted-foreground">{metric.title}</p>
@@ -324,19 +312,25 @@ export function Analytics({ userRole }: AnalyticsProps) {
           <div className="flex items-center justify-between gap-4">
             <div>
               <h2 className="text-xl font-semibold text-foreground">Employés par département</h2>
-              <p className="text-sm text-muted-foreground">Distribution des employés actifs par département.</p>
+              <p className="text-sm text-muted-foreground">
+                {userRole === 'Manager' ? 'Distribution dans vos départements.' : 'Distribution des employés actifs par département.'}
+              </p>
             </div>
           </div>
           <div className="mt-6 h-72">
-            <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={employeesByDepartment} margin={{ top: 10, right: 24, left: 0, bottom: 0 }}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#E5E7EB" />
-                <XAxis dataKey="name" stroke="#6B7280" />
-                <YAxis stroke="#6B7280" />
-                <Tooltip />
-                <Bar dataKey="count" fill="#2563EB" radius={[8, 8, 0, 0]} />
-              </BarChart>
-            </ResponsiveContainer>
+            {employeesByDepartment.length === 0 ? (
+              <div className="flex h-full items-center justify-center text-muted-foreground text-sm">Aucune donnée</div>
+            ) : (
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={employeesByDepartment} margin={{ top: 10, right: 24, left: 0, bottom: 0 }}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#E5E7EB" />
+                  <XAxis dataKey="name" stroke="#6B7280" />
+                  <YAxis stroke="#6B7280" />
+                  <Tooltip />
+                  <Bar dataKey="count" fill="#2563EB" radius={[8, 8, 0, 0]} />
+                </BarChart>
+              </ResponsiveContainer>
+            )}
           </div>
         </div>
 
@@ -344,15 +338,19 @@ export function Analytics({ userRole }: AnalyticsProps) {
           <h2 className="text-xl font-semibold text-foreground">Répartition des rôles</h2>
           <p className="text-sm text-muted-foreground">Vue globale des profils utilisateur.</p>
           <div className="mt-6 h-72">
-            <ResponsiveContainer width="100%" height="100%">
-              <BarChart layout="vertical" data={roleDistribution} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#E5E7EB" vertical={false} />
-                <XAxis type="number" stroke="#6B7280" />
-                <YAxis type="category" dataKey="role" stroke="#6B7280" width={100} />
-                <Tooltip />
-                <Bar dataKey="count" fill="#0EA5E9" radius={[0, 8, 8, 0]} />
-              </BarChart>
-            </ResponsiveContainer>
+            {roleDistribution.length === 0 ? (
+              <div className="flex h-full items-center justify-center text-muted-foreground text-sm">Aucune donnée</div>
+            ) : (
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart layout="vertical" data={roleDistribution} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#E5E7EB" vertical={false} />
+                  <XAxis type="number" stroke="#6B7280" />
+                  <YAxis type="category" dataKey="role" stroke="#6B7280" width={100} />
+                  <Tooltip />
+                  <Bar dataKey="count" fill="#0EA5E9" radius={[0, 8, 8, 0]} />
+                </BarChart>
+              </ResponsiveContainer>
+            )}
           </div>
         </div>
       </div>
@@ -363,24 +361,28 @@ export function Analytics({ userRole }: AnalyticsProps) {
           <h2 className="text-xl font-semibold text-foreground">Activités par statut</h2>
           <p className="text-sm text-muted-foreground">Statut des activités existantes.</p>
           <div className="mt-6 h-72">
-            <ResponsiveContainer width="100%" height="100%">
-              <RechartsPieChart>
-                <RechartsPie
-                  data={activityStatusData}
-                  dataKey="count"
-                  nameKey="status"
-                  cx="50%"
-                  cy="50%"
-                  outerRadius={100}
-                  label
-                >
-                  {activityStatusData.map((entry, index) => (
-                    <Cell key={`status-${index}`} fill={COLORS[index % COLORS.length]} />
-                  ))}
-                </RechartsPie>
-                <Tooltip />
-              </RechartsPieChart>
-            </ResponsiveContainer>
+            {activityStatusData.length === 0 ? (
+              <div className="flex h-full items-center justify-center text-muted-foreground text-sm">Aucune donnée</div>
+            ) : (
+              <ResponsiveContainer width="100%" height="100%">
+                <RechartsPieChart>
+                  <RechartsPie
+                    data={activityStatusData}
+                    dataKey="count"
+                    nameKey="status"
+                    cx="50%"
+                    cy="50%"
+                    outerRadius={100}
+                    label
+                  >
+                    {activityStatusData.map((_entry, index) => (
+                      <Cell key={`status-${index}`} fill={COLORS[index % COLORS.length]} />
+                    ))}
+                  </RechartsPie>
+                  <Tooltip />
+                </RechartsPieChart>
+              </ResponsiveContainer>
+            )}
           </div>
         </div>
 
@@ -388,15 +390,19 @@ export function Analytics({ userRole }: AnalyticsProps) {
           <h2 className="text-xl font-semibold text-foreground">Top compétences requises</h2>
           <p className="text-sm text-muted-foreground">Compétences les plus demandées par les activités.</p>
           <div className="mt-6 h-72">
-            <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={topRequiredSkills} margin={{ top: 10, right: 24, left: 0, bottom: 0 }}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#E5E7EB" />
-                <XAxis dataKey="name" stroke="#6B7280" />
-                <YAxis stroke="#6B7280" />
-                <Tooltip />
-                <Bar dataKey="count" fill="#14B8A6" radius={[8, 8, 0, 0]} />
-              </BarChart>
-            </ResponsiveContainer>
+            {topRequiredSkills.length === 0 ? (
+              <div className="flex h-full items-center justify-center text-muted-foreground text-sm">Aucune donnée</div>
+            ) : (
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={topRequiredSkills} margin={{ top: 10, right: 24, left: 0, bottom: 0 }}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#E5E7EB" />
+                  <XAxis dataKey="name" stroke="#6B7280" />
+                  <YAxis stroke="#6B7280" />
+                  <Tooltip />
+                  <Bar dataKey="count" fill="#14B8A6" radius={[8, 8, 0, 0]} />
+                </BarChart>
+              </ResponsiveContainer>
+            )}
           </div>
         </div>
       </div>

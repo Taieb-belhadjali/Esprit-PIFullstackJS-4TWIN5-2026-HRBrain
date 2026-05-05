@@ -59,9 +59,14 @@ spec:
             - name: SONAR_JDBC_USERNAME
               value: "sonarqube"
             - name: SONAR_JDBC_PASSWORD
-              value: "sonarqube123"
+              valueFrom:
+                secretKeyRef:
+                  name: sonarqube-db-secrets
+                  key: POSTGRES_PASSWORD
             - name: SONAR_ES_BOOTSTRAP_CHECKS_DISABLE
               value: "true"
+            - name: SONAR_WEB_SYSTEMPASSCODE
+              value: "sonar-monitoring-2026"
 
           resources:
             requests:

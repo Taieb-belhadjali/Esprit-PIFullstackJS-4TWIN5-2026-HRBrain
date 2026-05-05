@@ -17,6 +17,7 @@ interface SkillsFiltersProps {
   onSortChange: (value: SkillSortBy) => void;
   onDepartmentChange: (value: string) => void;
   onReset: () => void;
+  readOnlyDepartment?: boolean;
   t?: (key: string) => string | undefined;
 }
 
@@ -29,26 +30,35 @@ const SkillsFiltersComponent: React.FC<SkillsFiltersProps> = ({
   onSortChange,
   onDepartmentChange,
   onReset,
+  readOnlyDepartment,
   t,
 }) => {
-  const hasActiveFilters = searchTerm || sortBy !== 'name-asc' || selectedDepartment;
+  const hasActiveFilters = searchTerm || sortBy !== 'name-asc' || (!readOnlyDepartment && selectedDepartment);
   const translate = t || ((key: string) => key);
+
+  const activeDeptName = departments.find(d => d._id === selectedDepartment)?.name;
 
   return (
     <div className="rounded-xl border border-border bg-card shadow-sm">
       <div className="flex flex-col gap-3 p-4 lg:flex-row lg:items-center lg:gap-4">
         <div className="flex items-center gap-2 lg:min-w-[200px]">
           <Building2 size={16} className="flex-shrink-0 text-muted-foreground" />
-          <select
-            value={selectedDepartment}
-            onChange={(e) => onDepartmentChange(e.target.value)}
-            className="w-full rounded-lg border border-input bg-card px-3 py-2 text-sm outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/10"
-          >
-            <option value="">{translate('skills_all_departments')}</option>
-            {departments.map((dep) => (
-              <option key={dep._id} value={dep._id}>{dep.name}</option>
-            ))}
-          </select>
+          {readOnlyDepartment ? (
+            <span className="w-full rounded-lg border border-input bg-secondary px-3 py-2 text-sm text-foreground font-medium">
+              {activeDeptName ?? '—'}
+            </span>
+          ) : (
+            <select
+              value={selectedDepartment}
+              onChange={(e) => onDepartmentChange(e.target.value)}
+              className="w-full rounded-lg border border-input bg-card px-3 py-2 text-sm outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/10"
+            >
+              <option value="">{translate('skills_all_departments')}</option>
+              {departments.map((dep) => (
+                <option key={dep._id} value={dep._id}>{dep.name}</option>
+              ))}
+            </select>
+          )}
         </div>
 
         <div className="relative flex-1">

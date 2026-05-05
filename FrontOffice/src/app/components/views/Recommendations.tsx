@@ -57,9 +57,10 @@ interface CardProps {
   setExpandedId: (id: string | null) => void;
   getScoreColor: (s: number) => string;
   getScoreBg: (s: number) => string;
+  readOnly?: boolean;
 }
 
-function RecommendationCard({ rec, index, activityId, expandedId, setExpandedId, getScoreColor, getScoreBg }: CardProps) {
+function RecommendationCard({ rec, index, activityId, expandedId, setExpandedId, getScoreColor, getScoreBg, readOnly }: CardProps) {
   const [decision, setDecision] = useState<'approved' | 'rejected' | null>(rec.decision ?? null);
   const [saving, setSaving] = useState(false);
 
@@ -107,7 +108,7 @@ function RecommendationCard({ rec, index, activityId, expandedId, setExpandedId,
                 {decision === 'approved' ? <CheckCircle className="w-4 h-4" /> : <XCircle className="w-4 h-4" />}
                 {decision === 'approved' ? 'Approuvé' : 'Rejeté'}
               </span>
-            ) : (
+            ) : !readOnly && (
               <>
                 <button
                   onClick={() => handleDecision('approved')}
@@ -501,14 +502,16 @@ export function Recommendations({ userRole }: RecommendationsProps) {
             )}
           </div>
 
-          {/* Single activity button */}
-          <button onClick={handleRecommend} disabled={!selectedActivityId || loadingReco || loadingActivities}
-            className="flex items-center gap-2 px-5 py-3 bg-primary text-white rounded-lg hover:bg-primary/90 transition-colors disabled:opacity-50 font-medium shrink-0">
-            {loadingReco
-              ? <span className="w-4 h-4 border-2 border-white/40 border-t-white rounded-full animate-spin" />
-              : <Sparkles className="w-4 h-4" />}
-            {loadingReco ? 'Génération Ollama...' : 'Recommandation IA'}
-          </button>
+          {/* Single activity button — hidden for read-only SUPERADMIN */}
+          {userRole !== 'SUPERADMIN' && (
+            <button onClick={handleRecommend} disabled={!selectedActivityId || loadingReco || loadingActivities}
+              className="flex items-center gap-2 px-5 py-3 bg-primary text-white rounded-lg hover:bg-primary/90 transition-colors disabled:opacity-50 font-medium shrink-0">
+              {loadingReco
+                ? <span className="w-4 h-4 border-2 border-white/40 border-t-white rounded-full animate-spin" />
+                : <Sparkles className="w-4 h-4" />}
+              {loadingReco ? 'Génération Ollama...' : 'Recommandation IA'}
+            </button>
+          )}
 
           {/* Cancel button */}
           {loadingReco && (
@@ -604,6 +607,7 @@ export function Recommendations({ userRole }: RecommendationsProps) {
                           setExpandedId={setExpandedId}
                           getScoreColor={getScoreColor}
                           getScoreBg={getScoreBg}
+                          readOnly={userRole === 'SUPERADMIN'}
                         />
                       ))
                     )}
@@ -637,14 +641,16 @@ export function Recommendations({ userRole }: RecommendationsProps) {
                 Cette activité n'a pas encore été analysée par l'IA. Lance une recommandation pour obtenir le classement des meilleurs candidats.
               </p>
             </div>
-            <button
-              onClick={handleRecommend}
-              disabled={!selectedActivityId || loadingReco || loadingActivities}
-              className="flex items-center gap-2 px-6 py-2.5 bg-primary text-white rounded-lg hover:bg-primary/90 transition-colors disabled:opacity-50 font-medium"
-            >
-              <Sparkles className="w-4 h-4" />
-              Lancer la recommandation IA
-            </button>
+            {userRole !== 'SUPERADMIN' && (
+              <button
+                onClick={handleRecommend}
+                disabled={!selectedActivityId || loadingReco || loadingActivities}
+                className="flex items-center gap-2 px-6 py-2.5 bg-primary text-white rounded-lg hover:bg-primary/90 transition-colors disabled:opacity-50 font-medium"
+              >
+                <Sparkles className="w-4 h-4" />
+                Lancer la recommandation IA
+              </button>
+            )}
           </div>
         ) : (
           <div className="space-y-4">
@@ -652,7 +658,7 @@ export function Recommendations({ userRole }: RecommendationsProps) {
               <Brain className="w-4 h-4" />
               <span>Exemple de card — les vraies données apparaîtront après le calcul</span>
             </div>
-            <RecommendationCard rec={MOCK_CARD} index={0} activityId="" expandedId={expandedId} setExpandedId={setExpandedId} getScoreColor={getScoreColor} getScoreBg={getScoreBg} />
+            <RecommendationCard rec={MOCK_CARD} index={0} activityId="" expandedId={expandedId} setExpandedId={setExpandedId} getScoreColor={getScoreColor} getScoreBg={getScoreBg} readOnly={userRole === 'SUPERADMIN'} />
           </div>
         )
       )}
@@ -680,7 +686,8 @@ export function Recommendations({ userRole }: RecommendationsProps) {
             <RecommendationCard key={rec.employee._id} rec={rec} index={index}
               activityId={selectedActivityId}
               expandedId={expandedId} setExpandedId={setExpandedId}
-              getScoreColor={getScoreColor} getScoreBg={getScoreBg} />
+              getScoreColor={getScoreColor} getScoreBg={getScoreBg}
+              readOnly={userRole === 'SUPERADMIN'} />
           ))}
         </div>
       )}

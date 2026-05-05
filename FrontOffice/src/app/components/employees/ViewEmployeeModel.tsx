@@ -1,5 +1,5 @@
-import React, { useState } from "react";
-import { Download, AlertCircle } from "lucide-react";
+import { useState } from "react";
+import { Download, AlertCircle, X, Mail, IdCard, Briefcase } from "lucide-react";
 
 interface Employee {
   id: string;
@@ -16,181 +16,174 @@ interface Props {
   onClose: () => void;
 }
 
+const roleStyle: Record<string, string> = {
+  HR:       'bg-red-100 text-red-700',
+  MANAGER:  'bg-yellow-100 text-yellow-700',
+  EMPLOYEE: 'bg-green-100 text-green-700',
+};
+
 export default function ViewEmployeeModal({ open, employee, onClose }: Props) {
   const [downloading, setDownloading] = useState(false);
-  const [downloadError, setDownloadError] = useState("");
+  const [downloadError, setDownloadError] = useState('');
 
   if (!open || !employee) return null;
 
-  const skillNames = (employee.skills || []).map((skill) =>
-    typeof skill === 'string' ? skill : skill.name,
+  const skillNames = (employee.skills || []).map((s) =>
+    typeof s === 'string' ? s : s.name,
   );
 
   const handleDownloadCV = async () => {
     setDownloading(true);
-    setDownloadError("");
+    setDownloadError('');
     try {
-      const response = await fetch(
-        `${import.meta.env.VITE_API_URL || 'http://localhost:3000'}/users/${employee.id}/cv/download`
+      const token = (() => {
+        try { const a = JSON.parse(localStorage.getItem('hrbrain_auth') || '{}'); return a?.token ?? ''; }
+        catch { return ''; }
+      })();
+      const res = await fetch(
+        `${import.meta.env.VITE_API_URL || 'http://localhost:3000'}/users/${employee.id}/cv/download`,
+        { headers: token ? { Authorization: `Bearer ${token}` } : {} },
       );
-      
-      if (!response.ok) {
-        throw new Error("Impossible de télécharger le fichier CV");
-      }
-
-      const blob = await response.blob();
-      const url = window.URL.createObjectURL(blob);
-      const link = document.createElement('a');
-      link.href = url;
-      link.download = `CV_${employee.name.replace(/\s+/g, '_')}.txt`;
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-      window.URL.revokeObjectURL(url);
-    } catch (error) {
-      setDownloadError(error instanceof Error ? error.message : "Erreur lors du téléchargement");
-      console.error('Download error:', error);
+      if (!res.ok) throw new Error('Impossible de télécharger le CV');
+      const blob = await res.blob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url; a.download = `CV_${employee.name.replace(/\s+/g, '_')}.txt`;
+      document.body.appendChild(a); a.click();
+      document.body.removeChild(a); URL.revokeObjectURL(url);
+    } catch (err) {
+      setDownloadError(err instanceof Error ? err.message : 'Erreur lors du téléchargement');
     } finally {
       setDownloading(false);
     }
   };
 
-  // ROLE COLOR HELPER
-  const getRoleBadge = (role: string) => {
-    switch (role) {
-      case "HR":
-        return "badge bg-danger";
-      case "MANAGER":
-        return "badge bg-warning text-dark";
-      default:
-        return "badge bg-success";
-    }
-  };
-
-  // SKILL LEVEL COLOR
-  const getSkillLevelColor = (skillName: string) => {
-    const lowerName = skillName.toLowerCase();
-    if (lowerName.includes('high')) return 'bg-success';
-    if (lowerName.includes('medium')) return 'bg-info';
-    if (lowerName.includes('low')) return 'bg-secondary';
-    return 'bg-primary';
-  };
-
   return (
     <>
-      <div className="modal fade show d-block" tabIndex={-1}>
-        <div className="modal-dialog modal-dialog-centered modal-lg">
-          <div className="modal-content shadow">
+      {/* Backdrop */}
+      <div className="fixed inset-0 z-40 bg-black/50" onClick={onClose} aria-hidden="true" />
 
-            {/* HEADER */}
-            <div className="modal-header border-bottom">
-              <h5 className="modal-title">Détails de l'Employé</h5>
-              <button className="btn-close" onClick={onClose}></button>
+      {/* Modal */}
+      <div
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="view-emp-title"
+        className="fixed inset-0 z-50 flex items-center justify-center p-4"
+      >
+        <div className="bg-card w-full max-w-lg rounded-2xl shadow-2xl border border-border overflow-hidden">
+
+          {/* Header */}
+          <div className="flex items-center justify-between px-6 py-4 border-b border-border">
+            <h2 id="view-emp-title" className="text-lg font-semibold text-foreground">
+              Détails de l'employé
+            </h2>
+            <button
+              onClick={onClose}
+              className="p-1.5 rounded-lg text-muted-foreground hover:bg-secondary transition-colors focus:outline-none focus:ring-2 focus:ring-primary"
+              aria-label="Fermer"
+            >
+              <X size={18} />
+            </button>
+          </div>
+
+          {/* Body */}
+          <div className="px-6 py-5 space-y-5 max-h-[70vh] overflow-y-auto">
+
+            {/* Avatar + name */}
+            <div className="flex flex-col items-center gap-2">
+              <div
+                className="w-20 h-20 rounded-full flex items-center justify-center text-3xl font-bold text-white"
+                style={{ background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)' }}
+                aria-hidden="true"
+              >
+                {employee.name.charAt(0).toUpperCase()}
+              </div>
+              <h3 className="text-xl font-bold text-foreground">{employee.name}</h3>
+              <span className={`text-xs px-3 py-1 rounded-full font-medium ${roleStyle[employee.role] ?? 'bg-gray-100 text-gray-700'}`}>
+                {employee.role}
+              </span>
             </div>
 
-            {/* BODY */}
-            <div className="modal-body">
-
-              {/* PROFILE SECTION */}
-              <div className="text-center mb-4 pb-3 border-bottom">
-                <div
-                  className="rounded-circle bg-gradient text-white d-flex align-items-center justify-content-center mx-auto mb-2"
-                  style={{ 
-                    width: 80, 
-                    height: 80, 
-                    fontSize: 32,
-                    background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)'
-                  }}
-                >
-                  {employee.name.charAt(0).toUpperCase()}
+            {/* Info fields */}
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+              <div className="bg-secondary/50 rounded-xl px-4 py-3">
+                <div className="flex items-center gap-2 text-xs text-muted-foreground mb-1">
+                  <Mail size={13} /> Email
                 </div>
-
-                <h5 className="mt-3 mb-1">{employee.name}</h5>
-
-                {/* ROLE BADGE */}
-                <span className={getRoleBadge(employee.role)}>
-                  {employee.role}
-                </span>
+                <p className="text-sm text-foreground font-medium truncate">{employee.email}</p>
               </div>
-
-              {/* INFO SECTION */}
-              <div className="row mb-3">
-                <div className="col-md-6">
-                  <label className="form-label fw-bold text-muted small">Email</label>
-                  <div className="form-control bg-light border-0">{employee.email}</div>
+              <div className="bg-secondary/50 rounded-xl px-4 py-3">
+                <div className="flex items-center gap-2 text-xs text-muted-foreground mb-1">
+                  <Briefcase size={13} /> Rôle
                 </div>
-                <div className="col-md-6">
-                  <label className="form-label fw-bold text-muted small">ID Employé</label>
-                  <div className="form-control bg-light border-0">{employee.id}</div>
-                </div>
+                <p className="text-sm text-foreground font-medium">{employee.role}</p>
               </div>
-
-              {/* SKILLS SECTION */}
-              <div className="mb-4">
-                <label className="form-label fw-bold">
-                  🎯 Compétences ({skillNames.length})
-                </label>
-                <div className="p-3 bg-light rounded">
-                  {skillNames.length > 0 ? (
-                    <div className="d-flex flex-wrap gap-2">
-                      {skillNames.map((skill, idx) => (
-                        <span 
-                          key={idx} 
-                          className={`badge ${getSkillLevelColor(skill)} text-white px-3 py-2`}
-                          style={{ fontSize: '0.9rem' }}
-                        >
-                          {skill}
-                        </span>
-                      ))}
-                    </div>
-                  ) : (
-                    <p className="text-muted mb-0">Aucune compétence assignée</p>
-                  )}
+              <div className="bg-secondary/50 rounded-xl px-4 py-3 sm:col-span-2">
+                <div className="flex items-center gap-2 text-xs text-muted-foreground mb-1">
+                  <IdCard size={13} /> ID Employé
                 </div>
+                <p className="text-xs text-foreground font-mono break-all">{employee.id}</p>
               </div>
+            </div>
 
-              {/* ERROR MESSAGE */}
-              {downloadError && (
-                <div className="alert alert-warning d-flex align-items-center gap-2 mb-3">
-                  <AlertCircle size={20} />
-                  <span>{downloadError}</span>
-                </div>
-              )}
-
-              {/* CV DOWNLOAD SECTION */}
-              {employee.role === 'EMPLOYEE' && (
-                <div className="alert alert-info border-0 bg-info bg-opacity-10">
-                  <div className="d-flex align-items-center justify-content-between">
-                    <div>
-                      <strong>📄 Fichier CV</strong>
-                      <p className="text-muted small mb-0">Téléchargez le CV avec les compétences détectées</p>
-                    </div>
-                    <button
-                      className="btn btn-info btn-sm"
-                      onClick={handleDownloadCV}
-                      disabled={downloading}
-                    >
-                      <Download size={16} className="me-2" style={{ display: 'inline' }} />
-                      {downloading ? 'Téléchargement...' : 'Télécharger'}
-                    </button>
+            {/* Skills */}
+            <div>
+              <p className="text-sm font-semibold text-foreground mb-2">
+                Compétences ({skillNames.length})
+              </p>
+              <div className="bg-secondary/50 rounded-xl p-3 min-h-[48px]">
+                {skillNames.length > 0 ? (
+                  <div className="flex flex-wrap gap-2">
+                    {skillNames.map((skill, i) => (
+                      <span key={i} className="text-xs px-2.5 py-1 rounded-full bg-primary/10 text-primary font-medium">
+                        {skill}
+                      </span>
+                    ))}
                   </div>
+                ) : (
+                  <p className="text-sm text-muted-foreground">Aucune compétence assignée</p>
+                )}
+              </div>
+            </div>
+
+            {/* CV download */}
+            {employee.role === 'EMPLOYEE' && (
+              <div className="bg-blue-50 border border-blue-100 rounded-xl px-4 py-3 flex items-center justify-between gap-3">
+                <div>
+                  <p className="text-sm font-semibold text-blue-800">Fichier CV</p>
+                  <p className="text-xs text-blue-600">Télécharger le CV avec les compétences détectées</p>
                 </div>
-              )}
+                <button
+                  onClick={handleDownloadCV}
+                  disabled={downloading}
+                  className="flex items-center gap-1.5 px-3 py-2 bg-blue-600 text-white text-sm rounded-lg hover:bg-blue-700 disabled:opacity-50 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-400 shrink-0"
+                >
+                  <Download size={14} />
+                  {downloading ? 'Chargement…' : 'Télécharger'}
+                </button>
+              </div>
+            )}
 
-            </div>
+            {/* Download error */}
+            {downloadError && (
+              <div className="flex items-center gap-2 bg-red-50 border border-red-200 text-red-700 rounded-xl px-4 py-3 text-sm">
+                <AlertCircle size={16} className="shrink-0" />
+                {downloadError}
+              </div>
+            )}
+          </div>
 
-            {/* FOOTER */}
-            <div className="modal-footer border-top">
-              <button className="btn btn-secondary" onClick={onClose}>
-                Fermer
-              </button>
-            </div>
-
+          {/* Footer */}
+          <div className="px-6 py-4 border-t border-border flex justify-end">
+            <button
+              onClick={onClose}
+              className="px-4 py-2 rounded-lg border border-input text-sm font-medium text-foreground hover:bg-secondary transition-colors focus:outline-none focus:ring-2 focus:ring-primary"
+            >
+              Fermer
+            </button>
           </div>
         </div>
       </div>
-
-      {open && <div className="modal-backdrop fade show"></div>}
     </>
   );
 }

@@ -15,6 +15,7 @@ interface Props {
   activityId: string;
   activityTitle: string;
   onClose: () => void;
+  autoLoad?: boolean;
 }
 
 const ScoreBar: React.FC<{ value: number; color: string }> = ({ value, color }) => (
@@ -33,7 +34,7 @@ const getRankBadge = (rank: number) => {
   return 'bg-card text-muted-foreground border border-gray-200';
 };
 
-export const ActivityRecommendations: React.FC<Props> = ({ activityId, activityTitle, onClose }) => {
+export const ActivityRecommendations: React.FC<Props> = ({ activityId, activityTitle, onClose, autoLoad = false }) => {
   const [results, setResults] = useState<RecommendationResult[]>([]);
   const [loading, setLoading] = useState(false);
   const [loaded, setLoaded] = useState(false);
@@ -49,6 +50,9 @@ export const ActivityRecommendations: React.FC<Props> = ({ activityId, activityT
     } catch { alert('Erreur lors du chargement des recommandations'); }
     finally { setLoading(false); }
   };
+
+  // Auto-load for read-only consumers (e.g. SUPERADMIN)
+  React.useEffect(() => { if (autoLoad) load(); }, []);
 
   const toggleSort = (field: keyof RecommendationResult) => {
     if (sortField === field) setSortAsc(!sortAsc);
@@ -92,19 +96,21 @@ export const ActivityRecommendations: React.FC<Props> = ({ activityId, activityT
               <div className="p-4 bg-indigo-50 rounded-full">
                 <Brain size={32} className="text-indigo-500" />
               </div>
-              <p className="text-muted-foreground text-center max-w-sm">
-                Calcule les meilleurs employés pour cette activité selon leurs compétences, le contexte et leur potentiel de progression.
-              </p>
-              <button
-                onClick={load}
-                disabled={loading}
-                className="flex items-center gap-2 bg-primary text-white px-6 py-2.5 rounded-lg hover:bg-primary/90 transition-colors disabled:opacity-50"
-              >
-                {loading ? (
-                  <span className="w-4 h-4 border-2 border-white/40 border-t-white rounded-full animate-spin" />
-                ) : <Award size={16} />}
-                {loading ? 'Calcul en cours...' : 'Calculer les recommandations'}
-              </button>
+              {loading ? (
+                <span className="w-6 h-6 border-2 border-indigo-300 border-t-indigo-600 rounded-full animate-spin" />
+              ) : !autoLoad && (
+                <>
+                  <p className="text-muted-foreground text-center max-w-sm">
+                    Calcule les meilleurs employés pour cette activité selon leurs compétences, le contexte et leur potentiel de progression.
+                  </p>
+                  <button
+                    onClick={load}
+                    className="flex items-center gap-2 bg-primary text-white px-6 py-2.5 rounded-lg hover:bg-primary/90 transition-colors"
+                  >
+                    <Award size={16} /> Calculer les recommandations
+                  </button>
+                </>
+              )}
             </div>
           ) : results.length === 0 ? (
             <div className="text-center py-16 text-muted-foreground">Aucun employé trouvé.</div>

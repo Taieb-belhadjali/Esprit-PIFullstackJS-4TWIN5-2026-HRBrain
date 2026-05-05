@@ -26,6 +26,7 @@ services:
       - GOOGLE_CLIENT_SECRET=${GOOGLE_CLIENT_SECRET}
       - FRONTEND_URL=http://localhost:8888
       - BACKEND_URL=http://localhost:3000
+      - OLLAMA_BASE_URL=http://host.docker.internal:11434
     volumes:
       - backend-uploads:/app/uploads
       - backend-logs:/app/logs

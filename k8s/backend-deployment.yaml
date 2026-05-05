@@ -133,6 +133,8 @@ spec:
 
       volumes:
         - name: uploads-storage
-          emptyDir: {}          # Remplacer par PersistentVolumeClaim en prod réelle
+          persistentVolumeClaim:
+            claimName: backend-pvc-uploads
         - name: logs-storage
-          emptyDir: {}
+          persistentVolumeClaim:
+            claimName: backend-pvc-logs

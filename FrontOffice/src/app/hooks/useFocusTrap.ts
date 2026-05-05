@@ -24,34 +24,41 @@ const FOCUSABLE = [
 
 export function useFocusTrap(isOpen: boolean, onClose?: () => void) {
   const containerRef = useRef<HTMLDivElement>(null);
-  // Remember which element had focus before the modal opened
   const previousFocusRef = useRef<HTMLElement | null>(null);
+  // Use a ref so onClose is always current without being a useEffect dependency.
+  // Without this, an inline () => setState() callback creates a new reference on
+  // every render, re-triggering the effect and stealing focus back to the first
+  // focusable element while the user types.
+  const onCloseRef = useRef(onClose);
+  onCloseRef.current = onClose;
 
   useEffect(() => {
     if (!isOpen) return;
 
-    // Save current focus
     previousFocusRef.current = document.activeElement as HTMLElement;
 
     const container = containerRef.current;
     if (!container) return;
 
-    // Move focus to first focusable element inside the modal
     const focusable = Array.from(container.querySelectorAll<HTMLElement>(FOCUSABLE));
     if (focusable.length > 0) {
-      // Small delay to ensure the modal is fully rendered
-      requestAnimationFrame(() => focusable[0].focus());
+      // Only steal focus if no element inside the modal already has it.
+      // Without this guard, a user who clicks a specific field right as the
+      // modal opens would lose focus to focusable[0] when the rAF fires.
+      requestAnimationFrame(() => {
+        if (!container.contains(document.activeElement)) {
+          focusable[0].focus();
+        }
+      });
     }
 
     const handleKeyDown = (e: KeyboardEvent) => {
-      // Escape → close modal
       if (e.key === 'Escape') {
         e.preventDefault();
-        onClose?.();
+        onCloseRef.current?.();
         return;
       }
 
-      // Tab / Shift+Tab → cycle within modal
       if (e.key !== 'Tab') return;
 
       const focusableNow = Array.from(container.querySelectorAll<HTMLElement>(FOCUSABLE));
@@ -61,13 +68,11 @@ export function useFocusTrap(isOpen: boolean, onClose?: () => void) {
       const last  = focusableNow[focusableNow.length - 1];
 
       if (e.shiftKey) {
-        // Shift+Tab: if on first element, wrap to last
         if (document.activeElement === first) {
           e.preventDefault();
           last.focus();
         }
       } else {
-        // Tab: if on last element, wrap to first
         if (document.activeElement === last) {
           e.preventDefault();
           first.focus();
@@ -79,10 +84,9 @@ export function useFocusTrap(isOpen: boolean, onClose?: () => void) {
 
     return () => {
       document.removeEventListener('keydown', handleKeyDown);
-      // Restore focus to the element that triggered the modal
       previousFocusRef.current?.focus();
     };
-  }, [isOpen, onClose]);
+  }, [isOpen]); // onClose excluded intentionally — handled via ref above
 
   return containerRef;
 }

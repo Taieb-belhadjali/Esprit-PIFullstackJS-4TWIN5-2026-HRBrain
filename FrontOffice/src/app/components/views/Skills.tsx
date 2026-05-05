@@ -34,27 +34,44 @@ export const Skills: React.FC<SkillsProps> = ({ userRole }) => {
   const [sortBy, setSortBy] = useState<SkillSortBy>('name-asc');
   const [departments, setDepartments] = useState<any[]>([]);
   const [selectedDepartment, setSelectedDepartment] = useState('');
+  const [managerDeptId, setManagerDeptId] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 9;
   const { pendingCommand, commandData, clearPendingCommand } = useVoiceCommand();
 
   useEffect(() => {
-    // Fire departments + skills in parallel on mount.
-    // apiGet deduplicates /departments if Activities is also mounted.
-    Promise.all([
-      apiGet('/departments').catch(() => ({ data: [] })),
-      apiGet('/skills').catch(() => ({ data: [] })),
-    ]).then(([deptRes, skillRes]) => {
+    const init = async () => {
+      const deptRes = await apiGet('/departments').catch(() => ({ data: [] }));
       setDepartments(deptRes.data);
-      const validSkills = (skillRes.data as any[]).filter((s: any) => s.name);
-      setSkills(validSkills);
+
+      if (userRole === 'Manager') {
+        try {
+          const meRes = await API.get('/users/me');
+          const raw = meRes.data?.departmentId;
+          const deptId = String(raw?._id ?? raw ?? '');
+          if (deptId && deptId !== 'undefined') {
+            setManagerDeptId(deptId);
+            setSelectedDepartment(deptId);
+            const skillRes = await API.get(`/skills?departmentId=${deptId}`);
+            setSkills((skillRes.data as any[]).filter((s: any) => s.name));
+            setLoading(false);
+            return;
+          }
+        } catch { /* fallback to all skills */ }
+      }
+
+      const skillRes = await apiGet('/skills').catch(() => ({ data: [] }));
+      setSkills((skillRes.data as any[]).filter((s: any) => s.name));
       setLoading(false);
-    });
+    };
+    init();
   }, []);
 
   useEffect(() => {
-    // Re-fetch skills when department filter changes (after initial load)
-    if (selectedDepartment === '') return; // initial load handled above
+    // Re-fetch skills when department filter changes (after initial load).
+    // Managers always have selectedDepartment locked — skip re-fetch triggered by init.
+    if (selectedDepartment === '') return;
+    if (managerDeptId && selectedDepartment === managerDeptId) return;
     fetchSkills();
   }, [selectedDepartment]);
 
@@ -269,10 +286,12 @@ export const Skills: React.FC<SkillsProps> = ({ userRole }) => {
         onSearchChange={setSearchTerm}
         onSortChange={setSortBy}
         onDepartmentChange={setSelectedDepartment}
+        readOnlyDepartment={userRole === 'Manager'}
         onReset={() => {
           setSearchTerm('');
           setSortBy('name-asc');
-          setSelectedDepartment('');
+          // Managers must keep their department filter locked
+          if (userRole !== 'Manager') setSelectedDepartment('');
         }}
         t={t}
       />

@@ -37,8 +37,7 @@ export class DepartmentController {
   }
 
   @Get()
-  // Departments change rarely — cache 2 minutes
-  @Header('Cache-Control', 'private, max-age=120, stale-while-revalidate=60')
+  @Header('Cache-Control', 'no-store')
   findAll() {
     return this.departmentService.findAll();
   }

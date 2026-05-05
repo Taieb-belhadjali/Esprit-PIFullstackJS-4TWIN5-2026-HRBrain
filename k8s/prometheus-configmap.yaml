@@ -129,38 +129,49 @@ data:
             action: replace
             target_label: kubernetes_pod_name
 
-      # HRBrain Frontend - Disabled (no /metrics endpoint yet)
-      # - job_name: 'hrbrain-frontend'
-      #   kubernetes_sd_configs:
-      #     - role: endpoints
-      #       namespaces:
-      #         names:
-      #           - hrbrain
-      #   relabel_configs:
-      #     - source_labels: [__meta_kubernetes_service_name]
-      #       regex: 'frontend-service'
-      #       action: keep
+      # HRBrain Frontend — nginx-prometheus-exporter sidecar (port 9113)
+      # Picked up automatically by kubernetes-pods job via pod annotations.
+      # Dedicated job for explicit labeling in Grafana.
+      - job_name: 'hrbrain-frontend'
+        kubernetes_sd_configs:
+          - role: pod
+            namespaces:
+              names:
+                - hrbrain
+        relabel_configs:
+          - source_labels: [__meta_kubernetes_pod_label_app]
+            action: keep
+            regex: frontend
+          - source_labels: [__meta_kubernetes_pod_annotation_prometheus_io_port]
+            action: replace
+            target_label: __address__
+            regex: (.+)
+            replacement: $1:9113
+          - source_labels: [__address__, __meta_kubernetes_pod_annotation_prometheus_io_port]
+            action: replace
+            regex: ([^:]+)(?::\d+)?;(\d+)
+            replacement: $1:$2
+            target_label: __address__
+          - action: labelmap
+            regex: __meta_kubernetes_pod_label_(.+)
+          - source_labels: [__meta_kubernetes_namespace]
+            action: replace
+            target_label: kubernetes_namespace
+          - source_labels: [__meta_kubernetes_pod_name]
+            action: replace
+            target_label: kubernetes_pod_name
 
-      # Jenkins - Disabled (no /metrics endpoint yet)
-      # - job_name: 'jenkins'
-      #   kubernetes_sd_configs:
-      #     - role: endpoints
-      #       namespaces:
-      #         names:
-      #           - hrbrain
-      #   relabel_configs:
-      #     - source_labels: [__meta_kubernetes_service_name]
-      #       regex: 'jenkins'
-      #       action: keep
+      # Jenkins — Prometheus plugin exposes metrics at /prometheus/
+      - job_name: 'jenkins'
+        metrics_path: '/prometheus/'
+        static_configs:
+          - targets: ['jenkins-service.hrbrain.svc.cluster.local:8080']
 
-      # SonarQube - Disabled (no /metrics endpoint yet)
-      # - job_name: 'sonarqube'
-      #   kubernetes_sd_configs:
-      #     - role: endpoints
-      #       namespaces:
-      #         names:
-      #           - hrbrain
-      #   relabel_configs:
-      #     - source_labels: [__meta_kubernetes_service_name]
-      #       regex: 'sonarqube'
-      #       action: keep
+      # SonarQube 10.3 CE — system metrics via /api/monitoring/metrics
+      # Requires SONAR_WEB_SYSTEMPASSCODE set in the SonarQube deployment.
+      - job_name: 'sonarqube'
+        metrics_path: '/api/monitoring/metrics'
+        authorization:
+          credentials: 'sonar-monitoring-2026'
+        static_configs:
+          - targets: ['sonarqube-service.hrbrain.svc.cluster.local:9000']

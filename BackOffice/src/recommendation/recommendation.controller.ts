@@ -1,11 +1,16 @@
-import { Controller, Post, Get, Param, Body } from '@nestjs/common';
+import { Controller, Post, Get, Param, Body, UseGuards } from '@nestjs/common';
 import { RecommendationService } from './recommendation.service';
+import { JwtAuthGuard } from '../auth/jwt-auth.guard';
+import { RolesGuard, Roles } from '../auth/roles.guard';
 
 @Controller('recommendations')
+@UseGuards(JwtAuthGuard)
 export class RecommendationController {
   constructor(private readonly recoService: RecommendationService) {}
 
   @Post(':activityId/generate')
+  @UseGuards(RolesGuard)
+  @Roles('MANAGER', 'HR', 'SUPERADMIN')
   generate(
     @Param('activityId') activityId: string,
     @Body() body: { top_k?: number; weights?: { skillMatch: number; progression: number; context: number } },
@@ -16,6 +21,8 @@ export class RecommendationController {
   }
 
   @Post('generate-all')
+  @UseGuards(RolesGuard)
+  @Roles('HR', 'SUPERADMIN')
   generateAll(
     @Body() body: { top_k?: number; weights?: { skillMatch: number; progression: number; context: number } },
   ) {
@@ -26,6 +33,8 @@ export class RecommendationController {
 
   /** Enregistre une décision RH (approuver/rejeter) */
   @Post(':activityId/decision')
+  @UseGuards(RolesGuard)
+  @Roles('MANAGER', 'HR', 'SUPERADMIN')
   saveDecision(
     @Param('activityId') activityId: string,
     @Body() body: {

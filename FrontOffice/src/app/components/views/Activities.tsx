@@ -1,5 +1,5 @@
 ﻿import { useState, useEffect } from 'react';
-import { Search, Plus, X, Sparkles } from 'lucide-react';
+import { Search, Plus, X, Sparkles, Calendar, Target, Building2, BookOpen } from 'lucide-react';
 import API, { apiGet } from '../../../api/api';
 import { ActivityCard } from '../activities/ActivityCard';
 import { extractSkills } from '../../../api/nlpApi';
@@ -55,6 +55,11 @@ export function Activities({ userRole }: ActivitiesProps) {
   const [historyActivity, setHistoryActivity] = useState<Activity | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
   const [confirmDeleteActivity, setConfirmDeleteActivity] = useState<Activity | null>(null);
+  const [viewActivity, setViewActivity] = useState<Activity | null>(null);
+  const [recoViewActivity, setRecoViewActivity] = useState<Activity | null>(null);
+  const [extracting, setExtracting] = useState(false);
+  const [extractMsg, setExtractMsg] = useState<string | null>(null);
+  const [employeeUserId, setEmployeeUserId] = useState<string>('');
   const itemsPerPage = 9;
 
   // WCAG 2.1.1 — focus trap sur la modal de création/édition
@@ -63,19 +68,39 @@ export function Activities({ userRole }: ActivitiesProps) {
   const { pendingCommand, commandData, clearPendingCommand } = useVoiceCommand();
 
   useEffect(() => {
-    // Fire all 3 independent requests in parallel — total time = slowest one,
-    // not the sum of all 3 (was ~3× slower with sequential awaits).
-    // apiGet deduplicates /departments and /skills if Skills view is also mounted.
-    Promise.all([
-      apiGet(userRole === 'Manager' ? '/departments/my' : '/departments').catch(() => ({ data: [] })),
-      API.get('/activities').catch(() => ({ data: [] })),
-      apiGet('/skills').catch(() => ({ data: [] })),
-    ]).then(([deptRes, actRes, skillRes]) => {
+    const init = async () => {
+      if (userRole === 'Employee') {
+        try {
+          const [deptRes, skillRes, meRes] = await Promise.all([
+            apiGet('/departments').catch(() => ({ data: [] })),
+            apiGet('/skills').catch(() => ({ data: [] })),
+            API.get('/users/me'),
+          ]);
+          setDepartments(deptRes.data);
+          setSkills(skillRes.data);
+          const userId = String(meRes.data?._id ?? meRes.data?.id ?? '');
+          if (userId && userId !== 'undefined') {
+            setEmployeeUserId(userId);
+            const approvedRes = await API.get(`/recommendations/employee/${userId}/approved`);
+            setActivities(approvedRes.data ?? []);
+          }
+        } catch { setActivities([]); }
+        setLoading(false);
+        return;
+      }
+
+      const deptUrl = userRole === 'Manager' ? '/departments/my' : '/departments';
+      const [deptRes, actRes, skillRes] = await Promise.all([
+        apiGet(deptUrl).catch(() => ({ data: [] })),
+        API.get('/activities').catch(() => ({ data: [] })),
+        apiGet('/skills').catch(() => ({ data: [] })),
+      ]);
       setDepartments(deptRes.data);
       setActivities(actRes.data);
       setSkills(skillRes.data);
       setLoading(false);
-    });
+    };
+    init();
   }, [userRole]);
 
   useEffect(() => {
@@ -103,51 +128,44 @@ export function Activities({ userRole }: ActivitiesProps) {
   // Used after mutations (create/update/delete) to refresh only activities
   const fetchActivities = async () => {
     setLoading(true);
-    try { const res = await API.get('/activities'); setActivities(res.data); }
+    try {
+      if (employeeUserId) {
+        const res = await API.get(`/recommendations/employee/${employeeUserId}/approved`);
+        setActivities(res.data ?? []);
+      } else {
+        const res = await API.get('/activities');
+        setActivities(res.data);
+      }
+    }
     catch { setActivities([]); }
     finally { setLoading(false); }
   };
 
-  // Extract skills from description using NLP with level detection
   const handleExtractSkills = async () => {
     if (!form.description && !form.title) return;
-
-    // Combine title + description for better skill detection
     const combinedText = `${form.title} ${form.description}`.trim();
-
+    setExtracting(true);
+    setExtractMsg(null);
     try {
       const res = await extractSkills(combinedText);
-      const extractedSkills = res.data.skills || [];
-      
-      // Map NLP levels to our levels
-      const levelMap: Record<string, string> = {
-        'Beginner': 'Low',
-        'Intermediate': 'Medium', 
-        'Advanced': 'High',
-        'Expert': 'Expert'
-      };
-      
-      // Add extracted skills to requiredSkills if not already present
+      const extractedSkills: string[] = res.data.skills || [];
       const newSkills: SkillEntry[] = [];
-      for (const extracted of extractedSkills) {
-        const skillName = typeof extracted === 'string' ? extracted : extracted.skill;
-        const skillLevel = typeof extracted === 'string' ? 'Medium' : extracted.level;
-        
+      for (const skillName of extractedSkills) {
         const skill = skills.find((s: any) => s.name.toLowerCase() === skillName.toLowerCase());
         if (skill && !requiredSkills.find(rs => rs.skillId === skill._id)) {
-          newSkills.push({
-            skillId: skill._id,
-            level: levelMap[skillLevel] || 'Medium',
-            contributionToScore: 1
-          });
+          newSkills.push({ skillId: skill._id, level: 'Medium', contributionToScore: 1 });
         }
       }
-      
       if (newSkills.length > 0) {
         setRequiredSkills([...requiredSkills, ...newSkills]);
+        setExtractMsg(`${newSkills.length} compétence(s) ajoutée(s)`);
+      } else {
+        setExtractMsg('Aucune compétence reconnue dans le texte');
       }
-    } catch (err) {
-      console.error('Error extracting skills:', err);
+    } catch {
+      setExtractMsg('Erreur lors de l\'extraction');
+    } finally {
+      setExtracting(false);
     }
   };
 
@@ -159,6 +177,7 @@ export function Activities({ userRole }: ActivitiesProps) {
     setLevelPick('Medium');
     setContribPick(1);
     setSkillSearch('');
+    setExtractMsg(null);
     setShowModal(true);
   };
 
@@ -187,6 +206,7 @@ export function Activities({ userRole }: ActivitiesProps) {
     setLevelPick('Medium');
     setContribPick(1);
     setSkillSearch('');
+    setExtractMsg(null);
     setShowModal(true);
   };
 
@@ -214,16 +234,25 @@ export function Activities({ userRole }: ActivitiesProps) {
 
   const handleSubmit = async () => {
     if (!form.title.trim()) return;
+    if (userRole === 'Manager' && !form.targetedDepartmentId) {
+      alert('Veuillez sélectionner un département cible.');
+      return;
+    }
     const payload = { ...form, requiredSkills };
     try {
       if (editingActivity) {
-        await API.patch(`/activities/${editingActivity._id}`, payload);
+        const res = await API.patch(`/activities/${editingActivity._id}`, payload);
+        // Optimistic update — replace immediately, no loading flash
+        setActivities(prev => prev.map(a => a._id === editingActivity._id ? res.data : a));
       } else {
-        await API.post('/activities', payload);
+        const res = await API.post('/activities', payload);
+        setActivities(prev => [...prev, res.data]);
       }
-      fetchActivities();
       setShowModal(false);
-    } catch { alert('Erreur lors de la sauvegarde'); }
+    } catch (err: any) {
+      const msg = err?.response?.data?.message || 'Erreur lors de la sauvegarde';
+      alert(msg);
+    }
   };
 
   const handleDelete = async (id: string) => {
@@ -234,8 +263,10 @@ export function Activities({ userRole }: ActivitiesProps) {
   };
 
   const doDelete = async (id: string) => {
-    try { await API.delete(`/activities/${id}`); fetchActivities(); }
-    catch { alert('Erreur lors de la suppression'); }
+    try {
+      await API.delete(`/activities/${id}`);
+      setActivities(prev => prev.filter(a => a._id !== id));
+    } catch { alert('Erreur lors de la suppression'); }
   };
 
   const createActivityDirectly = async (name: string) => {
@@ -256,9 +287,7 @@ export function Activities({ userRole }: ActivitiesProps) {
   const totalPages = Math.ceil(filtered.length / itemsPerPage);
   const paginated = filtered.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
 
-  // SUPERADMIN = read-only everywhere except creating HR accounts
   const canManage = userRole === 'Manager';
-  const canEdit   = userRole === 'HR' || userRole === 'SUPERADMIN';
 
   return (
     <div className="p-6 space-y-6">
@@ -323,6 +352,8 @@ export function Activities({ userRole }: ActivitiesProps) {
                   onDelete={canManage ? handleDelete : () => {}}
                   onRecommend={canManage ? setRecommendActivity : undefined}
                   onHistory={canManage ? setHistoryActivity : undefined}
+                  onView={!canManage ? setViewActivity : undefined}
+                  onViewRecommendations={!canManage ? setRecoViewActivity : undefined}
                 />
               );
             })}
@@ -376,12 +407,17 @@ export function Activities({ userRole }: ActivitiesProps) {
               <div>
                 <label htmlFor="act-description" className="block text-sm text-foreground mb-1">
                   Description
-                  <button type="button" onClick={handleExtractSkills}
-                    className="ml-2 inline-flex items-center px-2 py-1 text-xs font-medium text-blue-600 hover:text-blue-800 hover:bg-blue-50 rounded transition focus:outline-none focus:ring-2 focus:ring-primary"
+                  <button type="button" onClick={handleExtractSkills} disabled={extracting}
+                    className="ml-2 inline-flex items-center px-2 py-1 text-xs font-medium text-blue-600 hover:text-blue-800 hover:bg-blue-50 rounded transition focus:outline-none focus:ring-2 focus:ring-primary disabled:opacity-50"
                     aria-label="Extraire automatiquement les compétences depuis la description">
                     <Sparkles className="w-3 h-3 mr-1" aria-hidden="true" />
-                    Extraire
+                    {extracting ? 'Extraction…' : 'Extraire'}
                   </button>
+                  {extractMsg && (
+                    <span className={`ml-2 text-xs ${extractMsg.startsWith('Aucune') || extractMsg.startsWith('Erreur') ? 'text-amber-600' : 'text-green-600'}`}>
+                      {extractMsg}
+                    </span>
+                  )}
                 </label>
                 <textarea
                   id="act-description"
@@ -473,12 +509,18 @@ export function Activities({ userRole }: ActivitiesProps) {
               </div>
 
               <div>
-                <label htmlFor="act-dept" className="block text-sm text-foreground mb-1">Département cible</label>
+                <label htmlFor="act-dept" className="block text-sm text-foreground mb-1">
+                  Département cible
+                  {userRole === 'Manager' && (
+                    <><span aria-hidden="true" className="text-destructive ml-1">*</span><span className="sr-only">(obligatoire)</span></>
+                  )}
+                </label>
                 <select
                   id="act-dept"
                   value={form.targetedDepartmentId}
                   onChange={(e) => setForm({ ...form, targetedDepartmentId: e.target.value })}
                   className="w-full px-3 py-2 border border-input rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
+                  aria-required={userRole === 'Manager'}
                 >
                   <option value="">-- Aucun --</option>
                   {departments.map((d) => <option key={d._id} value={d._id}>{d.name}</option>)}
@@ -612,6 +654,16 @@ export function Activities({ userRole }: ActivitiesProps) {
         />
       )}
 
+      {/* Recommendations read-only (SUPERADMIN / HR / Employee) */}
+      {recoViewActivity && (
+        <ActivityRecommendations
+          activityId={recoViewActivity._id}
+          activityTitle={recoViewActivity.title}
+          onClose={() => setRecoViewActivity(null)}
+          autoLoad
+        />
+      )}
+
       {/* History Panel */}
       {historyActivity && (
         <ActivityRecommendationHistory
@@ -619,6 +671,93 @@ export function Activities({ userRole }: ActivitiesProps) {
           activityTitle={historyActivity.title}
           onClose={() => setHistoryActivity(null)}
         />
+      )}
+
+      {/* Modal détail read-only (SUPERADMIN / HR / Employee) */}
+      {viewActivity && (
+        <>
+          <div className="fixed inset-0 z-40 bg-black/50" onClick={() => setViewActivity(null)} aria-hidden="true" />
+          <div role="dialog" aria-modal="true" aria-labelledby="view-activity-title"
+            className="fixed inset-0 z-50 flex items-center justify-center p-4">
+            <div className="bg-card w-full max-w-lg rounded-2xl shadow-2xl border border-border overflow-hidden">
+              <div className="flex items-center justify-between px-6 py-4 border-b border-border">
+                <h2 id="view-activity-title" className="text-lg font-semibold text-foreground">{viewActivity.title}</h2>
+                <button onClick={() => setViewActivity(null)}
+                  className="p-1.5 rounded-lg text-muted-foreground hover:bg-secondary transition-colors focus:outline-none focus:ring-2 focus:ring-primary"
+                  aria-label="Fermer">
+                  <X size={18} />
+                </button>
+              </div>
+              <div className="px-6 py-5 space-y-4 max-h-[70vh] overflow-y-auto">
+                {/* Badges */}
+                <div className="flex flex-wrap gap-2">
+                  {viewActivity.status && (
+                    <span className="text-xs px-2 py-1 rounded-full bg-gray-100 text-foreground font-medium">{viewActivity.status}</span>
+                  )}
+                  {viewActivity.context && (
+                    <span className="text-xs px-2 py-1 rounded-full bg-blue-50 text-blue-600 font-medium">{viewActivity.context}</span>
+                  )}
+                  {viewActivity.type && (
+                    <span className="text-xs px-2 py-1 rounded-full bg-orange-50 text-orange-600 font-medium">{viewActivity.type}</span>
+                  )}
+                </div>
+                {/* Description */}
+                {viewActivity.description && (
+                  <p className="text-sm text-muted-foreground leading-relaxed">{viewActivity.description}</p>
+                )}
+                {/* Info */}
+                <div className="grid grid-cols-2 gap-3">
+                  {(viewActivity.startDate || viewActivity.endDate) && (
+                    <div className="bg-secondary/50 rounded-xl px-4 py-3">
+                      <div className="flex items-center gap-1.5 text-xs text-muted-foreground mb-1"><Calendar size={12} /> Dates</div>
+                      <p className="text-sm font-medium text-foreground">
+                        {viewActivity.startDate ? new Date(viewActivity.startDate).toLocaleDateString('fr-FR') : '?'}
+                        {' → '}
+                        {viewActivity.endDate ? new Date(viewActivity.endDate).toLocaleDateString('fr-FR') : '?'}
+                      </p>
+                    </div>
+                  )}
+                  {viewActivity.nombreDePlaces > 0 && (
+                    <div className="bg-secondary/50 rounded-xl px-4 py-3">
+                      <div className="flex items-center gap-1.5 text-xs text-muted-foreground mb-1"><Target size={12} /> Places</div>
+                      <p className="text-sm font-medium text-foreground">{viewActivity.nombreDePlaces}</p>
+                    </div>
+                  )}
+                  {viewActivity.targetedDepartmentId && (
+                    <div className="bg-secondary/50 rounded-xl px-4 py-3 col-span-2">
+                      <div className="flex items-center gap-1.5 text-xs text-muted-foreground mb-1"><Building2 size={12} /> Département</div>
+                      <p className="text-sm font-medium text-foreground">
+                        {departments.find(d => d._id === viewActivity.targetedDepartmentId)?.name ?? viewActivity.targetedDepartmentId}
+                      </p>
+                    </div>
+                  )}
+                </div>
+                {/* Required Skills */}
+                {viewActivity.requiredSkills?.length > 0 && (
+                  <div>
+                    <div className="flex items-center gap-1.5 text-xs text-muted-foreground mb-2"><BookOpen size={12} /> Required Skills</div>
+                    <div className="flex flex-wrap gap-1.5">
+                      {viewActivity.requiredSkills.map((rs, i) => {
+                        const skillName = typeof rs.skillId === 'object' ? rs.skillId.name : rs.skillId;
+                        return (
+                          <span key={i} className="text-xs px-2.5 py-1 rounded-full bg-primary/10 text-primary font-medium">
+                            {skillName} · {rs.level}
+                          </span>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
+              </div>
+              <div className="px-6 py-4 border-t border-border flex justify-end">
+                <button onClick={() => setViewActivity(null)}
+                  className="px-4 py-2 rounded-lg border border-input text-sm font-medium hover:bg-secondary transition-colors focus:outline-none focus:ring-2 focus:ring-primary">
+                  Fermer
+                </button>
+              </div>
+            </div>
+          </div>
+        </>
       )}
 
       {/* WCAG 2.1.1 — ConfirmDialog remplace window.confirm() non accessible */}

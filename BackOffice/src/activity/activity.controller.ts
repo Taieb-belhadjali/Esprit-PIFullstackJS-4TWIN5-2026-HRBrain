@@ -43,8 +43,7 @@ export class ActivityController {
 
   @Get()
   @UseGuards(JwtAuthGuard)
-  // Activities are user-specific (role-filtered) — private cache, 1 minute
-  @Header('Cache-Control', 'private, max-age=60, stale-while-revalidate=30')
+  @Header('Cache-Control', 'no-store')
   findAll(@Query('departmentId') departmentId?: string, @Request() req?: any) {
     if (req?.user?.role === 'MANAGER') {
       return this.activityService.findAllForManager(req.user.sub, departmentId);
@@ -53,6 +52,13 @@ export class ActivityController {
       return this.activityService.findAllForEmployee(req.user.sub);
     }
     return this.activityService.findAll(departmentId);
+  }
+
+  /** Fast aggregated stats — no population, for dashboard widgets */
+  @Get('stats')
+  @UseGuards(JwtAuthGuard)
+  getStats(@Request() req: any) {
+    return this.activityService.getStats(req.user?.role ?? '', req.user?.sub ?? '');
   }
 
   @Get(':id')

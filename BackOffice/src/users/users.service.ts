@@ -377,6 +377,59 @@ export class UsersService {
     };
   }
 
+  /** Fast aggregated stats for dashboards — no heavy population */
+  async getAnalyticsStats(managerId?: string, since?: Date) {
+    let deptFilter: any = undefined;
+    if (managerId) {
+      const depts = await this.departmentModel
+        .find({ managerIds: managerId }, '_id')
+        .lean();
+      deptFilter = depts.map((d: any) => d._id);
+    }
+
+    const matchEmployee: any = { role: 'EMPLOYEE' };
+    if (deptFilter) matchEmployee.departmentId = { $in: deptFilter };
+    if (since) matchEmployee.createdAt = { $gte: since };
+
+    const matchAll: any = {};
+    if (deptFilter) matchAll.departmentId = { $in: deptFilter };
+    if (since) matchAll.createdAt = { $gte: since };
+
+    const [employeeCount, empByDept, roleDistribution] = await Promise.all([
+      this.userModel.countDocuments(matchEmployee),
+      this.userModel.aggregate([
+        { $match: matchEmployee },
+        { $group: { _id: '$departmentId', count: { $sum: 1 } } },
+        {
+          $lookup: {
+            from: 'departments',
+            localField: '_id',
+            foreignField: '_id',
+            as: 'dept',
+          },
+        },
+        { $unwind: { path: '$dept', preserveNullAndEmptyArrays: true } },
+        {
+          $project: {
+            _id: 0,
+            department: { $ifNull: ['$dept.name', 'Inconnu'] },
+            count: 1,
+          },
+        },
+        { $sort: { count: -1 } },
+        { $limit: 10 },
+      ]),
+      this.userModel.aggregate([
+        { $match: matchAll },
+        { $group: { _id: '$role', count: { $sum: 1 } } },
+        { $project: { _id: 0, role: '$_id', count: 1 } },
+        { $sort: { count: -1 } },
+      ]),
+    ]);
+
+    return { employeeCount, empByDept, roleDistribution };
+  }
+
   /** Returns a single user by ID. Throws 404 if not found */
   async findOne(id: string) {
     const user = await this.userModel
