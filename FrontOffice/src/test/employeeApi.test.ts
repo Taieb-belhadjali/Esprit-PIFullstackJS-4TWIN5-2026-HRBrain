@@ -38,7 +38,7 @@ describe('EmployeeApi', () => {
 
       const result = await getEmployees()
 
-      expect(API.get).toHaveBeenCalledWith('/users')
+      expect(API.get).toHaveBeenCalledWith('/users', expect.objectContaining({ params: expect.objectContaining({ page: 1, limit: 50 }) }))
       expect(result.data).toEqual(mockEmployees)
     })
 
