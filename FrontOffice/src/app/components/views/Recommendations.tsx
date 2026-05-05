@@ -1,4 +1,4 @@
-﻿import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
+﻿import { useState, useEffect, useRef, useCallback } from 'react';
 import { Target, Brain, CheckCircle, XCircle, TrendingUp, Sparkles, ChevronDown, Clock, PlayCircle, Users, X } from 'lucide-react';
 import { useAppTranslation } from '../../hooks/useAppTranslation';
 import API from '../../../api/api';
@@ -39,8 +39,8 @@ const MOCK_CARD: ApiRecommendation = {
 
 /** Affiche le temps écoulé depuis startedAt, mis à jour chaque seconde */
 function ElapsedTimer({ startedAt }: { startedAt: Date }) {
-  const [elapsed, setElapsed] = React.useState(0);
-  React.useEffect(() => {
+  const [elapsed, setElapsed] = useState(0);
+  useEffect(() => {
     const id = setInterval(() => setElapsed(Math.floor((Date.now() - startedAt.getTime()) / 1000)), 1000);
     return () => clearInterval(id);
   }, [startedAt]);
@@ -60,8 +60,8 @@ interface CardProps {
 }
 
 function RecommendationCard({ rec, index, activityId, expandedId, setExpandedId, getScoreColor, getScoreBg }: CardProps) {
-  const [decision, setDecision] = React.useState<'approved' | 'rejected' | null>(rec.decision ?? null);
-  const [saving, setSaving] = React.useState(false);
+  const [decision, setDecision] = useState<'approved' | 'rejected' | null>(rec.decision ?? null);
+  const [saving, setSaving] = useState(false);
 
   const handleDecision = async (d: 'approved' | 'rejected') => {
     setSaving(true);

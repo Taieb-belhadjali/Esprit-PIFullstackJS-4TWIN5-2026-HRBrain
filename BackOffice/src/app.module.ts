@@ -1,7 +1,7 @@
 import { Module, NestModule, MiddlewareConsumer } from '@nestjs/common';
 import { AppController } from './app.controller';
 import { MongooseModule } from '@nestjs/mongoose';
-import { ConfigModule } from '@nestjs/config';
+import { ConfigModule, ConfigService } from '@nestjs/config';
 import { UsersModule } from './users/users.module';
 import { AuthModule } from './auth/auth.module';
 import { SkillModule } from './skill/skill.module';
@@ -15,10 +15,18 @@ import { MetricsMiddleware } from './metrics/metrics.middleware';
 
 @Module({
   imports: [
+    // Load .env variables globally — must be first so other modules can use ConfigService
     ConfigModule.forRoot({ isGlobal: true }),
-    MongooseModule.forRoot(
-      'mongodb+srv://taiebaminebelhadjali_db_user:Complexatom88@cluster0.wczwpwn.mongodb.net/HRBrain_db',
-    ),
+
+    // MongoDB connection — URI read from environment variable (never hardcoded)
+    MongooseModule.forRootAsync({
+      inject: [ConfigService],
+      useFactory: (config: ConfigService) => ({
+        uri: config.get<string>('MONGO_URI'),
+      }),
+    }),
+
+    // Feature modules
     MetricsModule,
     UsersModule,
     AuthModule,
@@ -32,6 +40,7 @@ import { MetricsMiddleware } from './metrics/metrics.middleware';
   controllers: [AppController],
 })
 export class AppModule implements NestModule {
+  /** Apply request metrics middleware to every route */
   configure(consumer: MiddlewareConsumer) {
     consumer.apply(MetricsMiddleware).forRoutes('*');
   }
