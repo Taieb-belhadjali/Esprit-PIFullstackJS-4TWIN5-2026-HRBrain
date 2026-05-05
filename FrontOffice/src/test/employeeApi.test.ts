@@ -49,6 +49,81 @@ describe('EmployeeApi', () => {
 
       expect(result.data).toEqual([])
     })
+
+    it('should include role param when role is not All', async () => {
+      vi.mocked(API.get).mockResolvedValue({ data: [] })
+
+      await getEmployees(1, 50, 'MANAGER')
+
+      expect(API.get).toHaveBeenCalledWith('/users', expect.objectContaining({
+        params: expect.objectContaining({ role: 'MANAGER' }),
+      }))
+    })
+
+    it('should NOT include role param when role is All', async () => {
+      vi.mocked(API.get).mockResolvedValue({ data: [] })
+
+      await getEmployees(1, 50, 'All')
+
+      const callArgs = vi.mocked(API.get).mock.calls[0][1] as any
+      expect(callArgs.params).not.toHaveProperty('role')
+    })
+
+    it('should NOT include role param when role is undefined', async () => {
+      vi.mocked(API.get).mockResolvedValue({ data: [] })
+
+      await getEmployees(1, 50, undefined)
+
+      const callArgs = vi.mocked(API.get).mock.calls[0][1] as any
+      expect(callArgs.params).not.toHaveProperty('role')
+    })
+
+    it('should include search param when search is provided', async () => {
+      vi.mocked(API.get).mockResolvedValue({ data: [] })
+
+      await getEmployees(1, 50, undefined, 'john')
+
+      expect(API.get).toHaveBeenCalledWith('/users', expect.objectContaining({
+        params: expect.objectContaining({ search: 'john' }),
+      }))
+    })
+
+    it('should trim search string', async () => {
+      vi.mocked(API.get).mockResolvedValue({ data: [] })
+
+      await getEmployees(1, 50, undefined, '  alice  ')
+
+      const callArgs = vi.mocked(API.get).mock.calls[0][1] as any
+      expect(callArgs.params.search).toBe('alice')
+    })
+
+    it('should NOT include search param when search is empty string', async () => {
+      vi.mocked(API.get).mockResolvedValue({ data: [] })
+
+      await getEmployees(1, 50, undefined, '')
+
+      const callArgs = vi.mocked(API.get).mock.calls[0][1] as any
+      expect(callArgs.params).not.toHaveProperty('search')
+    })
+
+    it('should NOT include search param when search is only whitespace', async () => {
+      vi.mocked(API.get).mockResolvedValue({ data: [] })
+
+      await getEmployees(1, 50, undefined, '   ')
+
+      const callArgs = vi.mocked(API.get).mock.calls[0][1] as any
+      expect(callArgs.params).not.toHaveProperty('search')
+    })
+
+    it('should support custom page and limit', async () => {
+      vi.mocked(API.get).mockResolvedValue({ data: [] })
+
+      await getEmployees(3, 10)
+
+      expect(API.get).toHaveBeenCalledWith('/users', expect.objectContaining({
+        params: expect.objectContaining({ page: 3, limit: 10 }),
+      }))
+    })
   })
 
   describe('createEmployee', () => {
