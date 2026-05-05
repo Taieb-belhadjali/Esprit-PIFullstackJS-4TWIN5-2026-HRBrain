@@ -91,7 +91,6 @@ pipeline {
                         dir('FrontOffice') {
                             sh """
                                 docker build \
-                                  --cache-from ${DOCKER_IMAGE}:latest \
                                   --target production \
                                   --build-arg ENV=k8s \
                                   -t ${DOCKER_IMAGE}:${DOCKER_TAG} \
