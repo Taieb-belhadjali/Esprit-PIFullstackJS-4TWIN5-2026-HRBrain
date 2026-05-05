@@ -33,6 +33,7 @@ interface Employee {
 export function Employees({ userRole }: EmployeesProps) {
   const t = useAppTranslation();
   const [employees, setEmployees] = useState<Employee[]>([]);
+  const [totalEmployees, setTotalEmployees] = useState(0);
   const [openModal, setOpenModal] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedRole, setSelectedRole] = useState('All');
@@ -45,7 +46,8 @@ export function Employees({ userRole }: EmployeesProps) {
   const { pendingCommand, commandData, clearPendingCommand } = useVoiceCommand();
 
   const [currentPage, setCurrentPage] = useState(1);
-  const itemsPerPage = 5;
+  const [totalPages, setTotalPages] = useState(1);
+  const itemsPerPage = 50;
 
   // Role filter options — matches the actual role values from the backend
   const roleOptions = useMemo(() => [
@@ -55,22 +57,39 @@ export function Employees({ userRole }: EmployeesProps) {
     { value: 'HR',       label: 'HR' },
   ], []);
 
-  const fetchEmployees = useCallback(async () => {
+  const fetchEmployees = useCallback(async (page = currentPage, role = selectedRole, search = searchTerm) => {
     try {
-      const res = await getEmployees();
-      const mappedEmployees = res.data.map((emp: any) => ({
+      const res = await getEmployees(page, itemsPerPage, role, search);
+      const payload = res.data;
+      const mappedEmployees = (payload.data ?? []).map((emp: any) => ({
         ...emp,
         id: emp._id,
         skills: Array.isArray(emp.skills) ? emp.skills : [],
         skillsCount: Array.isArray(emp.skills) ? emp.skills.length : 0,
       }));
       setEmployees(mappedEmployees);
+      setTotalEmployees(payload.total ?? 0);
+      setTotalPages(payload.pages ?? 1);
     } catch (error) {
       console.error('Failed to fetch employees:', error);
     }
-  }, []);
+  }, [currentPage, selectedRole, searchTerm]);
 
-  useEffect(() => { fetchEmployees(); }, []);
+  useEffect(() => { fetchEmployees(1, selectedRole, searchTerm); }, []);
+
+  // Re-fetch when filters or page change
+  useEffect(() => {
+    fetchEmployees(currentPage, selectedRole, searchTerm);
+  }, [currentPage, selectedRole]);
+
+  // Debounce search to avoid firing on every keystroke
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setCurrentPage(1);
+      fetchEmployees(1, selectedRole, searchTerm);
+    }, 400);
+    return () => clearTimeout(timer);
+  }, [searchTerm]);
 
   useEffect(() => {
     if (pendingCommand === 'create-employee') {
@@ -106,30 +125,11 @@ export function Employees({ userRole }: EmployeesProps) {
     }
   }, [pendingCommand, commandData, clearPendingCommand, employees]);
 
-  // ── Memoized derived state ─────────────────────────────────────────────────
-  // Without useMemo, filter + slice run on EVERY render (modal open/close,
-  // hover states, etc.) — wasted CPU for 0 visual change.
-  const filteredEmployees = useMemo(() => {
-    const search = searchTerm.toLowerCase();
-    return employees.filter((emp) => {
-      const matchesSearch =
-        emp.name?.toLowerCase().includes(search) ||
-        emp.email?.toLowerCase().includes(search) ||
-        emp.position?.toLowerCase().includes(search);
-      const matchesRole = selectedRole === 'All' || emp.role === selectedRole;
-      return matchesSearch && matchesRole;
-    });
-  }, [employees, searchTerm, selectedRole]);
-
-  const { paginatedEmployees, totalPages } = useMemo(() => {
-    const indexOfFirst = (currentPage - 1) * itemsPerPage;
-    return {
-      paginatedEmployees: filteredEmployees.slice(indexOfFirst, indexOfFirst + itemsPerPage),
-      totalPages: Math.ceil(filteredEmployees.length / itemsPerPage),
-    };
-  }, [filteredEmployees, currentPage]);
-
-  useEffect(() => { setCurrentPage(1); }, [searchTerm, selectedRole]);
+  // Reset page when role filter changes
+  const handleRoleChange = (role: string) => {
+    setSelectedRole(role);
+    setCurrentPage(1);
+  };
 
   if (selectedEmployee) {
     return <EmployeeProfile employeeId={selectedEmployee} onBack={() => setSelectedEmployee(null)} userRole={userRole} />;
@@ -178,7 +178,7 @@ export function Employees({ userRole }: EmployeesProps) {
             <select
               id="employee-role-filter"
               value={selectedRole}
-              onChange={(e) => setSelectedRole(e.target.value)}
+              onChange={(e) => handleRoleChange(e.target.value)}
               className="px-3 py-2 border border-input rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary"
             >
               {roleOptions.map((opt) => (
@@ -188,7 +188,7 @@ export function Employees({ userRole }: EmployeesProps) {
           </div>
         </div>
         <p className="mt-3 text-sm text-muted-foreground" aria-live="polite">
-          {t('showingEmployees').replace('{filteredEmployees.length}', String(filteredEmployees.length)).replace('{employees.length}', String(employees.length))}
+          Showing {employees.length} of {totalEmployees} employees (page {currentPage}/{totalPages})
         </p>
       </div>
 
@@ -206,7 +206,7 @@ export function Employees({ userRole }: EmployeesProps) {
             </tr>
           </thead>
           <tbody className="divide-y divide-border">
-            {paginatedEmployees.map((employee) => (
+            {employees.map((employee) => (
               <tr key={employee.id} className="hover:bg-secondary/50">
                 <td className="px-6 py-4">
                   <div className="flex items-center gap-3">
@@ -277,9 +277,9 @@ export function Employees({ userRole }: EmployeesProps) {
           <Pagination
             currentPage={currentPage}
             totalPages={totalPages}
-            totalItems={filteredEmployees.length}
+            totalItems={totalEmployees}
             itemsPerPage={itemsPerPage}
-            onPageChange={setCurrentPage}
+            onPageChange={(page) => setCurrentPage(page)}
           />
         </div>
       </div>

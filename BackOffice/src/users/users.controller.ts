@@ -6,6 +6,7 @@ import {
   Param,
   Delete,
   Put,
+  Query,
   UseInterceptors,
   UploadedFile,
   NotFoundException,
@@ -108,8 +109,18 @@ export class UsersController {
   }
 
   @Get()
-  findAll() {
-    return this.usersService.findAll();
+  findAll(
+    @Query('page')  page  = '1',
+    @Query('limit') limit = '50',
+    @Query('role')  role?: string,
+    @Query('search') search?: string,
+  ) {
+    return this.usersService.findAll({
+      page:   Math.max(1, parseInt(page)   || 1),
+      limit:  Math.min(200, parseInt(limit) || 50),
+      role,
+      search,
+    });
   }
 
   @Get(':id')

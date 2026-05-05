@@ -338,12 +338,41 @@ export class UsersService {
     }
   }
 
-  /** Returns all users with populated skills and department */
-  async findAll() {
-    return this.userModel
-      .find()
-      .populate('skills', 'name')
-      .populate('departmentId', 'name');
+  /** Returns paginated users with populated skills and department */
+  async findAll(opts: { page: number; limit: number; role?: string; search?: string } = { page: 1, limit: 50 }) {
+    const { page, limit, role, search } = opts;
+    const skip = (page - 1) * limit;
+
+    // Build filter query
+    const filter: Record<string, any> = {};
+    if (role && role !== 'All') filter.role = role;
+    if (search) {
+      const escaped = search.replace(/[.*+?^${}()|[\]\\]/g, String.raw`\$&`);
+      filter.$or = [
+        { name:  { $regex: escaped, $options: 'i' } },
+        { email: { $regex: escaped, $options: 'i' } },
+      ];
+    }
+
+    const [users, total] = await Promise.all([
+      this.userModel
+        .find(filter)
+        .select('name email role skills departmentId cv mustChangePassword')
+        .populate('skills', 'name')
+        .populate('departmentId', 'name')
+        .skip(skip)
+        .limit(limit)
+        .lean(),
+      this.userModel.countDocuments(filter),
+    ]);
+
+    return {
+      data:  users,
+      total,
+      page,
+      limit,
+      pages: Math.ceil(total / limit),
+    };
   }
 
   /** Returns a single user by ID. Throws 404 if not found */
