@@ -24,6 +24,8 @@ services:
       - JWT_SECRET=hrbrain_secret_key
       - GOOGLE_CLIENT_ID=${GOOGLE_CLIENT_ID}
       - GOOGLE_CLIENT_SECRET=${GOOGLE_CLIENT_SECRET}
+      - FRONTEND_URL=http://localhost:8888
+      - BACKEND_URL=http://localhost:3000
     volumes:
       - backend-uploads:/app/uploads
       - backend-logs:/app/logs
@@ -52,11 +54,11 @@ services:
     networks:
       - hrbrain-network
     healthcheck:
-      test: ["CMD", "wget", "-qO-", "http://localhost:80"]
+      test: ["CMD", "wget", "-qO-", "http://127.0.0.1:80"]
       interval: 30s
       timeout: 10s
       retries: 3
-      start_period: 10s
+      start_period: 15s
 
 # ── Volumes persistants ─────────────────────────────────────────
 volumes:
