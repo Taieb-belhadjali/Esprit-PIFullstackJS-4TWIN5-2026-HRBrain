@@ -16,6 +16,7 @@ import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { Skill } from '../skill/skill.schema';
 import { Department } from '../department/department.schema';
+import { Activity } from '../activity/activity.schema';
 import { NotificationService } from '../notification/notification.service';
 
 @Injectable()
@@ -26,6 +27,7 @@ export class UsersService {
     @InjectModel(User.name)       private userModel: Model<User>,
     @InjectModel(Skill.name)      private skillModel: Model<Skill>,
     @InjectModel(Department.name) private departmentModel: Model<Department>,
+    @InjectModel(Activity.name)   private activityModel: Model<Activity>,
     private readonly notifService: NotificationService,
   ) {}
 
@@ -397,13 +399,36 @@ export class UsersService {
 
   /**
    * Deletes a user by ID.
-   * If the user is an EMPLOYEE, also removes their row from the CSV dataset.
+   * - EMPLOYEE: removes their row from the CSV dataset.
+   * - MANAGER: cascade-deletes all activities they created (createdById).
+   *            Also removes them from any department's managerIds list.
    */
   async remove(id: string) {
     const user = await this.userModel.findByIdAndDelete(id).lean();
     if (!user) throw new NotFoundException('User not found');
 
-    if ((user as any).role === 'EMPLOYEE') {
+    const role = (user as any).role;
+
+    // ── MANAGER cascade ────────────────────────────────────────────────────
+    if (role === 'MANAGER') {
+      // 1. Delete all activities created by this manager
+      const deleted = await this.activityModel.deleteMany({
+        createdById: new Types.ObjectId(id),
+      });
+      this.logger.log(
+        `Cascade: deleted ${deleted.deletedCount} activities for manager ${id}`,
+      );
+
+      // 2. Remove manager from all departments' managerIds arrays
+      await this.departmentModel.updateMany(
+        { managerIds: new Types.ObjectId(id) },
+        { $pull: { managerIds: new Types.ObjectId(id) } },
+      );
+      this.logger.log(`Cascade: removed manager ${id} from department lists`);
+    }
+
+    // ── EMPLOYEE CSV cleanup ────────────────────────────────────────────────
+    if (role === 'EMPLOYEE') {
       try {
         const csvPath = join(process.cwd(), 'DataSets', 'employees_updated.csv');
         const email   = (user as any).email ?? '';

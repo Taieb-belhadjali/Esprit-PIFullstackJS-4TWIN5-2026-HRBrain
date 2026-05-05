@@ -48,7 +48,8 @@ const ActivityCard: React.FC<ActivityCardProps> = ({
   onRecommend,
   onHistory,
 }) => {
-  const canManage = userRole === 'Manager' || userRole === 'SUPERADMIN';
+  // SUPERADMIN = read-only on activities (no edit/delete/create)
+  const canManage = userRole === 'Manager';
 
   // Construit le texte descriptif complet de la card pour le TTS
   const cardDescription = [
