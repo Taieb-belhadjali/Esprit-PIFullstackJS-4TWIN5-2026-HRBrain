@@ -35,7 +35,7 @@ export function Employees({ userRole }: EmployeesProps) {
   const [employees, setEmployees] = useState<Employee[]>([]);
   const [openModal, setOpenModal] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
-  const [selectedDepartment, setSelectedDepartment] = useState('All');
+  const [selectedRole, setSelectedRole] = useState('All');
   const [selectedEmployee, setSelectedEmployee] = useState<string | null>(null);
   const [editingEmployee, setEditingEmployee] = useState<Employee | null>(null);
   const [viewEmployee, setViewEmployee] = useState<Employee | null>(null);
@@ -47,8 +47,13 @@ export function Employees({ userRole }: EmployeesProps) {
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 5;
 
-  // Stable reference — avoids recreating the array on every render
-  const departments = useMemo(() => ['All', 'Engineering', 'Marketing', 'Sales', 'HR', 'Finance'], []);
+  // Role filter options — matches the actual role values from the backend
+  const roleOptions = useMemo(() => [
+    { value: 'All',      label: 'All' },
+    { value: 'EMPLOYEE', label: 'Employee' },
+    { value: 'MANAGER',  label: 'Manager' },
+    { value: 'HR',       label: 'HR' },
+  ], []);
 
   const fetchEmployees = useCallback(async () => {
     try {
@@ -111,10 +116,10 @@ export function Employees({ userRole }: EmployeesProps) {
         emp.name?.toLowerCase().includes(search) ||
         emp.email?.toLowerCase().includes(search) ||
         emp.position?.toLowerCase().includes(search);
-      const matchesDepartment = selectedDepartment === 'All' || emp.department === selectedDepartment;
-      return matchesSearch && matchesDepartment;
+      const matchesRole = selectedRole === 'All' || emp.role === selectedRole;
+      return matchesSearch && matchesRole;
     });
-  }, [employees, searchTerm, selectedDepartment]);
+  }, [employees, searchTerm, selectedRole]);
 
   const { paginatedEmployees, totalPages } = useMemo(() => {
     const indexOfFirst = (currentPage - 1) * itemsPerPage;
@@ -124,7 +129,7 @@ export function Employees({ userRole }: EmployeesProps) {
     };
   }, [filteredEmployees, currentPage]);
 
-  useEffect(() => { setCurrentPage(1); }, [searchTerm, selectedDepartment]);
+  useEffect(() => { setCurrentPage(1); }, [searchTerm, selectedRole]);
 
   if (selectedEmployee) {
     return <EmployeeProfile employeeId={selectedEmployee} onBack={() => setSelectedEmployee(null)} userRole={userRole} />;
@@ -169,14 +174,16 @@ export function Employees({ userRole }: EmployeesProps) {
           <div className="flex items-center gap-2">
             <Filter className="w-4 h-4 text-muted-foreground shrink-0" aria-hidden="true" />
             {/* WCAG 1.3.1 — label associé au select */}
-            <label htmlFor="employee-dept-filter" className="sr-only">Filtrer par département</label>
+            <label htmlFor="employee-role-filter" className="sr-only">Filtrer par rôle</label>
             <select
-              id="employee-dept-filter"
-              value={selectedDepartment}
-              onChange={(e) => setSelectedDepartment(e.target.value)}
+              id="employee-role-filter"
+              value={selectedRole}
+              onChange={(e) => setSelectedRole(e.target.value)}
               className="px-3 py-2 border border-input rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary"
             >
-              {departments.map((dept) => <option key={dept} value={dept}>{dept}</option>)}
+              {roleOptions.map((opt) => (
+                <option key={opt.value} value={opt.value}>{opt.label}</option>
+              ))}
             </select>
           </div>
         </div>
