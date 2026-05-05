@@ -54,27 +54,7 @@ pipeline {
             }
         }
 
-        stage('SonarQube') {
-            steps {
-                withCredentials([string(credentialsId: 'sonarqube-token', variable: 'SONAR_TOKEN')]) {
-                    dir('BackOffice') {
-                        sh """
-                            npx sonar-scanner \
-                              -Dsonar.projectKey=hrbrain-backend \
-                              -Dsonar.projectName="HRBrain Backend" \
-                              -Dsonar.sources=src \
-                              -Dsonar.tests=src \
-                              -Dsonar.test.inclusions=**/*.spec.ts \
-                              -Dsonar.typescript.lcov.reportPaths=coverage/lcov.info \
-                              -Dsonar.host.url=${SONAR_URL} \
-                              -Dsonar.token=\${SONAR_TOKEN} \
-                              -Dsonar.exclusions=**/node_modules/**,**/dist/**,**/*.spec.ts \
-                              || true
-                        """
-                    }
-                }
-            }
-        }
+        // stage('SonarQube') { /* désactivé temporairement — réseau en cours de config */ }
 
         stage('Build & Docker') {
             stages {
