@@ -131,6 +131,18 @@ pipeline {
             build job: 'hrbrain-cd-frontend',
                   parameters: [string(name: 'IMAGE_TAG', value: "${DOCKER_TAG}")],
                   wait: false
+            emailext(
+                subject: "✅ CI Frontend SUCCESS — Build #${env.BUILD_NUMBER}",
+                body: """<h2>✅ CI Frontend réussi</h2>
+<p><b>Build:</b> #${env.BUILD_NUMBER}</p>
+<p><b>Branch:</b> ${env.GIT_BRANCH}</p>
+<p><b>Commit:</b> ${env.GIT_COMMIT?.take(8)}</p>
+<p><b>Image:</b> ${DOCKER_IMAGE}:${DOCKER_TAG}</p>
+<p><b>CD Frontend:</b> déclenché automatiquement</p>
+<p><a href="${env.BUILD_URL}">Voir le build</a></p>""",
+                mimeType: 'text/html',
+                to: 'taiebaminebelhadjali@gmail.com'
+            )
         }
         unstable {
             echo "⚠️ CI Frontend #${env.BUILD_NUMBER} UNSTABLE — déploiement déclenché quand même"
@@ -140,6 +152,17 @@ pipeline {
         }
         failure {
             echo "❌ CI Frontend #${env.BUILD_NUMBER} FAILED — CD non déclenché"
+            emailext(
+                subject: "❌ CI Frontend FAILURE — Build #${env.BUILD_NUMBER}",
+                body: """<h2>❌ CI Frontend échoué</h2>
+<p><b>Build:</b> #${env.BUILD_NUMBER}</p>
+<p><b>Branch:</b> ${env.GIT_BRANCH}</p>
+<p><b>Commit:</b> ${env.GIT_COMMIT?.take(8)}</p>
+<p><b>CD Frontend:</b> non déclenché</p>
+<p><a href="${env.BUILD_URL}console">Voir les logs</a></p>""",
+                mimeType: 'text/html',
+                to: 'taiebaminebelhadjali@gmail.com'
+            )
         }
         always {
             sh "docker rmi ${DOCKER_IMAGE}:${DOCKER_TAG} || true"
