@@ -247,7 +247,9 @@ export function Employees({ userRole }: EmployeesProps) {
                     >
                       <Eye className="w-4 h-4 text-muted-foreground" aria-hidden="true" />
                     </button>
-                    {(userRole === 'HR' || userRole === 'SUPERADMIN') && (
+                    {/* HR: can edit/delete all employees
+                        SUPERADMIN: can only edit/delete HR accounts */}
+                    {(userRole === 'HR' || (userRole === 'SUPERADMIN' && employee.role === 'HR')) && (
                       <>
                         <button
                           className="p-2 hover:bg-secondary rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"

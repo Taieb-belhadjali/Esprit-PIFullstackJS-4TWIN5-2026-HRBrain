@@ -256,7 +256,9 @@ export function Activities({ userRole }: ActivitiesProps) {
   const totalPages = Math.ceil(filtered.length / itemsPerPage);
   const paginated = filtered.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
 
-  const canManage = userRole === 'Manager' || userRole === 'SUPERADMIN';
+  // SUPERADMIN = read-only everywhere except creating HR accounts
+  const canManage = userRole === 'Manager';
+  const canEdit   = userRole === 'HR' || userRole === 'SUPERADMIN';
 
   return (
     <div className="p-6 space-y-6">

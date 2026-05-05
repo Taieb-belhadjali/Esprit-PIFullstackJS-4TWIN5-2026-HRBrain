@@ -24,8 +24,10 @@ const generatePassword = () => {
 const MODAL_TITLE_ID = 'add-employee-title';
 
 export default function AddEmployeeModal({ open, onClose, onCreated, prefilledName, userRole }: Props) {
+  // SUPERADMIN can only create HR accounts — default role accordingly
+  const defaultRole = userRole === 'SUPERADMIN' ? 'HR' : 'EMPLOYEE';
   const [form, setForm] = useState({
-    name: "", email: "", password: generatePassword(), role: "EMPLOYEE",
+    name: "", email: "", password: generatePassword(), role: defaultRole,
     skills: [] as string[], departmentId: "",
   });
   const [file, setFile] = useState<File | null>(null);
@@ -92,7 +94,7 @@ export default function AddEmployeeModal({ open, onClose, onCreated, prefilledNa
       await createEmployee(formData);
       onCreated();
       onClose();
-      setForm({ name: "", email: "", password: generatePassword(), role: "EMPLOYEE", skills: [], departmentId: "" });
+      setForm({ name: "", email: "", password: generatePassword(), role: defaultRole, skills: [], departmentId: "" });
       setFile(null);
     } catch (err: any) {
       setError(err.response?.data?.message || "Erreur lors de la création.");
@@ -229,9 +231,15 @@ export default function AddEmployeeModal({ open, onClose, onCreated, prefilledNa
                   onChange={handleChange}
                   required
                 >
-                  <option value="EMPLOYEE">Employee</option>
-                  <option value="MANAGER">Manager</option>
-                  {userRole === 'SUPERADMIN' && <option value="HR">HR</option>}
+                  {/* SUPERADMIN can only create HR accounts */}
+                  {userRole === 'SUPERADMIN' ? (
+                    <option value="HR">HR</option>
+                  ) : (
+                    <>
+                      <option value="EMPLOYEE">Employee</option>
+                      <option value="MANAGER">Manager</option>
+                    </>
+                  )}
                 </select>
               </div>
 

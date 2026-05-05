@@ -163,6 +163,9 @@ export function Departments({ userRole }: { userRole: UserRole }) {
     </div>
   );
 
+  // SUPERADMIN = read-only (no add / edit / delete)
+  const canWrite = userRole === 'HR';
+
   return (
     <div className="p-6 space-y-6">
       {/* Header */}
@@ -174,18 +177,20 @@ export function Departments({ userRole }: { userRole: UserRole }) {
             </div>
             <h1 className="mt-3 text-2xl font-bold text-slate-900">Départements</h1>
           </div>
-          <button onClick={() => setShowAddForm(!showAddForm)}
-            className="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2.5 font-medium text-white hover:bg-blue-700">
-            <Plus size={18} /> Ajouter un département
-          </button>
+          {canWrite && (
+            <button onClick={() => setShowAddForm(!showAddForm)}
+              className="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2.5 font-medium text-white hover:bg-blue-700">
+              <Plus size={18} /> Ajouter un département
+            </button>
+          )}
         </div>
       </div>
 
       <DepartmentsStats totalDepartments={departments.length} uniqueManagers={managers.length} totalShown={filteredDepartments.length} />
       <DepartmentsFilters searchTerm={searchTerm} sortBy={sortBy} onSearchChange={setSearchTerm} onSortChange={setSortBy} onReset={() => { setSearchTerm(''); setSortBy('name-asc'); }} />
 
-      {/* Formulaire ajout */}
-      {showAddForm && (
+      {/* Formulaire ajout — HR only */}
+      {showAddForm && canWrite && (
         <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm space-y-4">
           <h2 className="text-lg font-semibold text-slate-900">Nouveau département</h2>
           <div>
@@ -246,20 +251,24 @@ export function Departments({ userRole }: { userRole: UserRole }) {
                       <p className="text-gray-400 font-mono text-xs mt-2 truncate">{dept._id}</p>
                     </div>
                     <div className="flex gap-2 ml-4 opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity">
-                      <button
-                        onClick={() => { setEditId(dept._id); setEditName(dept.name); }}
-                        className="p-2 rounded-lg bg-blue-50 hover:bg-blue-100 text-blue-600 transition-all hover:scale-110 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                        aria-label={`Modifier le département ${dept.name}`}
-                      >
-                        <Edit2 size={18} aria-hidden="true" />
-                      </button>
-                      <button
-                        onClick={() => handleDelete(dept._id)}
-                        className="p-2 rounded-lg bg-red-50 hover:bg-red-100 text-red-600 transition-all hover:scale-110 focus:outline-none focus:ring-2 focus:ring-red-500"
-                        aria-label={`Supprimer le département ${dept.name}`}
-                      >
-                        <Trash2 size={18} aria-hidden="true" />
-                      </button>
+                      {canWrite && (
+                        <>
+                          <button
+                            onClick={() => { setEditId(dept._id); setEditName(dept.name); }}
+                            className="p-2 rounded-lg bg-blue-50 hover:bg-blue-100 text-blue-600 transition-all hover:scale-110 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                            aria-label={`Modifier le département ${dept.name}`}
+                          >
+                            <Edit2 size={18} aria-hidden="true" />
+                          </button>
+                          <button
+                            onClick={() => handleDelete(dept._id)}
+                            className="p-2 rounded-lg bg-red-50 hover:bg-red-100 text-red-600 transition-all hover:scale-110 focus:outline-none focus:ring-2 focus:ring-red-500"
+                            aria-label={`Supprimer le département ${dept.name}`}
+                          >
+                            <Trash2 size={18} aria-hidden="true" />
+                          </button>
+                        </>
+                      )}
                     </div>
                   </div>
                 )}
@@ -317,12 +326,14 @@ export function Departments({ userRole }: { userRole: UserRole }) {
                   <p className="mt-1 text-slate-800">{getManagerNames(viewDept)}</p>
                 </div>
                 <div className="flex justify-end gap-2 pt-2">
-                  <button
-                    onClick={() => { setViewDept(null); setEditId(viewDept._id); setEditName(viewDept.name); }}
-                    className="rounded-lg border border-slate-300 px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-100 focus:outline-none focus:ring-2 focus:ring-primary"
-                  >
-                    Modifier
-                  </button>
+                  {canWrite && (
+                    <button
+                      onClick={() => { setViewDept(null); setEditId(viewDept._id); setEditName(viewDept.name); }}
+                      className="rounded-lg border border-slate-300 px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-100 focus:outline-none focus:ring-2 focus:ring-primary"
+                    >
+                      Modifier
+                    </button>
+                  )}
                   <button
                     onClick={() => setViewDept(null)}
                     className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
