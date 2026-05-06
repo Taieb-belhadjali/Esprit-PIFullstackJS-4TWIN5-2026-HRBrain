@@ -21,17 +21,14 @@ pipeline {
 
         stage('Checkout') {
             steps {
-                // Increase Git buffer to handle large repos on slow networks
-                sh 'git config --global http.postBuffer 524288000'
-                sh 'git config --global http.lowSpeedLimit 0'
-                sh 'git config --global http.lowSpeedTime 999999'
-                retry(3) {
-                    checkout([$class: 'GitSCM',
-                        branches: [[name: '*/main']],
-                        extensions: [[$class: 'CloneOption', depth: 1, shallow: true, noTags: true, timeout: 60]],
-                        userRemoteConfigs: scm.userRemoteConfigs
-                    ])
-                }
+                checkout([$class: 'GitSCM',
+                    branches: [[name: '*/main']],
+                    extensions: [
+                        [$class: 'CloneOption', depth: 1, shallow: true, noTags: true, timeout: 60],
+                        [$class: 'CheckoutOption', timeout: 60]
+                    ],
+                    userRemoteConfigs: scm.userRemoteConfigs
+                ])
                 echo "Branch: ${env.GIT_BRANCH} | Commit: ${env.GIT_COMMIT?.take(8)}"
             }
         }
@@ -99,12 +96,17 @@ pipeline {
             }
         }
 
+        stage('Cleanup') {
+            steps {
+                sh "docker rmi ${DOCKER_IMAGE}:${DOCKER_TAG} || true"
+            }
+        }
+
     }
 
     post {
         success {
             echo "✅ CI Backend #${env.BUILD_NUMBER} — Image: ${DOCKER_IMAGE}:${DOCKER_TAG}"
-            // Déclenche automatiquement le CD Backend
             build job: 'hrbrain-cd-backend',
                   parameters: [string(name: 'IMAGE_TAG', value: "${DOCKER_TAG}")],
                   wait: false
@@ -136,7 +138,6 @@ pipeline {
             )
         }
         always {
-            sh "docker rmi mouadh08/hrbrain-backend:${env.BUILD_NUMBER} || true"
             cleanWs()
         }
     }

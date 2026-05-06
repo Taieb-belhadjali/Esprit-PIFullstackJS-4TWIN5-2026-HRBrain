@@ -29,16 +29,14 @@ pipeline {
 
         stage('Checkout') {
             steps {
-                sh 'git config --global http.postBuffer 524288000'
-                sh 'git config --global http.lowSpeedLimit 0'
-                sh 'git config --global http.lowSpeedTime 999999'
-                retry(3) {
-                    checkout([$class: 'GitSCM',
-                        branches: [[name: '*/main']],
-                        extensions: [[$class: 'CloneOption', depth: 1, shallow: true, noTags: true, timeout: 60]],
-                        userRemoteConfigs: scm.userRemoteConfigs
-                    ])
-                }
+                checkout([$class: 'GitSCM',
+                    branches: [[name: '*/main']],
+                    extensions: [
+                        [$class: 'CloneOption', depth: 1, shallow: true, noTags: true, timeout: 60],
+                        [$class: 'CheckoutOption', timeout: 60]
+                    ],
+                    userRemoteConfigs: scm.userRemoteConfigs
+                ])
                 echo "Deploying ${DOCKER_IMAGE}:${IMAGE_TAG} → ${K8S_NAMESPACE}/${K8S_DEPLOY}"
             }
         }
@@ -78,16 +76,12 @@ pipeline {
         stage('Smoke Test') {
             steps {
                 withKubeConfig([credentialsId: 'kubeconfig']) {
-                    script {
-                        // Use worker-1 IP — backend NodePort 30000
-                        def nodeIp = '192.168.1.11'
-                        sh """
-                            sleep 5
-                            curl -sf http://${nodeIp}:30000/health || \\
-                              (echo '❌ Smoke test Backend échoué' && exit 1)
-                            echo '✅ Smoke test Backend réussi'
-                        """
-                    }
+                    sh """
+                        sleep 5
+                        curl -sf http://10.248.202.11:30000/health || \\
+                          (echo '❌ Smoke test Backend échoué' && exit 1)
+                        echo '✅ Smoke test Backend réussi'
+                    """
                 }
             }
         }
@@ -103,7 +97,7 @@ pipeline {
 <p><b>Deploy:</b> #${env.BUILD_NUMBER}</p>
 <p><b>Image:</b> ${DOCKER_IMAGE}:${IMAGE_TAG}</p>
 <p><b>Namespace:</b> ${K8S_NAMESPACE}</p>
-<p><b>Health:</b> <a href="http://192.168.1.11:30000/health">http://192.168.1.11:30000/health</a></p>
+<p><b>Health:</b> <a href="http://10.248.202.11:30000/health">http://10.248.202.11:30000/health</a></p>
 <p><a href="${env.BUILD_URL}">Voir le build</a></p>""",
                 mimeType: 'text/html',
                 to: 'taiebaminebelhadjali@gmail.com'
