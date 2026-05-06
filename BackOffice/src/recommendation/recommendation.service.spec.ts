@@ -1,3 +1,13 @@
+jest.mock('fs', () => ({
+  ...jest.requireActual('fs'),
+  existsSync: jest.fn().mockReturnValue(false),
+  readFileSync: jest.fn().mockReturnValue('prompt template {{top_k}}'),
+  appendFileSync: jest.fn(),
+  mkdirSync: jest.fn(),
+}));
+
+jest.mock('axios');
+
 import { Test, TestingModule } from '@nestjs/testing';
 import { RecommendationService } from './recommendation.service';
 import { getModelToken } from '@nestjs/mongoose';
@@ -130,6 +140,184 @@ describe('RecommendationService', () => {
       });
       const result = await service.getApprovedActivitiesForEmployee('emp1');
       expect(result).toEqual([]);
+    });
+  });
+
+  describe('getTop100', () => {
+    it('should throw NotFoundException when activity does not exist', async () => {
+      mockActivityModel.findById.mockReturnValue({
+        populate: jest.fn().mockReturnValue({ exec: jest.fn().mockResolvedValue(null) }),
+      });
+      await expect(service.getTop100('nonexistent')).rejects.toThrow('Activity nonexistent not found');
+    });
+
+    it('should return activity and empty candidates when no employees', async () => {
+      const activity = { _id: 'act1', title: 'Test', requiredSkills: [], context: '' };
+      mockActivityModel.findById.mockReturnValue({
+        populate: jest.fn().mockReturnValue({ exec: jest.fn().mockResolvedValue(activity) }),
+      });
+      mockSkillModel.find.mockReturnValue({ lean: jest.fn().mockResolvedValue([]) });
+      mockUserModel.find.mockReturnValue({
+        populate: jest.fn().mockReturnValue({ lean: jest.fn().mockResolvedValue([]) }),
+      });
+      const result = await service.getTop100('act1');
+      expect(result.activity).toEqual(activity);
+      expect(result.candidates).toHaveLength(0);
+    });
+
+    it('should score employees without cv using their skills array', async () => {
+      const activity = { _id: 'act1', title: 'Test', requiredSkills: [], context: '' };
+      const employee = {
+        _id: 'emp1',
+        name: 'Alice',
+        email: 'alice@test.com',
+        role: 'EMPLOYEE',
+        skills: [{ _id: 'skill1', name: 'React' }],
+        cv: null,
+      };
+      mockActivityModel.findById.mockReturnValue({
+        populate: jest.fn().mockReturnValue({ exec: jest.fn().mockResolvedValue(activity) }),
+      });
+      mockSkillModel.find.mockReturnValue({ lean: jest.fn().mockResolvedValue([{ _id: 'skill1', name: 'React' }]) });
+      mockUserModel.find.mockReturnValue({
+        populate: jest.fn().mockReturnValue({ lean: jest.fn().mockResolvedValue([employee]) }),
+      });
+      const result = await service.getTop100('act1');
+      expect(result.candidates).toHaveLength(1);
+      expect(result.candidates[0].rank).toBe(1);
+    });
+  });
+
+  describe('saveDecision', () => {
+    it('should save a rejected decision without updating employee skills', async () => {
+      const savedDecision = { activityId: 'act1', employeeId: 'emp1', decision: 'rejected' };
+      mockDecisionModel.findOneAndUpdate.mockResolvedValue(savedDecision);
+
+      const result = await service.saveDecision('act1', {
+        employeeId: 'emp1',
+        decision: 'rejected',
+        aiScore: 55,
+      });
+
+      expect(result).toEqual(savedDecision);
+      expect(mockUserModel.findByIdAndUpdate).not.toHaveBeenCalled();
+      expect(mockNotifService.notifyEmployeeApproved).not.toHaveBeenCalled();
+    });
+
+    it('should save an approved decision and update employee skills', async () => {
+      const savedDecision = { activityId: 'act1', employeeId: 'emp1', decision: 'approved' };
+      const activity = {
+        _id: 'act1',
+        title: 'React Training',
+        requiredSkills: [{ skillId: { _id: 'skill1', name: 'React' } }],
+      };
+      mockDecisionModel.findOneAndUpdate.mockResolvedValue(savedDecision);
+      mockActivityModel.findById.mockReturnValue({
+        populate: jest.fn().mockReturnValue({ lean: jest.fn().mockResolvedValue(activity) }),
+      });
+      mockUserModel.findByIdAndUpdate.mockResolvedValue({});
+      mockNotifService.notifyEmployeeApproved.mockResolvedValue(undefined);
+
+      const result = await service.saveDecision('act1', {
+        employeeId: 'emp1',
+        decision: 'approved',
+        aiScore: 88,
+        hrComment: 'Great candidate',
+      });
+
+      expect(result).toEqual(savedDecision);
+      expect(mockUserModel.findByIdAndUpdate).toHaveBeenCalledWith(
+        'emp1',
+        expect.objectContaining({ $addToSet: expect.anything() }),
+      );
+      expect(mockNotifService.notifyEmployeeApproved).toHaveBeenCalledWith('emp1', 'React Training');
+    });
+
+    it('should not throw when approved but activity not found', async () => {
+      const savedDecision = { activityId: 'act1', employeeId: 'emp1', decision: 'approved' };
+      mockDecisionModel.findOneAndUpdate.mockResolvedValue(savedDecision);
+      mockActivityModel.findById.mockReturnValue({
+        populate: jest.fn().mockReturnValue({ lean: jest.fn().mockResolvedValue(null) }),
+      });
+
+      const result = await service.saveDecision('act1', { employeeId: 'emp1', decision: 'approved' });
+      expect(result).toEqual(savedDecision);
+    });
+  });
+
+  describe('generateAndSave', () => {
+    it('should set generation status to error when _doGenerate throws', async () => {
+      jest.spyOn(service as any, '_doGenerate').mockRejectedValue(new Error('Ollama unavailable'));
+
+      await expect(service.generateAndSave('act1')).rejects.toThrow('Ollama unavailable');
+      expect(service.getGenerationStatus('act1')?.status).toBe('error');
+      expect(service.getGenerationStatus('act1')?.error).toBe('Ollama unavailable');
+    });
+
+    it('should set generation status to done when _doGenerate succeeds', async () => {
+      const mockDoc = { activityId: 'act1', jsonOllama: { rankings: [] } };
+      jest.spyOn(service as any, '_doGenerate').mockResolvedValue(mockDoc);
+
+      const result = await service.generateAndSave('act1', 5);
+      expect(result).toEqual(mockDoc);
+      expect(service.getGenerationStatus('act1')?.status).toBe('done');
+      expect(service.getGenerationStatus('act1')?.top_k).toBe(5);
+    });
+  });
+
+  describe('loadPrompt (private)', () => {
+    it('should read and cache prompt from disk on first call', () => {
+      const result = (service as any).loadPrompt('recommendation');
+      expect(result).toBe('prompt template {{top_k}}');
+    });
+
+    it('should return cached value on subsequent calls without re-reading disk', () => {
+      const fs = require('fs');
+      (service as any).promptCache.set('recommendation', 'cached-template');
+      const result = (service as any).loadPrompt('recommendation');
+      expect(result).toBe('cached-template');
+      expect(fs.readFileSync).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('generateAll', () => {
+    it('should return results for all activities', async () => {
+      const activities = [
+        { _id: { toString: () => 'act1' }, title: 'Activity 1' },
+        { _id: { toString: () => 'act2' }, title: 'Activity 2' },
+      ];
+      mockActivityModel.find.mockReturnValue({ lean: jest.fn().mockResolvedValue(activities) });
+      jest.spyOn(service, 'generateAndSave')
+        .mockResolvedValueOnce({ jsonOllama: { elapsedMs: 100, rankings: [{}] } } as any)
+        .mockRejectedValueOnce(new Error('Ollama timeout'));
+
+      const results = await service.generateAll(3);
+      expect(results).toHaveLength(2);
+      expect(results[0].rankings).toBe(1);
+      expect(results[1].error).toBe('Ollama timeout');
+    });
+  });
+
+  describe('callOllama (private)', () => {
+    it('should return the LLM response string', async () => {
+      const axios = require('axios');
+      axios.post.mockResolvedValueOnce({ data: { response: '{"rankings":[{"employeeId":"1","score":90,"reasons":[]}]}' } });
+
+      const result = await (service as any).callOllama('test prompt', 'test context', 3);
+      expect(result).toBe('{"rankings":[{"employeeId":"1","score":90,"reasons":[]}]}');
+      expect(axios.post).toHaveBeenCalledWith(
+        expect.stringContaining('/api/generate'),
+        expect.objectContaining({ prompt: 'test prompt' }),
+        expect.anything(),
+      );
+    });
+
+    it('should return empty string when response has no response field', async () => {
+      const axios = require('axios');
+      axios.post.mockResolvedValueOnce({ data: {} });
+
+      const result = await (service as any).callOllama('prompt', undefined, 5);
+      expect(result).toBe('');
     });
   });
 

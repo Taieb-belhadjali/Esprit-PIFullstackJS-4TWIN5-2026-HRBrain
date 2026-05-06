@@ -1,7 +1,14 @@
+jest.mock('fs', () => ({
+  ...jest.requireActual('fs'),
+  existsSync: jest.fn(),
+  createReadStream: jest.fn(),
+}));
+
 import { Test, TestingModule } from '@nestjs/testing';
 import { UsersController } from './users.controller';
 import { UsersService } from './users.service';
-import { BadRequestException, ForbiddenException } from '@nestjs/common';
+import { BadRequestException, ForbiddenException, NotFoundException } from '@nestjs/common';
+import * as fs from 'fs';
 
 const mockUsersService = {
   findOne: jest.fn(),
@@ -43,6 +50,48 @@ describe('UsersController', () => {
     it('should throw BadRequestException when no cv', async () => {
       mockUsersService.findOne.mockResolvedValue({ cv: null });
       await expect(controller.getCvFile('user1')).rejects.toThrow(BadRequestException);
+    });
+  });
+
+  describe('downloadCv', () => {
+    afterEach(() => jest.restoreAllMocks());
+
+    it('should throw NotFoundException when user has no cv', async () => {
+      mockUsersService.findOne.mockResolvedValue({ cv: null });
+      const mockRes = { setHeader: jest.fn() };
+      await expect(controller.downloadCv('user1', mockRes as any)).rejects.toThrow(NotFoundException);
+    });
+
+    it('should throw BadRequestException when cv file does not exist on disk', async () => {
+      mockUsersService.findOne.mockResolvedValue({ cv: '/some/path/cv.pdf' });
+      (fs.existsSync as jest.Mock).mockReturnValueOnce(false);
+      const mockRes = { setHeader: jest.fn() };
+      await expect(controller.downloadCv('user1', mockRes as any)).rejects.toThrow(BadRequestException);
+    });
+
+    it('should stream cv file when it exists on disk', async () => {
+      mockUsersService.findOne.mockResolvedValue({ cv: '/some/path/cv.txt' });
+      (fs.existsSync as jest.Mock).mockReturnValueOnce(true);
+      const mockStream = { pipe: jest.fn(), on: jest.fn() };
+      (fs.createReadStream as jest.Mock).mockReturnValueOnce(mockStream);
+      const mockRes = { setHeader: jest.fn() };
+      await controller.downloadCv('user1', mockRes as any);
+      expect(mockStream.pipe).toHaveBeenCalledWith(mockRes);
+      expect(mockRes.setHeader).toHaveBeenCalledWith('Content-Type', 'text/plain; charset=utf-8');
+    });
+
+    it('should handle stream errors and send 500 when headers not sent', async () => {
+      mockUsersService.findOne.mockResolvedValue({ cv: '/some/path/cv.txt' });
+      (fs.existsSync as jest.Mock).mockReturnValueOnce(true);
+      const mockStream = { pipe: jest.fn(), on: jest.fn() };
+      (fs.createReadStream as jest.Mock).mockReturnValueOnce(mockStream);
+      const mockRes = { setHeader: jest.fn(), headersSent: false, status: jest.fn().mockReturnThis(), send: jest.fn() };
+      await controller.downloadCv('user1', mockRes as any);
+
+      const [, errorCallback] = mockStream.on.mock.calls[0];
+      errorCallback(new Error('Read error'));
+      expect(mockRes.status).toHaveBeenCalledWith(500);
+      expect(mockRes.send).toHaveBeenCalledWith('Erreur lors du téléchargement');
     });
   });
 
