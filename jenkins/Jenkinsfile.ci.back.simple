@@ -1,6 +1,6 @@
 // ─────────────────────────────────────────────────────────────────
 // HRBrain — CI Pipeline Backend (NestJS)
-// Durée cible : ~8 min
+// Déclenche automatiquement le CD Backend après succès
 // ─────────────────────────────────────────────────────────────────
 
 pipeline {
@@ -9,7 +9,6 @@ pipeline {
     environment {
         DOCKER_IMAGE = "mouadh08/hrbrain-backend"
         DOCKER_TAG   = "${env.BUILD_NUMBER}"
-        SONAR_URL    = "http://10.248.202.11:30900"
     }
 
     options {
@@ -34,74 +33,62 @@ pipeline {
         stage('Install') {
             steps {
                 dir('BackOffice') {
-                    sh 'npm ci --prefer-offline 2>/dev/null || npm ci'
+                    sh 'npm ci'
                 }
             }
         }
 
-        stage('Lint & Tests') {
-            parallel {
-                stage('Lint') {
-                    steps {
-                        dir('BackOffice') {
-                            sh 'npm run lint || true'
-                        }
-                    }
-                }
-                stage('Unit Tests') {
-                    steps {
-                        dir('BackOffice') {
-                            sh 'npm run test:cov -- --forceExit || true'
-                        }
-                    }
+        stage('Lint') {
+            steps {
+                dir('BackOffice') {
+                    sh 'npm run lint || true'
                 }
             }
         }
 
-        // stage('SonarQube') { /* désactivé temporairement — réseau en cours de config */ }
-
-        stage('Build & Docker') {
-            stages {
-                stage('Build NestJS') {
-                    steps {
-                        dir('BackOffice') {
-                            sh 'npm run build'
-                        }
-                    }
+        stage('Unit Tests') {
+            steps {
+                dir('BackOffice') {
+                    sh 'npm run test:cov -- --forceExit'
                 }
+            }
+        }
 
-                stage('Docker Build') {
-                    steps {
-                        dir('BackOffice') {
-                            sh """
-                                docker build \
-                                  --target production \
-                                  -t ${DOCKER_IMAGE}:${DOCKER_TAG} \
-                                  -t ${DOCKER_IMAGE}:latest \
-                                  .
-                            """
-                        }
-                    }
+        stage('Build NestJS') {
+            steps {
+                dir('BackOffice') {
+                    sh 'npm run build'
                 }
+            }
+        }
 
-                stage('Docker Push') {
-                    when {
-                        branch 'main'
-                    }
-                    steps {
-                        withCredentials([usernamePassword(
-                            credentialsId: 'dockerhub-credentials',
-                            usernameVariable: 'DOCKER_USER',
-                            passwordVariable: 'DOCKER_PASS'
-                        )]) {
-                            sh """
-                                echo "\$DOCKER_PASS" | docker login -u "\$DOCKER_USER" --password-stdin
-                                docker push ${DOCKER_IMAGE}:${DOCKER_TAG}
-                                docker push ${DOCKER_IMAGE}:latest
-                                docker logout
-                            """
-                        }
-                    }
+        stage('Docker Build') {
+            steps {
+                dir('BackOffice') {
+                    sh """
+                        docker build \\
+                          --target production \\
+                          -t ${DOCKER_IMAGE}:${DOCKER_TAG} \\
+                          -t ${DOCKER_IMAGE}:latest \\
+                          .
+                    """
+                }
+            }
+        }
+
+        stage('Docker Push') {
+            steps {
+                withCredentials([usernamePassword(
+                    credentialsId: 'dockerhub-credentials',
+                    usernameVariable: 'DOCKER_USER',
+                    passwordVariable: 'DOCKER_PASS'
+                )]) {
+                    sh """
+                        echo "\$DOCKER_PASS" | docker login -u "\$DOCKER_USER" --password-stdin
+                        docker push ${DOCKER_IMAGE}:${DOCKER_TAG}
+                        docker push ${DOCKER_IMAGE}:latest
+                        docker logout
+                    """
                 }
             }
         }
@@ -111,6 +98,7 @@ pipeline {
     post {
         success {
             echo "✅ CI Backend #${env.BUILD_NUMBER} — Image: ${DOCKER_IMAGE}:${DOCKER_TAG}"
+            // Déclenche automatiquement le CD Backend
             build job: 'hrbrain-cd-backend',
                   parameters: [string(name: 'IMAGE_TAG', value: "${DOCKER_TAG}")],
                   wait: false
@@ -126,12 +114,6 @@ pipeline {
                 mimeType: 'text/html',
                 to: 'taiebaminebelhadjali@gmail.com'
             )
-        }
-        unstable {
-            echo "⚠️ CI Backend #${env.BUILD_NUMBER} UNSTABLE — déploiement déclenché quand même"
-            build job: 'hrbrain-cd-backend',
-                  parameters: [string(name: 'IMAGE_TAG', value: "${DOCKER_TAG}")],
-                  wait: false
         }
         failure {
             echo "❌ CI Backend #${env.BUILD_NUMBER} FAILED — CD non déclenché"

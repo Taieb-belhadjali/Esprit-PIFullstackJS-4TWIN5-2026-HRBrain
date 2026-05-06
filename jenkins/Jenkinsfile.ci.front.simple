@@ -1,6 +1,6 @@
 // ─────────────────────────────────────────────────────────────────
 // HRBrain — CI Pipeline Frontend (React/Vite)
-// Durée cible : ~8 min
+// Déclenche automatiquement le CD Frontend après succès
 // ─────────────────────────────────────────────────────────────────
 
 pipeline {
@@ -9,7 +9,6 @@ pipeline {
     environment {
         DOCKER_IMAGE = "mouadh08/hrbrain-frontend"
         DOCKER_TAG   = "${env.BUILD_NUMBER}"
-        SONAR_URL    = "http://10.248.202.11:30900"
     }
 
     options {
@@ -34,75 +33,62 @@ pipeline {
         stage('Install') {
             steps {
                 dir('FrontOffice') {
-                    sh 'npm ci --prefer-offline 2>/dev/null || npm ci'
+                    sh 'npm ci'
                 }
             }
         }
 
-        stage('Lint & Tests') {
-            parallel {
-                stage('Lint') {
-                    steps {
-                        dir('FrontOffice') {
-                            sh 'node_modules/typescript/bin/tsc --noEmit || true'
-                        }
-                    }
-                }
-                stage('Unit Tests') {
-                    steps {
-                        dir('FrontOffice') {
-                            sh 'npm run test:coverage -- --reporter=verbose || true'
-                        }
-                    }
+        stage('Lint') {
+            steps {
+                dir('FrontOffice') {
+                    sh 'node_modules/typescript/bin/tsc --noEmit || true'
                 }
             }
         }
 
-        // stage('SonarQube') { /* désactivé temporairement — réseau en cours de config */ }
-
-        stage('Build & Docker') {
-            stages {
-                stage('Build Vite') {
-                    steps {
-                        dir('FrontOffice') {
-                            sh 'NODE_OPTIONS="--max-old-space-size=1024" npm run build'
-                        }
-                    }
+        stage('Unit Tests') {
+            steps {
+                dir('FrontOffice') {
+                    sh 'npm run test:coverage'
                 }
+            }
+        }
 
-                stage('Docker Build') {
-                    steps {
-                        dir('FrontOffice') {
-                            sh """
-                                docker build \
-                                  --target production \
-                                  --build-arg ENV=k8s \
-                                  -t ${DOCKER_IMAGE}:${DOCKER_TAG} \
-                                  -t ${DOCKER_IMAGE}:latest \
-                                  .
-                            """
-                        }
-                    }
+        stage('Build Vite') {
+            steps {
+                dir('FrontOffice') {
+                    sh 'NODE_OPTIONS="--max-old-space-size=1024" npm run build'
                 }
+            }
+        }
 
-                stage('Docker Push') {
-                    when {
-                        branch 'main'
-                    }
-                    steps {
-                        withCredentials([usernamePassword(
-                            credentialsId: 'dockerhub-credentials',
-                            usernameVariable: 'DOCKER_USER',
-                            passwordVariable: 'DOCKER_PASS'
-                        )]) {
-                            sh """
-                                echo "\$DOCKER_PASS" | docker login -u "\$DOCKER_USER" --password-stdin
-                                docker push ${DOCKER_IMAGE}:${DOCKER_TAG}
-                                docker push ${DOCKER_IMAGE}:latest
-                                docker logout
-                            """
-                        }
-                    }
+        stage('Docker Build') {
+            steps {
+                dir('FrontOffice') {
+                    sh """
+                        docker build \\
+                          --target production \\
+                          -t ${DOCKER_IMAGE}:${DOCKER_TAG} \\
+                          -t ${DOCKER_IMAGE}:latest \\
+                          .
+                    """
+                }
+            }
+        }
+
+        stage('Docker Push') {
+            steps {
+                withCredentials([usernamePassword(
+                    credentialsId: 'dockerhub-credentials',
+                    usernameVariable: 'DOCKER_USER',
+                    passwordVariable: 'DOCKER_PASS'
+                )]) {
+                    sh """
+                        echo "\$DOCKER_PASS" | docker login -u "\$DOCKER_USER" --password-stdin
+                        docker push ${DOCKER_IMAGE}:${DOCKER_TAG}
+                        docker push ${DOCKER_IMAGE}:latest
+                        docker logout
+                    """
                 }
             }
         }
@@ -112,6 +98,7 @@ pipeline {
     post {
         success {
             echo "✅ CI Frontend #${env.BUILD_NUMBER} — Image: ${DOCKER_IMAGE}:${DOCKER_TAG}"
+            // Déclenche automatiquement le CD Frontend
             build job: 'hrbrain-cd-frontend',
                   parameters: [string(name: 'IMAGE_TAG', value: "${DOCKER_TAG}")],
                   wait: false
@@ -127,12 +114,6 @@ pipeline {
                 mimeType: 'text/html',
                 to: 'taiebaminebelhadjali@gmail.com'
             )
-        }
-        unstable {
-            echo "⚠️ CI Frontend #${env.BUILD_NUMBER} UNSTABLE — déploiement déclenché quand même"
-            build job: 'hrbrain-cd-frontend',
-                  parameters: [string(name: 'IMAGE_TAG', value: "${DOCKER_TAG}")],
-                  wait: false
         }
         failure {
             echo "❌ CI Frontend #${env.BUILD_NUMBER} FAILED — CD non déclenché"

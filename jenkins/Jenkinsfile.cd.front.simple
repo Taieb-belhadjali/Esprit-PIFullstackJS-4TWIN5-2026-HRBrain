@@ -1,22 +1,22 @@
 // ─────────────────────────────────────────────────────────────────
 // HRBrain — CD Pipeline Frontend (Kubernetes)
-// Durée cible : ~5 min
+// Déclenché automatiquement par CI Frontend
 // ─────────────────────────────────────────────────────────────────
 
 pipeline {
     agent any
+
+    parameters {
+        string(name: 'IMAGE_TAG',
+               defaultValue: 'latest',
+               description: 'Tag Docker à déployer (ex: 42)')
+    }
 
     environment {
         DOCKER_IMAGE  = "mouadh08/hrbrain-frontend"
         K8S_NAMESPACE = 'hrbrain'
         K8S_DEPLOY    = 'frontend'
         IMAGE_TAG     = "${params.IMAGE_TAG ?: 'latest'}"
-    }
-
-    parameters {
-        string(name: 'IMAGE_TAG',
-               defaultValue: 'latest',
-               description: 'Tag Docker à déployer (ex: 42)')
     }
 
     options {
@@ -48,11 +48,11 @@ pipeline {
                         kubectl apply -f k8s/frontend-deployment.yaml
                         kubectl apply -f k8s/frontend-service.yaml
 
-                        kubectl set image deployment/${K8S_DEPLOY} \
-                          frontend=${DOCKER_IMAGE}:${IMAGE_TAG} \
+                        kubectl set image deployment/${K8S_DEPLOY} \\
+                          frontend=${DOCKER_IMAGE}:${IMAGE_TAG} \\
                           -n ${K8S_NAMESPACE}
 
-                        kubectl rollout status deployment/${K8S_DEPLOY} \
+                        kubectl rollout status deployment/${K8S_DEPLOY} \\
                           -n ${K8S_NAMESPACE} --timeout=300s
                     """
                 }
@@ -64,7 +64,7 @@ pipeline {
                 withKubeConfig([credentialsId: 'kubeconfig']) {
                     sh """
                         kubectl get pods -n ${K8S_NAMESPACE} -l app=frontend
-                        kubectl get svc -n ${K8S_NAMESPACE}
+                        kubectl get svc  -n ${K8S_NAMESPACE}
                     """
                 }
             }
@@ -74,13 +74,11 @@ pipeline {
             steps {
                 withKubeConfig([credentialsId: 'kubeconfig']) {
                     script {
-                        def nodeIp = sh(
-                            script: "kubectl get nodes -o jsonpath='{.items[0].status.addresses[?(@.type==\"InternalIP\")].address}'",
-                            returnStdout: true
-                        ).trim()
+                        // Use worker-2 IP — frontend NodePort 30080
+                        def nodeIp = '192.168.1.12'
                         sh """
                             sleep 5
-                            curl -sf http://${nodeIp}:30080 || \
+                            curl -sf http://${nodeIp}:30080 || \\
                               (echo '❌ Smoke test Frontend échoué' && exit 1)
                             echo '✅ Smoke test Frontend réussi'
                         """
@@ -100,7 +98,7 @@ pipeline {
 <p><b>Deploy:</b> #${env.BUILD_NUMBER}</p>
 <p><b>Image:</b> ${DOCKER_IMAGE}:${IMAGE_TAG}</p>
 <p><b>Namespace:</b> ${K8S_NAMESPACE}</p>
-<p><b>App:</b> <a href="http://10.248.202.11:30080">http://10.248.202.11:30080</a></p>
+<p><b>App:</b> <a href="http://192.168.1.12:30080">http://192.168.1.12:30080</a></p>
 <p><a href="${env.BUILD_URL}">Voir le build</a></p>""",
                 mimeType: 'text/html',
                 to: 'taiebaminebelhadjali@gmail.com'
