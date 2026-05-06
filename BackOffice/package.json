@@ -94,6 +94,8 @@
     "collectCoverageFrom": [
       "auth/auth.service.(t|j)s",
       "auth/auth.controller.(t|j)s",
+      "auth/roles.guard.(t|j)s",
+      "auth/jwt.strategy.(t|j)s",
       "activity/scoring.util.(t|j)s",
       "activity/activity.service.(t|j)s",
       "activity/activity.controller.(t|j)s",
@@ -104,8 +106,10 @@
       "notification/notification.service.(t|j)s",
       "notification/notification.controller.(t|j)s",
       "recommendation/recommendation.controller.(t|j)s",
+      "recommendation/recommendation.service.(t|j)s",
       "nlp/nlp.service.(t|j)s",
-      "nlp/nlp.controller.(t|j)s"
+      "nlp/nlp.controller.(t|j)s",
+      "users/users.controller.(t|j)s"
     ],
     "coverageThreshold": {
       "global": {

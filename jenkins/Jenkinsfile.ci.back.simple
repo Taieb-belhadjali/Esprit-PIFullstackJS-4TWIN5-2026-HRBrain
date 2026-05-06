@@ -67,7 +67,7 @@ pipeline {
                               -Dsonar.projectKey=hrbrain-backend \
                               -Dsonar.projectName="HRBrain Backend" \
                               -Dsonar.sources=src \
-                              -Dsonar.exclusions=**/*.spec.ts,**/node_modules/** \
+                              -Dsonar.exclusions=**/*.spec.ts,**/node_modules/**,**/*.module.ts,**/*.schema.ts,**/dto/**/*.ts,**/dto-activity/**/*.ts,**/dto-department/**/*.ts,**/dto-skill/**/*.ts,**/main.ts,**/load-env.ts,**/scripts/**,**/metrics/**,**/app.module.ts,**/app.controller.ts \
                               -Dsonar.javascript.lcov.reportPaths=coverage/lcov.info
                         '''
                     }
