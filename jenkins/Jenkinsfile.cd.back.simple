@@ -20,6 +20,7 @@ pipeline {
     }
 
     options {
+        skipDefaultCheckout(true)
         timeout(time: 10, unit: 'MINUTES')
         disableConcurrentBuilds()
         buildDiscarder(logRotator(numToKeepStr: '10'))
@@ -109,8 +110,10 @@ pipeline {
         }
         failure {
             echo "❌ CD Backend #${env.BUILD_NUMBER} FAILED — Rollback en cours..."
-            withKubeConfig([credentialsId: 'kubeconfig']) {
-                sh "kubectl rollout undo deployment/${K8S_DEPLOY} -n ${K8S_NAMESPACE} || true"
+            node {
+                withKubeConfig([credentialsId: 'kubeconfig']) {
+                    sh "kubectl rollout undo deployment/${K8S_DEPLOY} -n ${K8S_NAMESPACE} || true"
+                }
             }
             emailext(
                 subject: "❌ CD Backend FAILURE — Deploy #${env.BUILD_NUMBER}",
