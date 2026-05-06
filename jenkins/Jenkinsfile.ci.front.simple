@@ -58,6 +58,23 @@ pipeline {
             }
         }
 
+        stage('SonarQube') {
+            steps {
+                withSonarQubeEnv('SonarQube') {
+                    dir('FrontOffice') {
+                        sh '''
+                            npx sonar-scanner \
+                              -Dsonar.projectKey=hrbrain-frontend \
+                              -Dsonar.projectName="HRBrain Frontend" \
+                              -Dsonar.sources=src \
+                              -Dsonar.exclusions=**/*.spec.ts,**/*.test.tsx,**/node_modules/** \
+                              -Dsonar.javascript.lcov.reportPaths=coverage/lcov.info
+                        '''
+                    }
+                }
+            }
+        }
+
         stage('Build Vite') {
             steps {
                 dir('FrontOffice') {
