@@ -110,7 +110,7 @@ pipeline {
         }
         failure {
             echo "❌ CD Backend #${env.BUILD_NUMBER} FAILED — Rollback en cours..."
-            node {
+            node('') {
                 withKubeConfig([credentialsId: 'kubeconfig']) {
                     sh "kubectl rollout undo deployment/${K8S_DEPLOY} -n ${K8S_NAMESPACE} || true"
                 }
