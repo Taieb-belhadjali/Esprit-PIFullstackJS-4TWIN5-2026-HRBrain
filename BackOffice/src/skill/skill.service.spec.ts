@@ -43,18 +43,21 @@ describe('SkillService', () => {
 
   // ── create ─────────────────────────────────────────────────────────────────
   describe('create', () => {
+    // Happy path: skill is persisted and the saved document is returned
     it('should create a skill successfully', async () => {
       const dto = { name: 'JavaScript', category: 'Frontend' };
       const result = await service.create(dto);
       expect(result).toEqual(mockSkill);
     });
 
+    // An empty name string must be rejected before hitting the DB — clear error message for the caller
     it('should throw error when name is empty', async () => {
       await expect(service.create({ name: '' })).rejects.toThrow(
         'Le nom du skill ne peut pas être vide',
       );
     });
 
+    // A whitespace-only name is semantically empty and must also be rejected
     it('should throw error when name is only whitespace', async () => {
       await expect(service.create({ name: '   ' })).rejects.toThrow(
         'Le nom du skill ne peut pas être vide',
@@ -64,6 +67,7 @@ describe('SkillService', () => {
 
   // ── findAll ────────────────────────────────────────────────────────────────
   describe('findAll', () => {
+    // Without a filter, the service queries with an empty filter object and returns all skills
     it('should return all skills without filter', async () => {
       const skills = [mockSkill];
       mockSkillModel.find.mockReturnValue({
@@ -75,6 +79,7 @@ describe('SkillService', () => {
       expect(mockSkillModel.find).toHaveBeenCalledWith({});
     });
 
+    // When a departmentId is provided, the query is scoped to skills belonging to that department
     it('should filter by departmentId when provided', async () => {
       const skills = [mockSkill];
       mockSkillModel.find.mockReturnValue({
@@ -86,6 +91,7 @@ describe('SkillService', () => {
       expect(mockSkillModel.find).toHaveBeenCalledWith({ departmentId: 'dept-1' });
     });
 
+    // Empty collection returns an empty array — no error thrown
     it('should return empty array when no skills found', async () => {
       mockSkillModel.find.mockReturnValue({
         exec: jest.fn().mockResolvedValue([]),
@@ -98,6 +104,7 @@ describe('SkillService', () => {
 
   // ── findOne ────────────────────────────────────────────────────────────────
   describe('findOne', () => {
+    // Returns the skill document for a known id
     it('should return a skill by id', async () => {
       mockSkillModel.findById.mockReturnValue({
         exec: jest.fn().mockResolvedValue(mockSkill),
@@ -107,6 +114,7 @@ describe('SkillService', () => {
       expect(result).toEqual(mockSkill);
     });
 
+    // Unknown id must throw NotFoundException rather than returning null silently
     it('should throw NotFoundException when skill not found', async () => {
       mockSkillModel.findById.mockReturnValue({
         exec: jest.fn().mockResolvedValue(null),
@@ -115,6 +123,7 @@ describe('SkillService', () => {
       await expect(service.findOne('nonexistent')).rejects.toThrow(NotFoundException);
     });
 
+    // The error message includes the id so callers can identify which skill was not found
     it('should throw NotFoundException with correct message', async () => {
       mockSkillModel.findById.mockReturnValue({
         exec: jest.fn().mockResolvedValue(null),
@@ -128,6 +137,7 @@ describe('SkillService', () => {
 
   // ── update ─────────────────────────────────────────────────────────────────
   describe('update', () => {
+    // Happy path: returns the updated skill document after applying the patch
     it('should update a skill successfully', async () => {
       const updatedSkill = { ...mockSkill, name: 'TypeScript' };
       mockSkillModel.findByIdAndUpdate.mockReturnValue({
@@ -138,6 +148,7 @@ describe('SkillService', () => {
       expect(result).toEqual(updatedSkill);
     });
 
+    // Updating a non-existent skill must throw NotFoundException
     it('should throw NotFoundException when skill not found', async () => {
       mockSkillModel.findByIdAndUpdate.mockReturnValue({
         exec: jest.fn().mockResolvedValue(null),
@@ -148,6 +159,7 @@ describe('SkillService', () => {
       );
     });
 
+    // Verifies that { returnDocument: 'after' } is passed so the updated document is returned, not the old one
     it('should call findByIdAndUpdate with correct params', async () => {
       mockSkillModel.findByIdAndUpdate.mockReturnValue({
         exec: jest.fn().mockResolvedValue(mockSkill),
@@ -164,6 +176,7 @@ describe('SkillService', () => {
 
   // ── remove ─────────────────────────────────────────────────────────────────
   describe('remove', () => {
+    // Happy path: deleted skill document is returned after removal
     it('should delete a skill successfully', async () => {
       mockSkillModel.findByIdAndDelete.mockReturnValue({
         exec: jest.fn().mockResolvedValue(mockSkill),
@@ -173,6 +186,7 @@ describe('SkillService', () => {
       expect(result).toEqual(mockSkill);
     });
 
+    // Attempting to delete a non-existent skill must throw NotFoundException
     it('should throw NotFoundException when skill not found', async () => {
       mockSkillModel.findByIdAndDelete.mockReturnValue({
         exec: jest.fn().mockResolvedValue(null),

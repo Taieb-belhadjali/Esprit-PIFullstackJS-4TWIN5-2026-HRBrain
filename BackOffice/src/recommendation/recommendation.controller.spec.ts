@@ -37,6 +37,7 @@ describe('RecommendationController', () => {
   });
 
   describe('generate', () => {
+    // Generation is fire-and-forget — the controller returns 'started' immediately without awaiting the result
     it('should start generation in background and return started status', () => {
       mockRecoService.generateAndSave.mockResolvedValue(undefined);
       const result = controller.generate('507f1f77bcf86cd799439012', { top_k: 5 });
@@ -47,6 +48,7 @@ describe('RecommendationController', () => {
       });
     });
 
+    // When top_k is omitted from the body, the default value of 5 is used
     it('should use default top_k of 5 when not provided', () => {
       mockRecoService.generateAndSave.mockResolvedValue(undefined);
       const result = controller.generate('507f1f77bcf86cd799439012', {});
@@ -58,6 +60,7 @@ describe('RecommendationController', () => {
       );
     });
 
+    // When top_k is explicitly provided, it is forwarded to the service as-is
     it('should use provided top_k', () => {
       mockRecoService.generateAndSave.mockResolvedValue(undefined);
       controller.generate('507f1f77bcf86cd799439012', { top_k: 10 });
@@ -70,6 +73,7 @@ describe('RecommendationController', () => {
   });
 
   describe('generateAll', () => {
+    // Bulk generation runs in the background — the controller returns 'started' immediately
     it('should start generateAll in background', () => {
       mockRecoService.generateAll.mockResolvedValue(undefined);
       const result = controller.generateAll({});
@@ -81,6 +85,7 @@ describe('RecommendationController', () => {
   });
 
   describe('saveDecision', () => {
+    // Forwards the HR decision DTO to the service for persistence
     it('should save HR decision', async () => {
       const decision = {
         employeeId: '507f1f77bcf86cd799439013',
@@ -96,6 +101,7 @@ describe('RecommendationController', () => {
   });
 
   describe('getDecisions', () => {
+    // Returns all HR decisions for the given activity
     it('should return decisions for an activity', async () => {
       const decisions = [{ employeeId: '507f1f77bcf86cd799439013', decision: 'approved' }];
       mockRecoService.getDecisions.mockResolvedValue(decisions);
@@ -106,6 +112,7 @@ describe('RecommendationController', () => {
   });
 
   describe('findByActivity', () => {
+    // Returns the most recent recommendation document for the activity
     it('should return recommendation for an activity', async () => {
       mockRecoService.findByActivity.mockResolvedValue(mockRecommendation);
       const result = await controller.findByActivity('507f1f77bcf86cd799439012');
@@ -115,6 +122,7 @@ describe('RecommendationController', () => {
   });
 
   describe('findAllByActivity', () => {
+    // Returns the full history of recommendation runs for the activity
     it('should return all recommendations history for an activity', async () => {
       const history = [mockRecommendation];
       mockRecoService.findAllByActivity.mockResolvedValue(history);
@@ -124,6 +132,7 @@ describe('RecommendationController', () => {
   });
 
   describe('getTop100', () => {
+    // Returns the top-scored employee candidates for the activity before Ollama is run
     it('should return top 100 employees for an activity', async () => {
       const top100 = [{ employeeId: '507f1f77bcf86cd799439013', score: 95 }];
       mockRecoService.getTop100.mockResolvedValue(top100);
@@ -133,12 +142,14 @@ describe('RecommendationController', () => {
   });
 
   describe('getStatus', () => {
+    // When no generation is running, the controller returns idle status so the frontend can show the correct UI state
     it('should return idle status when no generation running', () => {
       mockRecoService.getGenerationStatus = jest.fn().mockReturnValue(null);
       const result = controller.getStatus('507f1f77bcf86cd799439012');
       expect(result).toEqual({ status: 'idle', activityId: '507f1f77bcf86cd799439012' });
     });
 
+    // When a generation is in progress, the live status object is returned so the frontend can poll progress
     it('should return generation status when running', () => {
       const state = { status: 'running', startedAt: new Date() };
       mockRecoService.getGenerationStatus = jest.fn().mockReturnValue(state);
@@ -148,6 +159,7 @@ describe('RecommendationController', () => {
   });
 
   describe('getApprovedForEmployee', () => {
+    // Returns the list of activities that the employee has been approved for
     it('should return approved activities for an employee', async () => {
       const activities = [{ activityId: '507f1f77bcf86cd799439012', decision: 'approved' }];
       mockRecoService.getApprovedActivitiesForEmployee.mockResolvedValue(activities);

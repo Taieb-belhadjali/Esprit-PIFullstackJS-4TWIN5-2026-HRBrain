@@ -34,6 +34,7 @@ describe('SkillController', () => {
   });
 
   describe('create', () => {
+    // Controller delegates creation to the service and returns the created skill
     it('should create a skill', async () => {
       mockSkillService.create.mockResolvedValue(mockSkill);
       const result = await controller.create({ name: 'JavaScript', category: 'Frontend' });
@@ -41,6 +42,7 @@ describe('SkillController', () => {
       expect(service.create).toHaveBeenCalledWith({ name: 'JavaScript', category: 'Frontend' });
     });
 
+    // Propagates service validation errors (e.g. empty name) to the caller
     it('should throw error when creation fails', async () => {
       mockSkillService.create.mockRejectedValue(new Error('Skill name cannot be empty'));
       await expect(controller.create({ name: '' })).rejects.toThrow('Skill name cannot be empty');
@@ -48,6 +50,7 @@ describe('SkillController', () => {
   });
 
   describe('findAll', () => {
+    // Without a query param, all skills are returned from the service
     it('should return all skills without filter', async () => {
       const skills = [mockSkill];
       mockSkillService.findAll.mockResolvedValue(skills);
@@ -56,6 +59,7 @@ describe('SkillController', () => {
       expect(service.findAll).toHaveBeenCalledWith(undefined);
     });
 
+    // The optional departmentId query param is forwarded to the service for scoped filtering
     it('should return skills filtered by departmentId', async () => {
       const skills = [mockSkill];
       mockSkillService.findAll.mockResolvedValue(skills);
@@ -64,6 +68,7 @@ describe('SkillController', () => {
       expect(service.findAll).toHaveBeenCalledWith('507f1f77bcf86cd799439012');
     });
 
+    // Empty collection returns an empty array — no error thrown
     it('should return empty array when no skills', async () => {
       mockSkillService.findAll.mockResolvedValue([]);
       const result = await controller.findAll();
@@ -72,12 +77,14 @@ describe('SkillController', () => {
   });
 
   describe('findOne', () => {
+    // Delegates the id lookup to the service and returns the skill document
     it('should return a skill by id', async () => {
       mockSkillService.findOne.mockResolvedValue(mockSkill);
       const result = await controller.findOne('507f1f77bcf86cd799439011');
       expect(result).toEqual(mockSkill);
     });
 
+    // Propagates NotFoundException from the service when the skill does not exist
     it('should throw NotFoundException when skill not found', async () => {
       mockSkillService.findOne.mockRejectedValue(new NotFoundException());
       await expect(controller.findOne('nonexistent')).rejects.toThrow(NotFoundException);
@@ -85,6 +92,7 @@ describe('SkillController', () => {
   });
 
   describe('update', () => {
+    // Forwards the update DTO to the service and returns the updated skill
     it('should update a skill', async () => {
       const updated = { ...mockSkill, name: 'TypeScript' };
       mockSkillService.update.mockResolvedValue(updated);
@@ -92,6 +100,7 @@ describe('SkillController', () => {
       expect(result).toEqual(updated);
     });
 
+    // Propagates NotFoundException from the service when the skill does not exist
     it('should throw NotFoundException when skill not found', async () => {
       mockSkillService.update.mockRejectedValue(new NotFoundException());
       await expect(controller.update('nonexistent', { name: 'Test' })).rejects.toThrow(NotFoundException);
@@ -99,12 +108,14 @@ describe('SkillController', () => {
   });
 
   describe('remove', () => {
+    // Delegates deletion to the service and returns the deleted document
     it('should delete a skill', async () => {
       mockSkillService.remove.mockResolvedValue(mockSkill);
       const result = await controller.remove('507f1f77bcf86cd799439011');
       expect(result).toEqual(mockSkill);
     });
 
+    // Propagates NotFoundException from the service when the skill does not exist
     it('should throw NotFoundException when skill not found', async () => {
       mockSkillService.remove.mockRejectedValue(new NotFoundException());
       await expect(controller.remove('nonexistent')).rejects.toThrow(NotFoundException);

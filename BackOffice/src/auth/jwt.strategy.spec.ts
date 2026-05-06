@@ -8,6 +8,7 @@ describe('JwtStrategy', () => {
     strategy = new JwtStrategy(configService);
   });
 
+  // validate() mappe les claims JWT vers request.user sans modification — les trois champs sont conservés tels quels
   it('should validate and return user payload', () => {
     const payload = { sub: 'user1', email: 'test@test.com', role: 'HR' };
     expect(strategy.validate(payload)).toEqual({
@@ -17,6 +18,7 @@ describe('JwtStrategy', () => {
     });
   });
 
+  // Vérifie que sub, email et role sont tous présents dans le résultat — RolesGuard dépend de ces trois champs
   it('should return all three fields from payload', () => {
     const result = strategy.validate({ sub: 'u2', email: 'a@b.com', role: 'EMPLOYEE' });
     expect(result).toHaveProperty('sub');

@@ -49,16 +49,19 @@ describe('RecommendationService', () => {
   });
 
   describe('getGenerationStatus', () => {
+    // Returns null when no generation has been started for the given activityId
     it('should return null when activityId is unknown', () => {
       expect(service.getGenerationStatus('unknown-id')).toBeNull();
     });
 
+    // Returns the full status object when a generation has been registered in the in-memory map
     it('should return the status when a generation is tracked', () => {
       const state = { status: 'running' as const, startedAt: new Date(), top_k: 5 };
       (service as any).generationStatus.set('act1', state);
       expect(service.getGenerationStatus('act1')).toEqual(state);
     });
 
+    // Verifies that the 'done' status is correctly stored and retrieved after a completed generation
     it('should return done status', () => {
       const state = { status: 'done' as const, startedAt: new Date(), finishedAt: new Date(), top_k: 10 };
       (service as any).generationStatus.set('act2', state);
@@ -67,6 +70,7 @@ describe('RecommendationService', () => {
   });
 
   describe('findByActivity', () => {
+    // Returns the most recent recommendation document for the given activity
     it('should return latest recommendation for an activity', async () => {
       const reco = { activityId: 'act1', jsonOllama: { rankings: [] } };
       mockRecoModel.findOne.mockReturnValue({
@@ -77,6 +81,7 @@ describe('RecommendationService', () => {
       expect(mockRecoModel.findOne).toHaveBeenCalledWith({ activityId: 'act1' });
     });
 
+    // Returns null when no recommendation exists yet for the activity — not an error
     it('should return null when no recommendation exists', async () => {
       mockRecoModel.findOne.mockReturnValue({
         sort: jest.fn().mockReturnValue({ exec: jest.fn().mockResolvedValue(null) }),
@@ -86,6 +91,7 @@ describe('RecommendationService', () => {
   });
 
   describe('findAllByActivity', () => {
+    // Returns all historical recommendation documents for an activity, sorted by date
     it('should return all recommendations sorted by date', async () => {
       const recos = [{ activityId: 'act1' }, { activityId: 'act1' }];
       mockRecoModel.find.mockReturnValue({
@@ -97,6 +103,7 @@ describe('RecommendationService', () => {
   });
 
   describe('getDecisions', () => {
+    // Returns all HR decisions (approved/rejected) that have been made for an activity
     it('should return all HR decisions for an activity', async () => {
       const decisions = [{ employeeId: 'emp1', decision: 'approved' }];
       mockDecisionModel.find.mockReturnValue({ lean: jest.fn().mockResolvedValue(decisions) });
@@ -105,6 +112,7 @@ describe('RecommendationService', () => {
       expect(mockDecisionModel.find).toHaveBeenCalledWith({ activityId: 'act1' });
     });
 
+    // Empty array is returned when no decisions have been made yet for the activity
     it('should return empty array when no decisions', async () => {
       mockDecisionModel.find.mockReturnValue({ lean: jest.fn().mockResolvedValue([]) });
       expect(await service.getDecisions('act1')).toEqual([]);
@@ -112,6 +120,7 @@ describe('RecommendationService', () => {
   });
 
   describe('getApprovedActivitiesForEmployee', () => {
+    // Returns a list of approved activities enriched with AI score and reasons from the decision record
     it('should return approved activities with AI scores', async () => {
       const decidedAt = new Date();
       const decisions = [{
@@ -133,6 +142,7 @@ describe('RecommendationService', () => {
       expect(result[0].aiReasons).toEqual(['Good skill match']);
     });
 
+    // When the employee has no approved decisions, an empty array is returned
     it('should return empty when no approved decisions', async () => {
       mockDecisionModel.find.mockReturnValue({ lean: jest.fn().mockResolvedValue([]) });
       mockActivityModel.find.mockReturnValue({
@@ -144,6 +154,7 @@ describe('RecommendationService', () => {
   });
 
   describe('getTop100', () => {
+    // A non-existent activityId must throw a clear error before any scoring is attempted
     it('should throw NotFoundException when activity does not exist', async () => {
       mockActivityModel.findById.mockReturnValue({
         populate: jest.fn().mockReturnValue({ exec: jest.fn().mockResolvedValue(null) }),
@@ -151,6 +162,7 @@ describe('RecommendationService', () => {
       await expect(service.getTop100('nonexistent')).rejects.toThrow('Activity nonexistent not found');
     });
 
+    // When no employees are found, the result has an empty candidates list alongside the activity
     it('should return activity and empty candidates when no employees', async () => {
       const activity = { _id: 'act1', title: 'Test', requiredSkills: [], context: '' };
       mockActivityModel.findById.mockReturnValue({
@@ -165,6 +177,7 @@ describe('RecommendationService', () => {
       expect(result.candidates).toHaveLength(0);
     });
 
+    // When an employee has no CV, their skills array is used to build the skill profile for scoring
     it('should score employees without cv using their skills array', async () => {
       const activity = { _id: 'act1', title: 'Test', requiredSkills: [], context: '' };
       const employee = {
@@ -189,6 +202,7 @@ describe('RecommendationService', () => {
   });
 
   describe('saveDecision', () => {
+    // A rejected decision is saved without updating employee skills or sending a notification
     it('should save a rejected decision without updating employee skills', async () => {
       const savedDecision = { activityId: 'act1', employeeId: 'emp1', decision: 'rejected' };
       mockDecisionModel.findOneAndUpdate.mockResolvedValue(savedDecision);
@@ -204,6 +218,7 @@ describe('RecommendationService', () => {
       expect(mockNotifService.notifyEmployeeApproved).not.toHaveBeenCalled();
     });
 
+    // An approved decision updates the employee's skills with the activity's required skills and sends a notification
     it('should save an approved decision and update employee skills', async () => {
       const savedDecision = { activityId: 'act1', employeeId: 'emp1', decision: 'approved' };
       const activity = {
@@ -233,6 +248,7 @@ describe('RecommendationService', () => {
       expect(mockNotifService.notifyEmployeeApproved).toHaveBeenCalledWith('emp1', 'React Training');
     });
 
+    // When the activity is not found during skill update, the decision is still saved — graceful degradation
     it('should not throw when approved but activity not found', async () => {
       const savedDecision = { activityId: 'act1', employeeId: 'emp1', decision: 'approved' };
       mockDecisionModel.findOneAndUpdate.mockResolvedValue(savedDecision);
@@ -246,6 +262,7 @@ describe('RecommendationService', () => {
   });
 
   describe('generateAndSave', () => {
+    // When _doGenerate throws, the error status is recorded in the in-memory map and the error is re-thrown
     it('should set generation status to error when _doGenerate throws', async () => {
       jest.spyOn(service as any, '_doGenerate').mockRejectedValue(new Error('Ollama unavailable'));
 
@@ -254,6 +271,7 @@ describe('RecommendationService', () => {
       expect(service.getGenerationStatus('act1')?.error).toBe('Ollama unavailable');
     });
 
+    // On success, the done status is recorded with the correct top_k and the saved document is returned
     it('should set generation status to done when _doGenerate succeeds', async () => {
       const mockDoc = { activityId: 'act1', jsonOllama: { rankings: [] } };
       jest.spyOn(service as any, '_doGenerate').mockResolvedValue(mockDoc);
@@ -266,11 +284,13 @@ describe('RecommendationService', () => {
   });
 
   describe('loadPrompt (private)', () => {
+    // First call reads the prompt template from disk via fs.readFileSync
     it('should read and cache prompt from disk on first call', () => {
       const result = (service as any).loadPrompt('recommendation');
       expect(result).toBe('prompt template {{top_k}}');
     });
 
+    // Subsequent calls return the cached value without hitting the filesystem again
     it('should return cached value on subsequent calls without re-reading disk', () => {
       const fs = require('fs');
       (service as any).promptCache.set('recommendation', 'cached-template');
@@ -281,6 +301,7 @@ describe('RecommendationService', () => {
   });
 
   describe('generateAll', () => {
+    // Results array contains one entry per activity — successes include ranking count, failures include error message
     it('should return results for all activities', async () => {
       const activities = [
         { _id: { toString: () => 'act1' }, title: 'Activity 1' },
@@ -299,6 +320,7 @@ describe('RecommendationService', () => {
   });
 
   describe('callOllama (private)', () => {
+    // Happy path: the LLM response string is extracted from data.response and returned as-is
     it('should return the LLM response string', async () => {
       const axios = require('axios');
       axios.post.mockResolvedValueOnce({ data: { response: '{"rankings":[{"employeeId":"1","score":90,"reasons":[]}]}' } });
@@ -312,6 +334,7 @@ describe('RecommendationService', () => {
       );
     });
 
+    // When the response has no response field (e.g. unexpected Ollama output), an empty string is returned safely
     it('should return empty string when response has no response field', async () => {
       const axios = require('axios');
       axios.post.mockResolvedValueOnce({ data: {} });
@@ -322,6 +345,7 @@ describe('RecommendationService', () => {
   });
 
   describe('extractFirstValidRankingsJson (private)', () => {
+    // Extracts and parses JSON from a markdown ```json ... ``` code block in the LLM output
     it('should extract JSON from markdown code block', () => {
       const raw = '```json\n{"rankings":[{"employeeId":"1","score":90,"reasons":["Good"]}]}\n```';
       const result = (service as any).extractFirstValidRankingsJson(raw);
@@ -330,20 +354,24 @@ describe('RecommendationService', () => {
       expect(result.rankings[0].employeeId).toBe('1');
     });
 
+    // Extracts JSON directly when it appears inline without a code block fence
     it('should extract JSON directly from plain text', () => {
       const raw = 'Here is the result: {"rankings":[{"employeeId":"2","score":75,"reasons":[]}]} end.';
       const result = (service as any).extractFirstValidRankingsJson(raw);
       expect(result.rankings).toHaveLength(1);
     });
 
+    // Returns null when the LLM output contains no parseable JSON — caller must handle gracefully
     it('should return null when no JSON found', () => {
       expect((service as any).extractFirstValidRankingsJson('no json here')).toBeNull();
     });
 
+    // Returns null for an empty rankings array — an empty result is not useful for HR decisions
     it('should return null for empty rankings array', () => {
       expect((service as any).extractFirstValidRankingsJson('{"rankings":[]}')).toBeNull();
     });
 
+    // Extracts JSON from a code block without the 'json' language tag
     it('should extract from code block without json tag', () => {
       const raw = '```\n{"rankings":[{"employeeId":"3","score":80,"reasons":["Match"]}]}\n```';
       const result = (service as any).extractFirstValidRankingsJson(raw);

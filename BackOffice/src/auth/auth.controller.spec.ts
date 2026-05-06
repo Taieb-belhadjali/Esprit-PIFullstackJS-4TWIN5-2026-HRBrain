@@ -35,6 +35,7 @@ describe('AuthController', () => {
   // ─── login ───────────────────────────────────────────────────────────────────
 
   describe('login', () => {
+    // Le contrôleur délègue l'email et le mot de passe à AuthService et retourne la réponse sans modification
     it('should call authService.login with email and password', async () => {
       const mockResult = {
         token: 'mock.jwt.token',
@@ -56,6 +57,7 @@ describe('AuthController', () => {
   // ─── changePassword ───────────────────────────────────────────────────────────
 
   describe('changePassword', () => {
+    // Extrait l'userId depuis le claim sub du JWT et transmet le nouveau mot de passe à AuthService
     it('should call authService.changePassword with userId and new password', async () => {
       const mockResult = { message: 'Mot de passe mis à jour avec succès' };
       mockAuthService.changePassword.mockResolvedValue(mockResult);
@@ -71,6 +73,7 @@ describe('AuthController', () => {
   // ─── googleAuth ───────────────────────────────────────────────────────────────
 
   describe('googleAuth', () => {
+    // Le @UseGuards(AuthGuard('google')) intercepte la requête et redirige vers Google — le corps de la méthode n'est jamais atteint
     it('should return undefined (guard handles redirect to Google)', () => {
       expect(controller.googleAuth()).toBeUndefined();
     });
@@ -79,6 +82,7 @@ describe('AuthController', () => {
   // ─── googleCallback ───────────────────────────────────────────────────────────
 
   describe('googleCallback', () => {
+    // Après l'OAuth, le contrôleur construit une URL de redirection contenant token, role, name, email et id en query params
     it('should redirect to configured frontend URL with token params', async () => {
       const mockResult = {
         token: 'jwt-token-abc',
@@ -98,6 +102,7 @@ describe('AuthController', () => {
       expect(mockRes.redirect).toHaveBeenCalledWith(expect.stringContaining('role=EMPLOYEE'));
     });
 
+    // Quand la variable d'environnement FRONTEND_URL est absente, le contrôleur utilise localhost:8888 pour éviter une redirection cassée
     it('should fall back to http://localhost:8888 when FRONTEND_URL is not set', async () => {
       const mockResult = {
         token: 'jwt-token-xyz',
@@ -114,6 +119,7 @@ describe('AuthController', () => {
       );
     });
 
+    // Tous les champs utilisateur (name, email encodé, role, id) doivent figurer dans la redirection pour que le frontend hydrate la session
     it('should include all user params in redirect URL', async () => {
       const mockResult = {
         token: 'tok',

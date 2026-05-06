@@ -50,6 +50,7 @@ describe('AuthService', () => {
   // ─── login ───────────────────────────────────────────────────────────────────
 
   describe('login', () => {
+    // Vérifie que le JWT est signé avec le bon payload (sub/email/role) et que le flag mustChangePassword est transmis
     it('should return token and user info on valid credentials', async () => {
       mockUserModel.findOne.mockResolvedValue(mockUser);
       bcrypt.compare.mockResolvedValue(true);
@@ -66,6 +67,7 @@ describe('AuthService', () => {
       });
     });
 
+    // Protège contre la connexion avec un email inconnu — la recherche utilisateur retourne null → UnauthorizedException
     it('should throw UnauthorizedException when user not found', async () => {
       mockUserModel.findOne.mockResolvedValue(null);
 
@@ -74,6 +76,7 @@ describe('AuthService', () => {
       );
     });
 
+    // Protège contre les tentatives par force brute — bcrypt.compare retourne false si le mot de passe est incorrect
     it('should throw UnauthorizedException when password is wrong', async () => {
        mockUserModel.findOne.mockResolvedValue(mockUser);
        bcrypt.compare.mockResolvedValue(false);
@@ -83,6 +86,7 @@ describe('AuthService', () => {
       );
     });
 
+    // Quand l'utilisateur doit changer son mot de passe, ce flag doit apparaître dans la réponse pour que le frontend redirige
     it('should return mustChangePassword true when user must change password', async () => {
        const userMustChange = { ...mockUser, mustChangePassword: true };
        mockUserModel.findOne.mockResolvedValue(userMustChange);
@@ -97,6 +101,7 @@ describe('AuthService', () => {
   // ─── loginWithGoogle ──────────────────────────────────────────────────────────
 
   describe('loginWithGoogle', () => {
+    // La connexion via Google OAuth ignore la vérification du mot de passe — le JWT est généré directement à partir de l'objet utilisateur
     it('should return token and user info', async () => {
       const result = await service.loginWithGoogle(mockUser);
 
@@ -114,6 +119,7 @@ describe('AuthService', () => {
   // ─── changePassword ───────────────────────────────────────────────────────────
 
   describe('changePassword', () => {
+    // Cas nominal : le nouveau mot de passe est haché avec bcrypt et le flag mustChangePassword est remis à false
     it('should update password and return success message', async () => {
        mockUserModel.findByIdAndUpdate.mockResolvedValue({});
        bcrypt.hash.mockResolvedValue('newHashedPassword');
@@ -127,12 +133,14 @@ describe('AuthService', () => {
       });
     });
 
+    // La validation de longueur minimale empêche les mots de passe faibles — tout mot de passe de moins de 6 caractères est rejeté
     it('should throw BadRequestException when password is too short', async () => {
       await expect(service.changePassword('user123', '123')).rejects.toThrow(
         BadRequestException,
       );
     });
 
+    // Une chaîne vide doit être rejetée avant même d'appeler bcrypt
     it('should throw BadRequestException when password is empty', async () => {
       await expect(service.changePassword('user123', '')).rejects.toThrow(
         BadRequestException,

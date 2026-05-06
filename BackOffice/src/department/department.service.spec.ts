@@ -44,24 +44,28 @@ describe('DepartmentService', () => {
 
   // ── create ─────────────────────────────────────────────────────────────────
   describe('create', () => {
+    // Cas nominal : le département est sauvegardé en base et le document est retourné
     it('should create a department successfully', async () => {
       const dto = { name: 'Engineering', managerIds: [] };
       const result = await service.create(dto);
       expect(result).toEqual(mockDepartment);
     });
 
+    // An empty name string must be rejected before hitting the DB — clear error message for the caller
     it('should throw error when name is empty', async () => {
       await expect(service.create({ name: '', managerIds: [] })).rejects.toThrow(
         'Le nom du département ne peut pas être vide',
       );
     });
 
+    // A whitespace-only name is semantically empty and must also be rejected
     it('should throw error when name is only whitespace', async () => {
       await expect(service.create({ name: '   ', managerIds: [] })).rejects.toThrow(
         'Le nom du département ne peut pas être vide',
       );
     });
 
+    // Leading and trailing whitespace is stripped before saving to avoid display inconsistencies
     it('should trim the department name', async () => {
       const dto = { name: '  Engineering  ', managerIds: [] };
       await service.create(dto);
@@ -73,6 +77,7 @@ describe('DepartmentService', () => {
 
   // ── findAll ────────────────────────────────────────────────────────────────
   describe('findAll', () => {
+    // Returns all departments with their populated manager references
     it('should return all departments', async () => {
       const departments = [mockDepartment];
       mockDepartmentModel.find.mockReturnValue({
@@ -86,6 +91,7 @@ describe('DepartmentService', () => {
       expect(mockDepartmentModel.find).toHaveBeenCalled();
     });
 
+    // Empty collection returns an empty array — no error thrown
     it('should return empty array when no departments', async () => {
       mockDepartmentModel.find.mockReturnValue({
         populate: jest.fn().mockReturnValue({
@@ -100,6 +106,7 @@ describe('DepartmentService', () => {
 
   // ── findOne ────────────────────────────────────────────────────────────────
   describe('findOne', () => {
+    // Returns the populated department document for a known id
     it('should return a department by id', async () => {
       mockDepartmentModel.findById.mockReturnValue({
         populate: jest.fn().mockReturnValue({
@@ -111,6 +118,7 @@ describe('DepartmentService', () => {
       expect(result).toEqual(mockDepartment);
     });
 
+    // Unknown id must throw NotFoundException rather than returning null silently
     it('should throw NotFoundException when department not found', async () => {
       mockDepartmentModel.findById.mockReturnValue({
         populate: jest.fn().mockReturnValue({
@@ -124,6 +132,7 @@ describe('DepartmentService', () => {
 
   // ── findByManager ──────────────────────────────────────────────────────────
   describe('findByManager', () => {
+    // Returns all departments where the manager id appears in the managerIds array
     it('should return departments managed by a user', async () => {
       const departments = [mockDepartment];
       mockDepartmentModel.find.mockReturnValue({
@@ -142,6 +151,7 @@ describe('DepartmentService', () => {
 
   // ── update ─────────────────────────────────────────────────────────────────
   describe('update', () => {
+    // Happy path: returns the updated department document after applying the patch
     it('should update a department successfully', async () => {
       const updatedDept = { ...mockDepartment, name: 'Updated Engineering' };
       mockDepartmentModel.findByIdAndUpdate.mockReturnValue({
@@ -154,6 +164,7 @@ describe('DepartmentService', () => {
       expect(result).toEqual(updatedDept);
     });
 
+    // Updating a non-existent department must throw NotFoundException
     it('should throw NotFoundException when department not found', async () => {
       mockDepartmentModel.findByIdAndUpdate.mockReturnValue({
         populate: jest.fn().mockReturnValue({
@@ -166,6 +177,7 @@ describe('DepartmentService', () => {
       );
     });
 
+    // Leading and trailing whitespace is stripped from the name before updating
     it('should trim name when updating', async () => {
       mockDepartmentModel.findByIdAndUpdate.mockReturnValue({
         populate: jest.fn().mockReturnValue({
@@ -184,6 +196,7 @@ describe('DepartmentService', () => {
 
   // ── remove ─────────────────────────────────────────────────────────────────
   describe('remove', () => {
+    // Happy path: deleted document is returned after removal
     it('should delete a department successfully', async () => {
       mockDepartmentModel.findByIdAndDelete.mockReturnValue({
         exec: jest.fn().mockResolvedValue(mockDepartment),
@@ -193,6 +206,7 @@ describe('DepartmentService', () => {
       expect(result).toEqual(mockDepartment);
     });
 
+    // Attempting to delete a non-existent department must throw NotFoundException
     it('should throw NotFoundException when department not found', async () => {
       mockDepartmentModel.findByIdAndDelete.mockReturnValue({
         exec: jest.fn().mockResolvedValue(null),

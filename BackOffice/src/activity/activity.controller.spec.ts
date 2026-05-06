@@ -44,6 +44,7 @@ describe('ActivityController', () => {
 
   // ── create ─────────────────────────────────────────────────────────────────
   describe('create', () => {
+    // Le SUPERADMIN contourne la vérification de propriété du département — isManagerOfDepartment ne doit pas être appelé
     it('should create activity for SUPERADMIN without department check', async () => {
       mockActivityService.create.mockResolvedValue(mockActivity);
       const req = { user: { sub: '507f1f77bcf86cd799439013', role: 'SUPERADMIN' } };
@@ -57,6 +58,7 @@ describe('ActivityController', () => {
       expect(service.isManagerOfDepartment).not.toHaveBeenCalled();
     });
 
+    // Un MANAGER qui possède le département peut créer une activité — la vérification de propriété réussit
     it('should create activity for MANAGER who owns the department', async () => {
       mockActivityService.isManagerOfDepartment.mockResolvedValue(true);
       mockActivityService.create.mockResolvedValue(mockActivity);
@@ -74,6 +76,7 @@ describe('ActivityController', () => {
       );
     });
 
+    // Un MANAGER qui ne possède pas le département ciblé doit être bloqué par une ForbiddenException
     it('should throw ForbiddenException when MANAGER does not own department', async () => {
       mockActivityService.isManagerOfDepartment.mockResolvedValue(false);
       const req = { user: { sub: '507f1f77bcf86cd799439013', role: 'MANAGER' } };
@@ -85,6 +88,7 @@ describe('ActivityController', () => {
       await expect(controller.create(dto, req)).rejects.toThrow(ForbiddenException);
     });
 
+    // createdById est injecté depuis le claim sub du JWT, et non depuis le corps de la requête
     it('should inject createdById from token', async () => {
       mockActivityService.isManagerOfDepartment.mockResolvedValue(true);
       mockActivityService.create.mockResolvedValue(mockActivity);
@@ -98,6 +102,7 @@ describe('ActivityController', () => {
 
   // ── findAll ────────────────────────────────────────────────────────────────
   describe('findAll', () => {
+    // Le rôle MANAGER doit utiliser findAllForManager pour limiter les résultats à ses départements
     it('should call findAllForManager when user is MANAGER', async () => {
       const activities = [mockActivity];
       mockActivityService.findAllForManager.mockResolvedValue(activities);
@@ -108,6 +113,7 @@ describe('ActivityController', () => {
       expect(service.findAllForManager).toHaveBeenCalledWith('507f1f77bcf86cd799439013', undefined);
     });
 
+    // Le rôle EMPLOYEE doit utiliser findAllForEmployee pour n'afficher que les activités de son département
     it('should call findAllForEmployee when user is EMPLOYEE', async () => {
       const activities = [mockActivity];
       mockActivityService.findAllForEmployee.mockResolvedValue(activities);
@@ -118,6 +124,7 @@ describe('ActivityController', () => {
       expect(service.findAllForEmployee).toHaveBeenCalledWith('507f1f77bcf86cd799439014');
     });
 
+    // Les rôles HR et SUPERADMIN utilisent la méthode findAll sans restriction
     it('should call findAll for other roles', async () => {
       const activities = [mockActivity];
       mockActivityService.findAll.mockResolvedValue(activities);
@@ -128,6 +135,7 @@ describe('ActivityController', () => {
       expect(service.findAll).toHaveBeenCalledWith(undefined);
     });
 
+    // Le paramètre optionnel departmentId est transmis à findAllForManager pour affiner le filtrage
     it('should pass departmentId filter to findAllForManager', async () => {
       mockActivityService.findAllForManager.mockResolvedValue([]);
       const req = { user: { sub: '507f1f77bcf86cd799439013', role: 'MANAGER' } };
@@ -142,6 +150,7 @@ describe('ActivityController', () => {
 
   // ── findOne ────────────────────────────────────────────────────────────────
   describe('findOne', () => {
+    // Délègue la recherche par id au service et retourne le document activité
     it('should return an activity by id', async () => {
       mockActivityService.findOne.mockResolvedValue(mockActivity);
       const result = await controller.findOne('507f1f77bcf86cd799439011');
@@ -149,6 +158,7 @@ describe('ActivityController', () => {
       expect(service.findOne).toHaveBeenCalledWith('507f1f77bcf86cd799439011');
     });
 
+    // Propage la NotFoundException du service quand l'activité n'existe pas
     it('should throw NotFoundException when activity not found', async () => {
       mockActivityService.findOne.mockRejectedValue(new NotFoundException());
       await expect(controller.findOne('nonexistent')).rejects.toThrow(NotFoundException);
@@ -157,6 +167,7 @@ describe('ActivityController', () => {
 
   // ── update ─────────────────────────────────────────────────────────────────
   describe('update', () => {
+    // Transmet le DTO de mise à jour au service et retourne l'activité mise à jour
     it('should update an activity', async () => {
       const updated = { ...mockActivity, title: 'Updated Training' };
       mockActivityService.update.mockResolvedValue(updated);
@@ -167,6 +178,7 @@ describe('ActivityController', () => {
 
   // ── getRecommendations ─────────────────────────────────────────────────────
   describe('getRecommendations', () => {
+    // Délègue au service et retourne la liste des employés scorés pour l'activité
     it('should return recommendations for an activity', async () => {
       const recommendations = [{ employeeId: '507f1f77bcf86cd799439014', score: 90 }];
       mockActivityService.getRecommendations.mockResolvedValue(recommendations);
@@ -178,12 +190,14 @@ describe('ActivityController', () => {
 
   // ── remove ─────────────────────────────────────────────────────────────────
   describe('remove', () => {
+    // Délègue la suppression au service et retourne le document supprimé
     it('should delete an activity', async () => {
       mockActivityService.remove.mockResolvedValue(mockActivity);
       const result = await controller.remove('507f1f77bcf86cd799439011');
       expect(result).toEqual(mockActivity);
     });
 
+    // Propage la NotFoundException du service quand l'activité n'existe pas
     it('should throw NotFoundException when activity not found', async () => {
       mockActivityService.remove.mockRejectedValue(new NotFoundException());
       await expect(controller.remove('nonexistent')).rejects.toThrow(NotFoundException);

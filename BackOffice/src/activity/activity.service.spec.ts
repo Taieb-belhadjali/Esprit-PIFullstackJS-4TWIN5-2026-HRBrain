@@ -79,12 +79,13 @@ describe('ActivityService', () => {
 
   // ── create ─────────────────────────────────────────────────────────────────
   describe('create', () => {
-    // Helper: mock findById().populate().exec() used after save
+    // Helper : mock findById().populate().exec() utilisé après le save
     const mockFindByIdPopulate = (resolved: any) =>
       mockActivityModel.findById.mockReturnValue({
         populate: jest.fn().mockReturnValue({ exec: jest.fn().mockResolvedValue(resolved) }),
       });
 
+    // Cas nominal : l'activité est sauvegardée en base et le document peuplé est retourné
     it('should create an activity successfully', async () => {
       mockFindByIdPopulate(mockActivity);
       mockDepartmentModel.findById.mockResolvedValue({ name: 'Engineering' });
@@ -107,6 +108,7 @@ describe('ActivityService', () => {
       expect(result).toEqual(mockActivity);
     });
 
+    // Quand un département est précisé et que des employés sont trouvés, le service de notification doit être appelé
     it('should notify employees when department is specified', async () => {
       mockFindByIdPopulate(mockActivity);
       mockDepartmentModel.findById.mockReturnValue({
@@ -139,6 +141,7 @@ describe('ActivityService', () => {
 
   // ── findAll ────────────────────────────────────────────────────────────────
   describe('findAll', () => {
+    // Sans filtre, le service interroge la base avec un filtre vide et retourne toutes les activités
     it('should return all activities without filter', async () => {
       const activities = [mockActivity];
       mockActivityModel.find.mockReturnValue({
@@ -152,6 +155,7 @@ describe('ActivityService', () => {
       expect(mockActivityModel.find).toHaveBeenCalledWith({});
     });
 
+    // Quand un departmentId est fourni, la requête doit inclure targetedDepartmentId pour limiter les résultats
     it('should filter by departmentId when provided', async () => {
       const activities = [mockActivity];
       mockActivityModel.find.mockReturnValue({
@@ -167,6 +171,7 @@ describe('ActivityService', () => {
       });
     });
 
+    // Une collection vide doit retourner un tableau vide, sans erreur
     it('should return empty array when no activities', async () => {
       mockActivityModel.find.mockReturnValue({
         populate: jest.fn().mockReturnValue({
@@ -181,6 +186,7 @@ describe('ActivityService', () => {
 
   // ── findAllForManager ──────────────────────────────────────────────────────
   describe('findAllForManager', () => {
+    // Un manager qui n'a encore aucun département doit obtenir une liste vide sans erreur en base
     it('should return empty array when manager has no departments', async () => {
       mockDepartmentModel.find.mockReturnValue({
         lean: jest.fn().mockResolvedValue([]),
@@ -190,6 +196,7 @@ describe('ActivityService', () => {
       expect(result).toEqual([]);
     });
 
+    // Quand le manager possède au moins un département, les activités ciblant ces départements sont retournées
     it('should return activities for manager departments', async () => {
       const activities = [mockActivity];
       mockDepartmentModel.find.mockReturnValue({
@@ -205,6 +212,7 @@ describe('ActivityService', () => {
       expect(result).toEqual(activities);
     });
 
+    // Quand un departmentId spécifique est fourni, les résultats sont limités à ce seul département
     it('should filter by specific departmentId when provided', async () => {
       const activities = [mockActivity];
       mockDepartmentModel.find.mockReturnValue({
@@ -226,6 +234,7 @@ describe('ActivityService', () => {
 
   // ── findAllForEmployee ─────────────────────────────────────────────────────
   describe('findAllForEmployee', () => {
+    // Un employé sans departmentId assigné obtient une liste vide — pas de crash sur un département null
     it('should return empty array when employee has no department', async () => {
       mockUserModel.findById.mockReturnValue({
         lean: jest.fn().mockResolvedValue({ _id: '507f1f77bcf86cd799439014' }),
@@ -235,6 +244,7 @@ describe('ActivityService', () => {
       expect(result).toEqual([]);
     });
 
+    // Quand l'employé appartient à un département, les activités ciblant ce département sont retournées
     it('should return activities for employee department', async () => {
       const activities = [mockActivity];
       mockUserModel.findById.mockReturnValue({
@@ -256,11 +266,13 @@ describe('ActivityService', () => {
 
   // ── isManagerOfDepartment ──────────────────────────────────────────────────
   describe('isManagerOfDepartment', () => {
+    // Sans departmentId fourni, la vérification est impossible — retourne false par défaut
     it('should return false when departmentId is not provided', async () => {
       const result = await service.isManagerOfDepartment('507f1f77bcf86cd799439013');
       expect(result).toBe(false);
     });
 
+    // Retourne true quand le document département contient bien l'id du manager
     it('should return true when manager manages the department', async () => {
       mockDepartmentModel.findOne.mockResolvedValue({ _id: '507f1f77bcf86cd799439012' });
       const result = await service.isManagerOfDepartment(
@@ -270,6 +282,7 @@ describe('ActivityService', () => {
       expect(result).toBe(true);
     });
 
+    // Retourne false quand findOne ne trouve aucun enregistrement — le manager n'est pas responsable de ce département
     it('should return false when manager does not manage the department', async () => {
       mockDepartmentModel.findOne.mockResolvedValue(null);
       const result = await service.isManagerOfDepartment(
@@ -282,6 +295,7 @@ describe('ActivityService', () => {
 
   // ── findOne ────────────────────────────────────────────────────────────────
   describe('findOne', () => {
+    // Cas nominal : retourne le document activité peuplé pour un id connu
     it('should return an activity by id', async () => {
       mockActivityModel.findById.mockReturnValue({
         populate: jest.fn().mockReturnValue({
@@ -293,6 +307,7 @@ describe('ActivityService', () => {
       expect(result).toEqual(mockActivity);
     });
 
+    // Un id inconnu doit lever une NotFoundException plutôt que retourner null silencieusement
     it('should throw NotFoundException when activity not found', async () => {
       mockActivityModel.findById.mockReturnValue({
         populate: jest.fn().mockReturnValue({
@@ -306,6 +321,7 @@ describe('ActivityService', () => {
 
   // ── update ─────────────────────────────────────────────────────────────────
   describe('update', () => {
+    // Cas nominal : retourne le document peuplé après application de la mise à jour
     it('should update an activity', async () => {
       const updated = { ...mockActivity, title: 'Updated Training' };
       mockActivityModel.findByIdAndUpdate.mockReturnValue({
@@ -316,6 +332,7 @@ describe('ActivityService', () => {
       expect(result).toEqual(updated);
     });
 
+    // Mettre à jour une activité inexistante doit lever une NotFoundException
     it('should throw NotFoundException when activity not found', async () => {
       mockActivityModel.findByIdAndUpdate.mockReturnValue({
         populate: jest.fn().mockReturnValue({ exec: jest.fn().mockResolvedValue(null) }),
@@ -327,6 +344,7 @@ describe('ActivityService', () => {
 
   // ── remove ─────────────────────────────────────────────────────────────────
   describe('remove', () => {
+    // Cas nominal : le document supprimé est retourné après la suppression
     it('should delete an activity', async () => {
       mockActivityModel.findByIdAndDelete.mockReturnValue({
         exec: jest.fn().mockResolvedValue(mockActivity),
@@ -336,6 +354,7 @@ describe('ActivityService', () => {
       expect(result).toEqual(mockActivity);
     });
 
+    // Supprimer une activité inexistante doit lever une NotFoundException
     it('should throw NotFoundException when activity not found', async () => {
       mockActivityModel.findByIdAndDelete.mockReturnValue({
         exec: jest.fn().mockResolvedValue(null),
@@ -356,6 +375,7 @@ describe('ActivityService', () => {
         }),
       });
 
+    // Le SUPERADMIN n'a aucune restriction de département — les statistiques couvrent toute la collection d'activités
     it('should return stats for SUPERADMIN (no department filter)', async () => {
       mockActivityModel.countDocuments.mockResolvedValue(10);
       mockActivityModel.aggregate.mockResolvedValue([{ status: 'active', count: 10 }]);
@@ -367,6 +387,7 @@ describe('ActivityService', () => {
       expect(result.recent).toHaveLength(1);
     });
 
+    // Un MANAGER sans départements doit recevoir des statistiques vides (zéros) plutôt qu'une erreur en base
     it('should return empty stats for MANAGER with no departments', async () => {
       mockDepartmentModel.find.mockReturnValue({
         lean: jest.fn().mockResolvedValue([]),
@@ -376,6 +397,7 @@ describe('ActivityService', () => {
       expect(result).toEqual({ total: 0, statusDistribution: [], recent: [] });
     });
 
+    // Un MANAGER avec des départements reçoit des statistiques limitées aux activités de ces départements
     it('should return stats for MANAGER with departments', async () => {
       mockDepartmentModel.find.mockReturnValue({
         lean: jest.fn().mockResolvedValue([{ _id: '507f1f77bcf86cd799439012' }]),
@@ -388,6 +410,7 @@ describe('ActivityService', () => {
       expect(result.total).toBe(3);
     });
 
+    // Le rôle HR n'a pas de restriction de département — il reçoit les statistiques globales comme le SUPERADMIN
     it('should return stats for HR role (no filter)', async () => {
       mockActivityModel.countDocuments.mockResolvedValue(5);
       mockActivityModel.aggregate.mockResolvedValue([]);
@@ -400,6 +423,7 @@ describe('ActivityService', () => {
 
   // ── getRecommendations ─────────────────────────────────────────────────────
   describe('getRecommendations', () => {
+    // Demander des recommandations pour une activité inexistante doit lever une NotFoundException
     it('should throw NotFoundException when activity does not exist', async () => {
       mockActivityModel.findById.mockReturnValue({
         populate: jest.fn().mockReturnValue({ exec: jest.fn().mockResolvedValue(null) }),
@@ -408,6 +432,7 @@ describe('ActivityService', () => {
       await expect(service.getRecommendations('nonexistent')).rejects.toThrow(NotFoundException);
     });
 
+    // Quand aucun employé ne correspond aux critères de l'activité, un tableau vide est retourné
     it('should return empty results when no employees match', async () => {
       const activity = {
         _id: '507f1f77bcf86cd799439011',
@@ -427,6 +452,7 @@ describe('ActivityService', () => {
       expect(result).toHaveLength(0);
     });
 
+    // Plusieurs employés sont scorés et le tableau résultat est trié par finalScore décroissant
     it('should score and sort employees by finalScore', async () => {
       const activity = {
         _id: '507f1f77bcf86cd799439011',
@@ -451,6 +477,7 @@ describe('ActivityService', () => {
       expect(result[0].employee._id).toBeDefined();
     });
 
+    // Quand un employé n'a pas de CV, son tableau de compétences est utilisé directement pour construire son profil de scoring
     it('should use skills array when employee has no cv', async () => {
       const activity = { _id: 'act1', requiredSkills: [], context: '', targetedDepartmentId: null };
       const employees = [{
@@ -474,6 +501,7 @@ describe('ActivityService', () => {
       expect(result[0].employeeSkills[0].skillName).toBe('React');
     });
 
+    // Le paramètre limit doit tronquer le résultat au nombre de candidats demandé
     it('should respect the limit parameter', async () => {
       const activity = { _id: 'act1', requiredSkills: [], context: '', targetedDepartmentId: null };
       const employees = Array.from({ length: 5 }, (_, i) => ({

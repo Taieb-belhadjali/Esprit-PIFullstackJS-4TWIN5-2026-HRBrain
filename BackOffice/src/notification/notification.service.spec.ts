@@ -44,6 +44,7 @@ describe('NotificationService', () => {
 
   // ── create ─────────────────────────────────────────────────────────────────
   describe('create', () => {
+    // Happy path: notification is persisted and the created document is returned
     it('should create a notification successfully', async () => {
       mockNotifModel.create.mockResolvedValue(mockNotification)
 
@@ -59,6 +60,7 @@ describe('NotificationService', () => {
       expect(mockNotifModel.create).toHaveBeenCalledTimes(1)
     })
 
+    // The string userId is converted to a MongoDB ObjectId before storing — Mongoose requires the correct BSON type
     it('should convert string userId to ObjectId', async () => {
       mockNotifModel.create.mockResolvedValue(mockNotification)
 
@@ -77,6 +79,7 @@ describe('NotificationService', () => {
       )
     })
 
+    // The optional link field is included in the persisted document so the frontend can navigate to it
     it('should create notification with optional link', async () => {
       mockNotifModel.create.mockResolvedValue(mockNotification)
 
@@ -97,6 +100,7 @@ describe('NotificationService', () => {
 
   // ── createForMany ──────────────────────────────────────────────────────────
   describe('createForMany', () => {
+    // One insertMany call is made with one document per userId — efficient bulk insert
     it('should create notifications for multiple users', async () => {
       mockNotifModel.insertMany.mockResolvedValue([])
 
@@ -112,6 +116,7 @@ describe('NotificationService', () => {
       expect(insertedDocs).toHaveLength(2)
     })
 
+    // An empty userIds array must skip the DB call entirely to avoid an empty insertMany
     it('should not call insertMany when userIds is empty', async () => {
       await service.createForMany([], {
         title: 'Test',
@@ -125,6 +130,7 @@ describe('NotificationService', () => {
   })
 
   describe('findByUser', () => {
+    // Returns notifications for the given user, sorted by creation date descending
     it('should return notifications for a user', async () => {
       const notifications = [mockNotification]
       mockNotifModel.find.mockReturnValue({
@@ -139,6 +145,7 @@ describe('NotificationService', () => {
       expect(result).toEqual(notifications)
     })
 
+    // Verifies the sort direction is descending so the most recent notifications appear first
     it('should sort by createdAt descending', async () => {
       const sortMock = jest.fn().mockReturnValue({
         limit: jest.fn().mockReturnValue({
@@ -153,6 +160,7 @@ describe('NotificationService', () => {
   })
 
   describe('markAsRead', () => {
+    // Sets read=true on the specific notification that belongs to the given user
     it('should mark a notification as read', async () => {
       mockNotifModel.updateOne.mockResolvedValue({ modifiedCount: 1 })
 
@@ -166,6 +174,7 @@ describe('NotificationService', () => {
   })
 
   describe('markAllAsRead', () => {
+    // Sets read=true on all unread notifications belonging to the user in a single query
     it('should mark all notifications as read for a user', async () => {
       mockNotifModel.updateMany.mockResolvedValue({ modifiedCount: 5 })
 
@@ -179,6 +188,7 @@ describe('NotificationService', () => {
   })
 
   describe('delete', () => {
+    // Deletes the specific notification that belongs to the given user
     it('should delete a notification', async () => {
       mockNotifModel.deleteOne.mockResolvedValue({ deletedCount: 1 })
 
@@ -191,6 +201,7 @@ describe('NotificationService', () => {
   })
 
   describe('countUnread', () => {
+    // Returns the number of unread notifications so the frontend can display a badge count
     it('should return count of unread notifications', async () => {
       mockNotifModel.countDocuments.mockResolvedValue(3)
 
@@ -198,6 +209,7 @@ describe('NotificationService', () => {
       expect(result).toBe(3)
     })
 
+    // When the user has no unread notifications, the count must be 0 — not an error
     it('should return 0 when no unread notifications', async () => {
       mockNotifModel.countDocuments.mockResolvedValue(0)
 
@@ -207,6 +219,7 @@ describe('NotificationService', () => {
   })
 
   describe('notifyRecommendationReady', () => {
+    // Sends a success notification to the manager with type 'success' and category 'Recommendation'
     it('should create notification for manager', async () => {
       mockNotifModel.create.mockResolvedValue(mockNotification)
 
@@ -221,6 +234,7 @@ describe('NotificationService', () => {
       )
     })
 
+    // Singular form ("1 candidat classé") is used when exactly 1 candidate is ranked
     it('should use singular form for 1 candidate', async () => {
       mockNotifModel.create.mockResolvedValue(mockNotification)
 
@@ -230,6 +244,7 @@ describe('NotificationService', () => {
       expect(callArg.message).toContain('1 candidat classé')
     })
 
+    // Plural form ("3 candidats classés") is used when more than 1 candidate is ranked
     it('should use plural form for multiple candidates', async () => {
       mockNotifModel.create.mockResolvedValue(mockNotification)
 
@@ -241,6 +256,7 @@ describe('NotificationService', () => {
   })
 
   describe('notifyEmployeeApproved', () => {
+    // Sends a congratulatory notification to the employee selected for an activity
     it('should create notification for employee', async () => {
       mockNotifModel.create.mockResolvedValue(mockNotification)
 
@@ -257,6 +273,7 @@ describe('NotificationService', () => {
   })
 
   describe('notifyNewActivityInDepartment', () => {
+    // One insertMany call is made with one document per employee — efficient bulk notification
     it('should notify all employees in department', async () => {
       mockNotifModel.insertMany.mockResolvedValue([])
 
@@ -273,6 +290,7 @@ describe('NotificationService', () => {
   })
 
   describe('notifyNewEmployeeInDepartment', () => {
+    // One insertMany call is made with one document per manager — efficient bulk notification
     it('should notify all managers in department', async () => {
       mockNotifModel.insertMany.mockResolvedValue([])
 

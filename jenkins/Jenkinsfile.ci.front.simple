@@ -95,6 +95,7 @@ pipeline {
                         docker build \\
                           --network=host \\
                           --target production \\
+                          --build-arg ENV=k8s \\
                           -t ${DOCKER_IMAGE}:${DOCKER_TAG} \\
                           -t ${DOCKER_IMAGE}:latest \\
                           .
