@@ -29,7 +29,11 @@ pipeline {
 
         stage('Checkout') {
             steps {
-                checkout scm
+                checkout([$class: 'GitSCM',
+                    branches: [[name: '*/main']],
+                    extensions: [[$class: 'CloneOption', depth: 1, shallow: true, noTags: true]],
+                    userRemoteConfigs: scm.userRemoteConfigs
+                ])
                 echo "Deploying ${DOCKER_IMAGE}:${IMAGE_TAG} → ${K8S_NAMESPACE}/${K8S_DEPLOY}"
             }
         }
@@ -96,7 +100,7 @@ pipeline {
 <p><b>Deploy:</b> #${env.BUILD_NUMBER}</p>
 <p><b>Image:</b> ${DOCKER_IMAGE}:${IMAGE_TAG}</p>
 <p><b>Namespace:</b> ${K8S_NAMESPACE}</p>
-<p><b>App:</b> <a href="http://192.168.1.12:30000/health">http://192.168.1.12:30000/health</a></p>
+<p><b>App:</b> <a href="http://10.248.202.11:30000/health">http://10.248.202.11:30000/health</a></p>
 <p><a href="${env.BUILD_URL}">Voir le build</a></p>""",
                 mimeType: 'text/html',
                 to: 'taiebaminebelhadjali@gmail.com'
