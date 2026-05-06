@@ -5,6 +5,9 @@ FROM node:20-alpine AS builder
 
 WORKDIR /app
 
+# Disable AES hardware acceleration (fixes ERR_SSL_CIPHER_OPERATION_FAILED on VMs)
+ENV OPENSSL_ia32cap="~0x200000200000000"
+
 # Copier uniquement les fichiers de dépendances d'abord (cache layer)
 COPY package*.json ./
 COPY tsconfig*.json ./
@@ -25,6 +28,9 @@ RUN npm run build
 FROM node:20-alpine AS production
 
 WORKDIR /app
+
+# Disable AES hardware acceleration (fixes ERR_SSL_CIPHER_OPERATION_FAILED on VMs)
+ENV OPENSSL_ia32cap="~0x200000200000000"
 
 # Créer un utilisateur non-root pour la sécurité
 RUN addgroup -S appgroup && adduser -S appuser -G appgroup
