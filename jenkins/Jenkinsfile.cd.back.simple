@@ -29,11 +29,16 @@ pipeline {
 
         stage('Checkout') {
             steps {
-                checkout([$class: 'GitSCM',
-                    branches: [[name: '*/main']],
-                    extensions: [[$class: 'CloneOption', depth: 1, shallow: true, noTags: true]],
-                    userRemoteConfigs: scm.userRemoteConfigs
-                ])
+                sh 'git config --global http.postBuffer 524288000'
+                sh 'git config --global http.lowSpeedLimit 0'
+                sh 'git config --global http.lowSpeedTime 999999'
+                retry(3) {
+                    checkout([$class: 'GitSCM',
+                        branches: [[name: '*/main']],
+                        extensions: [[$class: 'CloneOption', depth: 1, shallow: true, noTags: true, timeout: 60]],
+                        userRemoteConfigs: scm.userRemoteConfigs
+                    ])
+                }
                 echo "Deploying ${DOCKER_IMAGE}:${IMAGE_TAG} → ${K8S_NAMESPACE}/${K8S_DEPLOY}"
             }
         }
